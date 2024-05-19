@@ -1,3 +1,3 @@
-# IndyFly v1.0 Flight Computer
+# Larry v1.0 Flight Computer Software
 
-Flight computer software for v1 of the IndyFly rocket.
+Flight computer software for Larry v1.
