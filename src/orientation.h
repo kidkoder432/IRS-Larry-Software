@@ -4,6 +4,7 @@
 #include <math.h>
 #include <MadgwickAHRS.h>
 #include <Arduino_BMI270_BMM150.h>
+#include <Kalman.h>
 
 
 using namespace std;
@@ -90,4 +91,15 @@ Orientation get_angles_madgwick(double gb, SensorReadings r, Madgwick& f) {
     double angle_y = f.getYaw();
 
     return Orientation(angle_x, angle_y);
+}
+
+Orientation get_angles_kalman(double dt, double gb, SensorReadings r, Kalman& kx, Kalman& ky) {
+    double accel_angle_x = atan2(r.ay, r.az) * 180 / PI - 90;
+    double accel_angle_y = atan2(r.ax, r.az) * 180 / PI - 90;
+
+    double kal_x = kx.getAngle(accel_angle_x, r.gx - gb, dt);
+    double kal_y = ky.getAngle(accel_angle_y, r.gy - gb, dt);
+
+    return Orientation(kal_x, kal_y);
+
 }
