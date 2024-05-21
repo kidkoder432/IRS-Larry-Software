@@ -1,12 +1,14 @@
-#include <Arduino.h>
+#include "math.h"
 
+#include <Arduino.h>
 #include "Serial.h"
 #include "Servo.h"
+
 #include "ArduPID.h"
 #include "Arduino_BMI270_BMM150.h"
 #include "Arduino_LPS22HB.h"
-#include "math.h"
-#include <MadgwickAHRS.h>
+#include <Kalman.h>
+
 
 #include <leds.h>
 #include <orientation.h>
@@ -155,21 +157,29 @@ void loop() {
     PID(dir);
 
     // --- LED Control --- //
-    LED_STATES();
+    LED(currentState);
 
     // --- States --- //
     switch (currentState) {
-        case 0:
+        case 0:  // Pad-Idle
             logTimer.update(1000L / PAD_IDLE_LOG_FREQ);
         case 1:
             logTimer.update(1000L / FLIGHT_LOG_FREQ);
-        case 2:
+            PID(dir);
+
+        case 2:  // Coast Up
+            tvcx.write(XDEF);
+            tvcy.write(YDEF);
             break; // Not used (for now)
-        case 3:
+
+        case 3:  // Coast (Down)
+            tvcx.write(XDEF);
+            tvcy.write(YDEF);
             break;
         case 4:
             break;
-        case 5:
+
+        case 5:  // Touchdown
             break;
     }
 
@@ -177,9 +187,9 @@ void loop() {
 
     fire_pyro(pt1, PYRO_LANDING_MOTOR_IGNITION);
     fire_pyro(pt2, PYRO_LANDING_LEGS_DEPLOY);
+    
 
-
-    long long msFire;
+    long long msFire = 0;
     if (abs(altitude - ALT_LAND_ENGINE_START) <= 0.07 && pyro1Arm) {
         msFire = millis();
         pt2.begin(ENGINE_START_PYRO_ON);
