@@ -1,13 +1,11 @@
 // ORIENTATION CALCULATION
 
-#define PI 3.14159265358979323846
 #include <math.h>
 #include <MadgwickAHRS.h>
 #include <Arduino_BMI270_BMM150.h>
 #include <Kalman.h>
 
-
-using namespace std;
+#define PI 3.14159265358979323846
 
 // ========= Angles & Orientation ========= //
 double TAU = 0.99;
@@ -39,7 +37,7 @@ void calibrateGyro() {
     double dt = 0.005;
     SensorReadings r;
     long long lastM = micros();
-    while (micros() - now < (long long)10000000) {
+    while (micros() - now < 10000000LL) {
 
         IMU.readGyroscope(r.gx, r.gy, r.gz);
         Serial.print(r.gy);
@@ -94,11 +92,11 @@ Orientation get_angles_madgwick(double gb, SensorReadings r, Madgwick& f) {
 }
 
 Orientation get_angles_kalman(double dt, double gb, SensorReadings r, Kalman& kx, Kalman& ky) {
-    double accel_angle_x = atan2(r.ay, r.az) * 180 / PI - 90;
-    double accel_angle_y = atan2(r.ax, r.az) * 180 / PI - 90;
+    double accel_angle_x = atan2(r.ax, r.ay) * 180 / PI + 90;
+    double accel_angle_y = atan2(r.ax, r.az) * 180 / PI + 90;
 
-    double kal_x = kx.getAngle(accel_angle_x, r.gx - gb, dt);
-    double kal_y = ky.getAngle(accel_angle_y, r.gy - gb, dt);
+    double kal_x = kx.getAngle(accel_angle_x, r.gz, dt);
+    double kal_y = ky.getAngle(accel_angle_y, r.gx, dt);
 
     return Orientation(kal_x, kal_y);
 
