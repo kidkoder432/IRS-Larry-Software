@@ -40,7 +40,12 @@ Biases calibrateGyro() {
 
     Serial.println("Starting Gyro Calibration...");
 
-    IMU.componentReTrim();
+    bmi2_gyro_user_gain_data gains = IMU.componentReTrim();
+    Serial.print(gains.x);
+    Serial.print(" ");
+    Serial.print(gains.y);
+    Serial.print(" ");
+    Serial.println(gains.z);
 
     digitalWrite(LED_BUILTIN, HIGH);
     long long now = micros();
