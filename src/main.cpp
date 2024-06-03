@@ -1,23 +1,19 @@
 #include "math.h"
 
-#include <Arduino.h>
+#include "Arduino.h"
 #include "Serial.h"
 #include "Servo.h"
 
 #include "ArduPID.h"
 #include "Arduino_BMI270_BMM150.h"
 #include "Arduino_LPS22HB.h"
-#include <Kalman.h>
-
-
+#include "Kalman.h"
 #include <leds.h>
 #include <orientation.h>
 #include <pyro.h>
 #include <datalog.h>  // TODO: Implement
 #include <alt.h>
 
-Servo tvcx, tvcy;
-Madgwick filter;
 
 // --------- Helper functions --------- //
 double mag3(double a, double b, double c) {
@@ -25,6 +21,8 @@ double mag3(double a, double b, double c) {
 }
 
 // --------- TVC --------- //
+Servo tvcx, tvcy;
+
 // placeholder values; replace with actual limits
 const double XMIN = 80;  // TVC X Min
 const double XMAX = 100; // TVC X Max
@@ -52,6 +50,10 @@ struct Orientation dir, m_dir;
 
 double altitude, maxAltitude = -10000000;
 
+// --------- Filter Init --------- //
+Kalman kx, ky;
+Biases biases;
+
 // --------- Landing --------- //
 const double ALT_LAND_ENGINE_START = 15; // meters AGL to start land burn
 const double LANDING_LEGS_DEPLOY_DELAY = 1300; // ms after engine ignition to deploy legs
@@ -74,7 +76,6 @@ int currentState = 0;
 void setup() {
     Serial.begin(9600);
     IMU.begin();
-    filter.begin(48);
     BARO.begin();
 
     tvcx.attach(5);
@@ -96,11 +97,14 @@ void setup() {
     float ax, ay, az;
     IMU.readAcceleration(ax, ay, az);
     Serial.println(atan2(ax, az) * 180 / PI);
-    x_angle = atan2(ay, az) * 180 / PI;
-    y_angle = atan2(ax, az) * 180 / PI;
+    x_angle = atan2(ay, az) * 180 / PI - 90;
+    y_angle = atan2(ax, az) * 180 / PI - 90;
+
+    kx.setAngle(x_angle);
+    ky.setAngle(y_angle);
 
     pinMode(LED_BUILTIN, OUTPUT);
-    // calibrateGyro();
+    biases = calibrateGyro();
 
     pinMode(PYRO_LANDING_LEGS_DEPLOY, OUTPUT);
     pinMode(PYRO_LANDING_MOTOR_IGNITION, OUTPUT);
@@ -135,7 +139,7 @@ void loop() {
     lastMicros = micros();
 
     // --- Read Sensors --- //
-    IMU.readAcceleration(readings.ax, readings.ay, readings.az);
+    IMU.readAcceleration(readings.ay, readings.ax, readings.az);
     IMU.readGyroscope(readings.gx, readings.gy, readings.gz);
     IMU.readMagneticField(readings.mx, readings.my, readings.mz);
 
@@ -143,18 +147,11 @@ void loop() {
     maxAltitude = max(altitude, maxAltitude);
 
     // --- Angle Calc --- //
-    dir = get_angles_complementary(readings, x_angle, y_angle);
-    m_dir = get_angles_madgwick(GYRO_BIAS_PER_SEC, readings, filter);
-
-    x_angle = m_dir.angle_x;
-    y_angle = m_dir.angle_y;
+    dir = get_angles_kalman(DELTA_TIME, readings, kx, ky, biases);
 
     Serial.print(x_angle);
     Serial.print(" -x  y- ");
     Serial.println(y_angle);
-
-    // --- PID --- //
-    PID(dir);
 
     // --- LED Control --- //
     LED(currentState);
@@ -163,23 +160,21 @@ void loop() {
     switch (currentState) {
         case 0:  // Pad-Idle
             logTimer.update(1000L / PAD_IDLE_LOG_FREQ);
-        case 1:
+        case 1:  // Powered Ascent
             logTimer.update(1000L / FLIGHT_LOG_FREQ);
             PID(dir);
 
         case 2:  // Coast Up
-            tvcx.write(XDEF);
-            tvcy.write(YDEF);
             break; // Not used (for now)
-
         case 3:  // Coast (Down)
             tvcx.write(XDEF);
             tvcy.write(YDEF);
             break;
-        case 4:
+        case 4:  // Powered Descent
+            PID(dir);
             break;
-
         case 5:  // Touchdown
+            logTimer.update(1000L / PAD_IDLE_LOG_FREQ);
             break;
     }
 

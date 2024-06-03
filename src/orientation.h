@@ -1,18 +1,17 @@
 // ORIENTATION CALCULATION
 
-#define PI 3.14159265358979323846
 #include <math.h>
 #include <MadgwickAHRS.h>
 #include <Arduino_BMI270_BMM150.h>
+#include <Kalman.h>
 
-
-using namespace std;
+#define PI 3.14159265358979323846
 
 // ========= Angles & Orientation ========= //
-double TAU = 0.99;
+double TAU = 1;
 
 double DELTA_TIME = 0.01; // Time step
-double GYRO_BIAS_PER_SEC = 0.0615933787118;
+double GYRO_BIAS_X, GYRO_BIAS_Y, GYRO_BIAS_Z;
 
 // ========= Sensor Variables ========= //
 struct SensorReadings {
@@ -30,21 +29,37 @@ struct Orientation {
 
 };
 
-void calibrateGyro() {
+struct Biases {
+    double bx, by, bz;
+    Biases(){bx = by = bz = 0;};
+    Biases(float x, float y, float z) : bx(x), by(y), bz(z) {}
+
+};
+
+Biases calibrateGyro() {
+
     Serial.println("Starting Gyro Calibration...");
+
+    bmi2_gyro_user_gain_data gains = IMU.componentReTrim();
+    Serial.print(gains.x);
+    Serial.print(" ");
+    Serial.print(gains.y);
+    Serial.print(" ");
+    Serial.println(gains.z);
+
     digitalWrite(LED_BUILTIN, HIGH);
     long long now = micros();
-    double y_angle_c = 0;
+    double x_angle_c, y_angle_c, z_angle_c;
+    x_angle_c = y_angle_c = z_angle_c = 0;
     double dt = 0.005;
     SensorReadings r;
     long long lastM = micros();
-    while (micros() - now < (long long)10000000) {
+    while (micros() - now < 10000000LL) {
 
-        IMU.readGyroscope(r.gx, r.gy, r.gz);
-        Serial.print(r.gy);
-        Serial.print(" ");
-        Serial.println(y_angle_c);
+        IMU.readGyroscope(r.gy, r.gx, r.gz);
+        x_angle_c += dt * r.gx;
         y_angle_c += dt * r.gy;
+        z_angle_c += dt * r.gz;
         dt = (micros() - lastM) / 1000000.0;
         lastM = micros();
     }
@@ -54,23 +69,26 @@ void calibrateGyro() {
 
     Serial.print("Calibration Complete. \n New Bias Estimate: ");
 
-    GYRO_BIAS_PER_SEC = ((y_angle_c) / (double)(micros() - now)) * 1000000;
-    Serial.println(GYRO_BIAS_PER_SEC);
+    float bx = ((x_angle_c) / (double)(micros() - now)) * 1000000;
+    float by = ((y_angle_c) / (double)(micros() - now)) * 1000000;
+    float bz = ((z_angle_c) / (double)(micros() - now)) * 1000000;
     digitalWrite(LED_BUILTIN, LOW);
+
+    return Biases(bx, by, bz);
 }
 
 const double G = 9.80665;
 
 // COMPLEMENTARY FILTERING (Written by hand)
-Orientation get_angles_complementary(SensorReadings r, double lastX, double lastY) {
+Orientation get_angles_complementary(double dt, SensorReadings r, double lastX, double lastY, Biases b) {
 
-    double accel_angle_x = atan2(r.ay, r.az) * 180 / PI;
-    double gyro_angle_x = lastX + (r.gx - GYRO_BIAS_PER_SEC) * DELTA_TIME;
+    double accel_angle_x = atan2(r.ay, -r.ax) * 180 / PI;
+    double gyro_angle_x = lastX + (r.gz - b.bz) * dt;
 
     double angle_x = accel_angle_x * (1.0 - TAU) + gyro_angle_x * TAU;
 
-    double accel_angle_y = atan2(r.ax, r.az) * 180 / PI;
-    double gyro_angle_y = lastY + (r.gy - GYRO_BIAS_PER_SEC) * DELTA_TIME;
+    double accel_angle_y = atan2(r.az, -r.ax) * 180 / PI;
+    double gyro_angle_y = lastY + (r.gx - b.bx) * dt;
 
     double angle_y = accel_angle_y * (1.0 - TAU) + gyro_angle_y * TAU;
 
@@ -78,16 +96,32 @@ Orientation get_angles_complementary(SensorReadings r, double lastX, double last
 }
 
 // MADGWICK FILTERING (Using library Madgwick)
-Orientation get_angles_madgwick(double gb, SensorReadings r, Madgwick& f) {
+Orientation get_angles_madgwick(SensorReadings r, Madgwick& f, Biases b) {
 
-    GYRO_BIAS_PER_SEC = gb;
 
     f.updateIMU(
-        r.gy - GYRO_BIAS_PER_SEC, r.gx, r.gz - GYRO_BIAS_PER_SEC,
+        r.gy - b.by, r.gx - b.bx, r.gz - b.bz,
         r.ay, r.ax, r.az);
 
     double angle_x = f.getRoll();
     double angle_y = f.getYaw();
 
     return Orientation(angle_x, angle_y);
+}
+
+Orientation get_angles_kalman(double dt, SensorReadings r, Kalman& kx, Kalman& ky, Biases b) {
+    double accel_angle_x = atan2(r.ay, -r.ax) * 180 / PI;
+    double accel_angle_y = atan2(r.az, -r.ax) * 180 / PI;
+    // Serial.print(r.ax);
+    // Serial.print(" ");
+    // Serial.print(r.ay);
+    // Serial.print(" ");
+    // Serial.println(r.az);
+
+
+    double kal_x = kx.getAngle(accel_angle_x, r.gz - b.bz, dt);
+    double kal_y = ky.getAngle(accel_angle_y, r.gx - b.bx, dt);
+
+    return Orientation(kal_x, kal_y);
+
 }
