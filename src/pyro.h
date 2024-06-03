@@ -13,9 +13,9 @@
 void fire_pyro(FireTimer t, int pin)
 {
     if (t.fire(false)) {
-        digitalWrite(pin, LOW);
+        digitalWrite(pin, 0);
     }
     else {
-        digitalWrite(pin, HIGH);
+        digitalWrite(pin, 1);
     }
 }
