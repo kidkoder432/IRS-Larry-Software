@@ -51,6 +51,7 @@ double altitude, maxAltitude = -10000000;
 
 // --------- Filter Init --------- //
 Kalman kx, ky;
+Biases biases;
 
 // --------- Landing --------- //
 const double ALT_LAND_ENGINE_START = 15; // meters AGL to start land burn
@@ -102,7 +103,7 @@ void setup() {
     ky.setAngle(y_angle);
 
     pinMode(LED_BUILTIN, OUTPUT);
-    // calibrateGyro();
+    biases = calibrateGyro();
 
     pinMode(PYRO_LANDING_LEGS_DEPLOY, OUTPUT);
     pinMode(PYRO_LANDING_MOTOR_IGNITION, OUTPUT);
@@ -137,7 +138,7 @@ void loop() {
     lastMicros = micros();
 
     // --- Read Sensors --- //
-    IMU.readAcceleration(readings.ax, readings.ay, readings.az);
+    IMU.readAcceleration(readings.ay, readings.ax, readings.az);
     IMU.readGyroscope(readings.gx, readings.gy, readings.gz);
     IMU.readMagneticField(readings.mx, readings.my, readings.mz);
 
@@ -145,14 +146,14 @@ void loop() {
     maxAltitude = max(altitude, maxAltitude);
 
     // --- Angle Calc --- //
-    dir = get_angles_kalman(DELTA_TIME, GYRO_BIAS_PER_SEC, readings, kx, ky);
+    dir = get_angles_kalman(DELTA_TIME, readings, kx, ky, biases);
 
     Serial.print(x_angle);
     Serial.print(" -x  y- ");
     Serial.println(y_angle);
 
     // --- LED Control --- //
-    LED_STATES();
+    LED(currentState);
 
     // --- States --- //
     switch (currentState) {
