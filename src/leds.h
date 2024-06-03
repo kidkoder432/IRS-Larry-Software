@@ -14,7 +14,8 @@ struct Color COLOR_RED(255, 0, 0);
 struct Color COLOR_GREEN(0, 255, 0);
 struct Color COLOR_ORANGE(255, 128, 0);
 struct Color COLOR_YELLOW(255, 200, 0);
-struct Color COLOR_BLUE(0, 100, 255);
+struct Color COLOR_LIGHTBLUE(0, 100, 255);
+struct Color COLOR_BLUE(0, 0, 255);
 struct Color COLOR_PURPLE(128, 0, 255);
 struct Color COLOR_WHITE(255, 255, 255);
 struct Color COLOR_OFF(0, 0, 0);
@@ -38,19 +39,24 @@ void flash(Color c) {
     }
 }
 
-void LED_STATES(int currentState) {
+void LED(int currentState) {
     switch (currentState) {
         case 0:
             flash(COLOR_BLUE);
+            break;
         case 1:
             showColor(COLOR_GREEN);
+            break;
         case 2:
             break; // Not used (for now)
         case 3:
             flash(COLOR_YELLOW);
+            break;
         case 4:
             showColor(COLOR_YELLOW);
+            break;
         case 5:
             showColor(COLOR_BLUE);
+            break;
     }
 }
