@@ -8,7 +8,6 @@
 #define PI 3.14159265358979323846
 
 // ========= Angles & Orientation ========= //
-double TAU = 1;
 
 double DELTA_TIME = 0.01; // Time step
 double GYRO_BIAS_X, GYRO_BIAS_Y, GYRO_BIAS_Z;
@@ -73,17 +72,17 @@ Biases calibrateGyro() {
 const double G = 9.80665;
 
 // COMPLEMENTARY FILTERING (Written by hand)
-Orientation get_angles_complementary(double dt, SensorReadings r, double lastX, double lastY, Biases b) {
+Orientation get_angles_complementary(double A, double dt, SensorReadings r, double lastX, double lastY, Biases b) {
 
-    double accel_angle_x = atan2(r.ay, -r.ax) * 180 / PI;
+    double accel_angle_x = atan2(r.ax, -r.ay) * 180 / PI;
     double gyro_angle_x = lastX + (r.gz - b.bz) * dt;
 
-    double angle_x = accel_angle_x * (1.0 - TAU) + gyro_angle_x * TAU;
+    double angle_x = accel_angle_x * (1.0 - A) + gyro_angle_x * A;
 
-    double accel_angle_y = atan2(r.az, -r.ax) * 180 / PI;
+    double accel_angle_y = atan2(r.az, -r.ay) * 180 / PI;
     double gyro_angle_y = lastY + (r.gx - b.bx) * dt;
 
-    double angle_y = accel_angle_y * (1.0 - TAU) + gyro_angle_y * TAU;
+    double angle_y = accel_angle_y * (1.0 - A) + gyro_angle_y * A;
 
     return Orientation(angle_x, angle_y);
 }
@@ -103,8 +102,8 @@ Orientation get_angles_madgwick(SensorReadings r, Madgwick& f, Biases b) {
 }
 
 Orientation get_angles_kalman(double dt, SensorReadings r, Kalman& kx, Kalman& ky, Biases b) {
-    double accel_angle_x = atan2(r.ay, -r.ax) * 180 / PI;
-    double accel_angle_y = atan2(r.az, -r.ax) * 180 / PI;
+    double accel_angle_x = atan2(r.ax, -r.ay) * 180 / PI;
+    double accel_angle_y = atan2(r.az, -r.ay) * 180 / PI;
     // Serial.print(r.ax);
     // Serial.print(" ");
     // Serial.print(r.ay);
