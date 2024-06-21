@@ -38,8 +38,8 @@ const double P = 8.58679935818825;
 const double I = 12.4428493210038;
 const double D = 0.482664861486399;
 
-double x_angle;
-double y_angle;
+double roll;
+double pitch;
 
 double x_out;
 double y_out;
@@ -81,12 +81,12 @@ void setup() {
     tvcx.attach(5);
     tvcy.attach(6);
 
-    pid_x.begin(&x_angle, &x_out, 0, P, I, D);
+    pid_x.begin(&roll, &x_out, 0, P, I, D);
     pid_x.setOutputLimits(XMIN, XMAX);
     pid_x.setWindUpLimits(XMIN, XMAX);
     tvcx.write(XDEF);
 
-    pid_y.begin(&y_angle, &y_out, 0, P, I, D);
+    pid_y.begin(&pitch, &y_out, 0, P, I, D);
     pid_y.setOutputLimits(YMIN, YMAX);
     pid_y.setWindUpLimits(YMIN, YMAX);
     tvcy.write(YDEF);
@@ -97,11 +97,11 @@ void setup() {
     float ax, ay, az;
     IMU.readAcceleration(ax, ay, az);
     Serial.println(atan2(ax, az) * 180 / PI);
-    x_angle = atan2(ay, az) * 180 / PI - 90;
-    y_angle = atan2(ax, az) * 180 / PI - 90;
+    roll = atan2(ay, az) * 180 / PI - 90;
+    pitch = atan2(ax, az) * 180 / PI - 90;
 
-    kx.setAngle(x_angle);
-    ky.setAngle(y_angle);
+    kx.setAngle(roll);
+    ky.setAngle(pitch);
 
     pinMode(LED_BUILTIN, OUTPUT);
     biases = calibrateGyro();
@@ -121,12 +121,12 @@ void setup() {
 // TODO: Tune
 void PID(Orientation dir) {
     // X
-    x_angle = dir.angle_x;
+    roll = dir.roll;
     pid_x.compute();
     tvcx.write(x_out);
 
     // Y
-    y_angle = dir.angle_y;
+    pitch = dir.pitch;
     pid_y.compute();
     tvcy.write(y_out);
 
@@ -149,9 +149,9 @@ void loop() {
     // --- Angle Calc --- //
     dir = get_angles_kalman(DELTA_TIME, readings, kx, ky, biases);
 
-    Serial.print(x_angle);
+    Serial.print(roll);
     Serial.print(" -x  y- ");
-    Serial.println(y_angle);
+    Serial.println(pitch);
 
     // --- LED Control --- //
     LED(currentState);
@@ -182,7 +182,7 @@ void loop() {
 
     fire_pyro(pt1, PYRO_LANDING_MOTOR_IGNITION);
     fire_pyro(pt2, PYRO_LANDING_LEGS_DEPLOY);
-    
+
 
     long long msFire = 0;
     if (abs(altitude - ALT_LAND_ENGINE_START) <= 0.07 && pyro1Arm) {

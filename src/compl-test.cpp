@@ -5,20 +5,17 @@
 #include <leds.h>
 
 
-double x_angle, y_angle;
+double roll, pitch;
 SensorReadings readings;
 Orientation dir;
 Biases biases;
 
-double ALPHA = 0.01;
+double ALPHA = 0.05;
 
 void setup() {
     Serial.begin(9600);
     delay(200);
     IMU.begin();
-
-   
-
 
     pinMode(LED_BUILTIN, OUTPUT);
     biases = calibrateGyro();
@@ -31,9 +28,9 @@ void setup() {
     float ax, ay, az;
     IMU.readAcceleration(ay, ax, az);
     Serial.println(atan2(az, -ay) * 180 / PI);
-    x_angle = 0;
-    y_angle = atan2(az, -ay) * 180 / PI;
-
+    roll = atan2(ax, -sign(ay) * sqrt(az * az + ay * ay)) * 180 / PI;
+    pitch = atan2(az, -ay) * 180 / PI;
+    pinMode(3, INPUT_PULLUP);
 
 }
 
@@ -44,47 +41,53 @@ void loop() {
     IMU.readGyroscope(readings.gy, readings.gx, readings.gz);
     IMU.readMagneticField(readings.mx, readings.my, readings.mz);
 
-    
-
     // Serial.print(readings.gx - biases.bx);
     // Serial.print(" ");
     // Serial.print(readings.gy);
     // Serial.print(" ");
     // Serial.println(readings.gz - biases.bz);
 
-    Orientation dir = get_angles_complementary(1-ALPHA, DELTA_TIME, readings, x_angle, y_angle, biases);
-    x_angle = -dir.angle_x;
-    y_angle = dir.angle_y;
+    Orientation dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, roll, pitch, biases);
+    roll = dir.roll;
+    pitch = dir.pitch;
 
-    if (x_angle > 180) {
-        x_angle = x_angle - 360;
+    if (roll > 180) {
+        roll = roll - 360;
     }
-    else if (x_angle < -180) {
-        x_angle = x_angle + 360;
-    }
-
-    if (y_angle > 180) {   
-        y_angle = y_angle - 360;
+    else if (roll < -180) {
+        roll = roll + 360;
     }
 
-    else if (y_angle < -180) {
-        y_angle = y_angle + 360;
+    if (pitch > 180) {
+        pitch = pitch - 360;
     }
 
-    Serial.print(x_angle);
+    else if (pitch < -180) {
+        pitch = pitch + 360;
+    }
+
+    Serial.print(roll);
     Serial.print(" ");
-    Serial.println(y_angle);
+    Serial.println(pitch);
 
-    if (abs(x_angle) >= 15) {
+    if (digitalRead(3) == LOW) {
+        delay(20);
+        if (digitalRead(3) == LOW) {
+            showColor(COLOR_YELLOW);
+            roll = pitch = 0;
+        }
+    }
+
+    if (abs(roll) >= 15) {
         showColor(COLOR_RED);
-        if (abs(y_angle) >= 15) {
+        if (abs(pitch) >= 15) {
             showColor(COLOR_PURPLE);
         }
     }
 
     else {
         showColor(COLOR_GREEN);
-        if (abs(y_angle) >= 15) {
+        if (abs(pitch) >= 15) {
             showColor(COLOR_LIGHTBLUE);
         }
     }
