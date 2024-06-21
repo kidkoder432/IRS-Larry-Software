@@ -5,7 +5,7 @@
 #include <leds.h>
 
 
-double roll, pitch;
+double yaw, pitch;
 SensorReadings readings;
 Orientation dir;
 Biases biases;
@@ -29,7 +29,7 @@ void setup() {
     float ax, ay, az;
     IMU.readAcceleration(ay, ax, az);
     Serial.println(atan2(az, -ay) * 180 / PI);
-    roll = 0;
+    yaw = 0;
     pitch = 0;
 
     pinMode(3, INPUT_PULLUP);
@@ -41,9 +41,8 @@ void loop() {
     // --- Read Sensors --- //
     IMU.readAcceleration(readings.ay, readings.ax, readings.az);
     IMU.readGyroscope(readings.gy, readings.gx, readings.gz);
-    IMU.readMagneticField(readings.mx, readings.my, readings.mz);
 
-    roll -= (readings.gz - biases.bz) * DELTA_TIME;
+    yaw -= (readings.gz - biases.bz) * DELTA_TIME;
     pitch += (readings.gx - biases.bx) * DELTA_TIME;
 
     // Serial.print(readings.gx - biases.bx);
@@ -52,7 +51,7 @@ void loop() {
     // Serial.print(" ");
     // Serial.println(readings.gz - biases.bz);
 
-    Serial.print(roll);
+    Serial.print(yaw);
     Serial.print(" ");
     Serial.println(pitch);
 
@@ -60,11 +59,11 @@ void loop() {
         delay(20);
         if (digitalRead(3) == LOW) {
             showColor(COLOR_YELLOW);
-            roll = pitch = 0;
+            yaw = pitch = 0;
         }
     }
 
-    if (abs(roll) >= 15) {
+    if (abs(yaw) >= 15) {
         showColor(COLOR_RED);
         if (abs(pitch) >= 15) {
             showColor(COLOR_PURPLE);

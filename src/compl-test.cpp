@@ -5,7 +5,7 @@
 #include <leds.h>
 
 
-double roll, pitch;
+double yaw, pitch;
 SensorReadings readings;
 Orientation dir;
 Biases biases;
@@ -28,7 +28,7 @@ void setup() {
     float ax, ay, az;
     IMU.readAcceleration(ay, ax, az);
     Serial.println(atan2(az, -ay) * 180 / PI);
-    roll = atan2(ax, -sign(ay) * sqrt(az * az + ay * ay)) * 180 / PI;
+    yaw = atan2(ax, -sign(ay) * sqrt(az * az + ay * ay)) * 180 / PI;
     pitch = atan2(az, -ay) * 180 / PI;
     pinMode(3, INPUT_PULLUP);
 
@@ -39,7 +39,6 @@ void loop() {
     // --- Read Sensors --- //
     IMU.readAcceleration(readings.ay, readings.ax, readings.az);
     IMU.readGyroscope(readings.gy, readings.gx, readings.gz);
-    IMU.readMagneticField(readings.mx, readings.my, readings.mz);
 
     // Serial.print(readings.gx - biases.bx);
     // Serial.print(" ");
@@ -47,15 +46,15 @@ void loop() {
     // Serial.print(" ");
     // Serial.println(readings.gz - biases.bz);
 
-    Orientation dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, roll, pitch, biases);
-    roll = dir.roll;
+    Orientation dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, yaw, pitch, biases);
+    yaw = dir.yaw;
     pitch = dir.pitch;
 
-    if (roll > 180) {
-        roll = roll - 360;
+    if (yaw > 180) {
+        yaw = yaw - 360;
     }
-    else if (roll < -180) {
-        roll = roll + 360;
+    else if (yaw < -180) {
+        yaw = yaw + 360;
     }
 
     if (pitch > 180) {
@@ -66,7 +65,7 @@ void loop() {
         pitch = pitch + 360;
     }
 
-    Serial.print(roll);
+    Serial.print(yaw);
     Serial.print(" ");
     Serial.println(pitch);
 
@@ -74,11 +73,11 @@ void loop() {
         delay(20);
         if (digitalRead(3) == LOW) {
             showColor(COLOR_YELLOW);
-            roll = pitch = 0;
+            yaw = pitch = 0;
         }
     }
 
-    if (abs(roll) >= 15) {
+    if (abs(yaw) >= 15) {
         showColor(COLOR_RED);
         if (abs(pitch) >= 15) {
             showColor(COLOR_PURPLE);

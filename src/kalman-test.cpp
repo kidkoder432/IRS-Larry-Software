@@ -7,7 +7,7 @@
 
 
 Kalman kx, ky;
-double roll, pitch;
+double yaw, pitch;
 SensorReadings readings;
 Orientation dir;
 Biases biases;
@@ -20,10 +20,10 @@ void setup() {
     float ax, ay, az;
     IMU.readAcceleration(ay, ax, az);
     Serial.println(atan2(az, -ay) * 180 / PI);
-    roll = atan2(ax, -ay) * 180 / PI;
+    yaw = atan2(ax, -ay) * 180 / PI;
     pitch = atan2(az, -ay) * 180 / PI;
 
-    kx.setAngle(roll);
+    kx.setAngle(yaw);
     ky.setAngle(pitch);
 
     pinMode(LED_BUILTIN, OUTPUT);
@@ -42,7 +42,6 @@ void loop() {
     // --- Read Sensors --- //
     IMU.readAcceleration(readings.ay, readings.ax, readings.az);
     IMU.readGyroscope(readings.gx, readings.gy, readings.gz);
-    IMU.readMagneticField(readings.mx, readings.my, readings.mz);
 
 
     // --- Angle Calc --- //
@@ -52,15 +51,15 @@ void loop() {
     // x_angle = dir.angle_x;
     // y_angle = dir.angle_y;
 
-    roll += (readings.gz - biases.bz) * DELTA_TIME;
+    yaw += (readings.gz - biases.bz) * DELTA_TIME;
     pitch += (readings.gx - biases.bx) * DELTA_TIME;
 
 
-    Serial.print(roll);
+    Serial.print(yaw);
     Serial.print(" ");
     Serial.println(pitch);
 
-    if (abs(roll) >= 15) {
+    if (abs(yaw) >= 15) {
         showColor(COLOR_RED);
         if (abs(pitch) >= 15) {
             showColor(COLOR_PURPLE);

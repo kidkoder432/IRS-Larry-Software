@@ -38,7 +38,7 @@ const double P = 8.58679935818825;
 const double I = 12.4428493210038;
 const double D = 0.482664861486399;
 
-double roll;
+double yaw;
 double pitch;
 
 double x_out;
@@ -81,7 +81,7 @@ void setup() {
     tvcx.attach(5);
     tvcy.attach(6);
 
-    pid_x.begin(&roll, &x_out, 0, P, I, D);
+    pid_x.begin(&yaw, &x_out, 0, P, I, D);
     pid_x.setOutputLimits(XMIN, XMAX);
     pid_x.setWindUpLimits(XMIN, XMAX);
     tvcx.write(XDEF);
@@ -97,10 +97,10 @@ void setup() {
     float ax, ay, az;
     IMU.readAcceleration(ax, ay, az);
     Serial.println(atan2(ax, az) * 180 / PI);
-    roll = atan2(ay, az) * 180 / PI - 90;
+    yaw = atan2(ay, az) * 180 / PI - 90;
     pitch = atan2(ax, az) * 180 / PI - 90;
 
-    kx.setAngle(roll);
+    kx.setAngle(yaw);
     ky.setAngle(pitch);
 
     pinMode(LED_BUILTIN, OUTPUT);
@@ -121,7 +121,7 @@ void setup() {
 // TODO: Tune
 void PID(Orientation dir) {
     // X
-    roll = dir.roll;
+    yaw = dir.yaw;
     pid_x.compute();
     tvcx.write(x_out);
 
@@ -141,7 +141,6 @@ void loop() {
     // --- Read Sensors --- //
     IMU.readAcceleration(readings.ay, readings.ax, readings.az);
     IMU.readGyroscope(readings.gx, readings.gy, readings.gz);
-    IMU.readMagneticField(readings.mx, readings.my, readings.mz);
 
     altitude = getAltitude();
     maxAltitude = max(altitude, maxAltitude);
@@ -149,7 +148,7 @@ void loop() {
     // --- Angle Calc --- //
     dir = get_angles_kalman(DELTA_TIME, readings, kx, ky, biases);
 
-    Serial.print(roll);
+    Serial.print(yaw);
     Serial.print(" -x  y- ");
     Serial.println(pitch);
 
