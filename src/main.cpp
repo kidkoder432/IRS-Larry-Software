@@ -7,12 +7,12 @@
 #include "ArduPID.h"
 #include "Arduino_BMI270_BMM150.h"
 #include "Arduino_LPS22HB.h"
-#include "Kalman.h"
 #include <leds.h>
 #include <orientation.h>
 #include <pyro.h>
 #include <datalog.h>  // TODO: Implement
 #include <alt.h>
+#include "tvc.h"
 
 
 // --------- Helper functions --------- //
@@ -21,38 +21,17 @@ double mag3(double a, double b, double c) {
 }
 
 // --------- TVC --------- //
-Servo tvcx, tvcy;
-
-// placeholder values; replace with actual limits
-const double XMIN = 80;  // TVC X Min
-const double XMAX = 100; // TVC X Max
-const double YMIN = 80;  // TVC Y Min
-const double YMAX = 100; // TVC Y Max
-const double XDEF = 90;  // TVC X Default (zero position)
-const double YDEF = 90;  // TVC Y Default (zero position)
-
-// --------- TVC Control --------- //
-ArduPID pid_x;
-ArduPID pid_y;
-const double P = 8.58679935818825;
-const double I = 12.4428493210038;
-const double D = 0.482664861486399;
-
-double yaw;
-double pitch;
-
-double x_out;
-double y_out;
+TVC tvc;
 
 // --------- Sensor Variables --------- //
 struct SensorReadings readings;
-struct Orientation dir, m_dir;
+struct Orientation dir;
 
 double altitude, maxAltitude = -10000000;
 
 // --------- Filter Init --------- //
-Kalman kx, ky;
 Biases biases;
+float ALPHA = 0.05;
 
 // --------- Landing --------- //
 const double ALT_LAND_ENGINE_START = 15; // meters AGL to start land burn
@@ -78,18 +57,8 @@ void setup() {
     IMU.begin();
     BARO.begin();
 
-    tvcx.attach(5);
-    tvcy.attach(6);
-
-    pid_x.begin(&yaw, &x_out, 0, P, I, D);
-    pid_x.setOutputLimits(XMIN, XMAX);
-    pid_x.setWindUpLimits(XMIN, XMAX);
-    tvcx.write(XDEF);
-
-    pid_y.begin(&pitch, &y_out, 0, P, I, D);
-    pid_y.setOutputLimits(YMIN, YMAX);
-    pid_y.setWindUpLimits(YMIN, YMAX);
-    tvcy.write(YDEF);
+    tvc.begin();
+    tvc.lock();
 
     delay(500);
 
@@ -97,11 +66,8 @@ void setup() {
     float ax, ay, az;
     IMU.readAcceleration(ax, ay, az);
     Serial.println(atan2(ax, az) * 180 / PI);
-    yaw = atan2(ay, az) * 180 / PI - 90;
-    pitch = atan2(ax, az) * 180 / PI - 90;
-
-    kx.setAngle(yaw);
-    ky.setAngle(pitch);
+    dir.yaw = atan2(ay, az) * 180 / PI - 90;
+    dir.pitch = atan2(ax, az) * 180 / PI - 90;
 
     pinMode(LED_BUILTIN, OUTPUT);
     biases = calibrateGyro();
@@ -115,21 +81,7 @@ void setup() {
     showColor(COLOR_OFF);
 
     logTimer.begin(1000L / PAD_IDLE_LOG_FREQ);
-}
-
-// --- PID Control loops --- //
-// TODO: Tune
-void PID(Orientation dir) {
-    // X
-    yaw = dir.yaw;
-    pid_x.compute();
-    tvcx.write(x_out);
-
-    // Y
-    pitch = dir.pitch;
-    pid_y.compute();
-    tvcy.write(y_out);
-
+    tvc.unlock();
 }
 
 // Main Control Loop
@@ -146,11 +98,11 @@ void loop() {
     maxAltitude = max(altitude, maxAltitude);
 
     // --- Angle Calc --- //
-    dir = get_angles_kalman(DELTA_TIME, readings, kx, ky, biases);
+    dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, dir.yaw, dir.pitch, biases);
 
-    Serial.print(yaw);
+    Serial.print(dir.yaw);
     Serial.print(" -x  y- ");
-    Serial.println(pitch);
+    Serial.println(dir.pitch);
 
     // --- LED Control --- //
     LED(currentState);
@@ -158,19 +110,20 @@ void loop() {
     // --- States --- //
     switch (currentState) {
         case 0:  // Pad-Idle
+            tvc.lock();
             logTimer.update(1000L / PAD_IDLE_LOG_FREQ);
+            break;
         case 1:  // Powered Ascent
+            tvc.unlock();
             logTimer.update(1000L / FLIGHT_LOG_FREQ);
-            PID(dir);
-
+            break;
         case 2:  // Coast Up
             break; // Not used (for now)
         case 3:  // Coast (Down)
-            tvcx.write(XDEF);
-            tvcy.write(YDEF);
+            tvc.lock();
             break;
         case 4:  // Powered Descent
-            PID(dir);
+            tvc.unlock();
             break;
         case 5:  // Touchdown
             logTimer.update(1000L / PAD_IDLE_LOG_FREQ);

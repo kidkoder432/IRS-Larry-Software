@@ -27,7 +27,7 @@ bool newData = false;
 bool dirOutLock = true;
 bool sensorOutLock = true;
 
-const char HELP_STR[] = 
+const char HELP_STR[] =
 R"(Input commands to test the following:
 U: Unlock the TVC
 L: Lock the TVC
@@ -129,11 +129,11 @@ void loop() {
                 break;
             case 'G':
                 Serial.println("Pyro 1: Motor Ignition");
-                fire_pyro_2(PYRO_LANDING_MOTOR_IGNITION);
+                fire_pyro_test(PYRO_LANDING_MOTOR_IGNITION);
                 break;
             case 'T':
                 Serial.println("Pyro 2: Landing Legs Deploy");
-                fire_pyro_2(PYRO_LANDING_LEGS_DEPLOY);
+                fire_pyro_test(PYRO_LANDING_LEGS_DEPLOY);
                 break;
             case 'S':
                 Serial.println("Reading SD Card Info");
