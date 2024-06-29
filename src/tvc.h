@@ -34,7 +34,7 @@ public:
         }
     }
 
-    /* Writes angles to TVC 
+    /* Writes angles to TVC
     *  - angle range: -10 to +10 */
     void write(double x, double y) {
         tvcx.write(x + 90);
@@ -64,9 +64,13 @@ private:
     // --------- TVC Control --------- //
     ArduPID pid_x;
     ArduPID pid_y;
-    const double P = 8.58679935818825;
-    const double I = 12.4428493210038;
-    const double D = 0.482664861486399;
+    // old PID values
+    // P = 8.58679935818825;
+    // I = 12.4428493210038;
+    // D = 0.482664861486399;
+    const double P = 1.2;
+    const double I = 0.1;
+    const double D = 0.1;
 
     double x_out;
     double y_out;
