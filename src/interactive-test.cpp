@@ -147,7 +147,7 @@ void loop() {
                 pitch = 0;
                 break;
             case 'H':
-                Serial.println();
+                Serial.println(HELP_STR);
                 break;
 
 
