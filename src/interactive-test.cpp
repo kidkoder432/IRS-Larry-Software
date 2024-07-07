@@ -66,6 +66,8 @@ void setup() {
     tvc.begin();
     tvc.lock();
 
+    delay(2000);
+
     Serial.println("Initialized");
     Serial.println(R"(Welcome to Larry v1 Interactive Test Suite.
 This test suite will test all components and features of the flight computer.)");
@@ -145,7 +147,7 @@ void loop() {
                 pitch = 0;
                 break;
             case 'H':
-                Serial.println();
+                Serial.println(HELP_STR);
                 break;
 
 
