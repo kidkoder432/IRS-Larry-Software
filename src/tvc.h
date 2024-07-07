@@ -20,18 +20,23 @@ public:
         tvcy.write(YDEF);
     }
 
-    void update(Orientation o) {
+    Orientation update(Orientation o) {
         if (!locked) {
             dir = o;
             pid_x.compute();
             pid_y.compute();
             tvcx.write(x_out);
             tvcy.write(y_out);
+            return Orientation(x_out, y_out);
+
         }
         else {
             tvcx.write(XDEF);
             tvcy.write(YDEF);
+
+            return Orientation(XDEF, YDEF);
         }
+
     }
 
     /* Writes angles to TVC
@@ -39,6 +44,10 @@ public:
     void write(double x, double y) {
         tvcx.write(x + 90);
         tvcy.write(y + 90);
+    }
+
+    Orientation getAngle() {
+        return Orientation(x_out, y_out);
     }
 
     void lock() {
