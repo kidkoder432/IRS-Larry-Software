@@ -7,22 +7,22 @@
 class TVC {
 public:
     void begin() {
-        dir = Orientation(0, 0);
         tvcx.attach(5);
         tvcy.attach(6);
 
-        pid_x.begin(&dir.pitch, &x_out, 0, P, I, D);
+        pid_x.begin(&yaw, &x_out, 0, P, I, D);
         pid_x.setOutputLimits(XMIN, XMAX);
         tvcx.write(XDEF);
 
-        pid_y.begin(&dir.pitch, &y_out, 0, P, I, D);
+        pid_y.begin(&pitch, &y_out, 0, P, I, D);
         pid_y.setOutputLimits(YMIN, YMAX);
         tvcy.write(YDEF);
     }
 
     Orientation update(Orientation o) {
         if (!locked) {
-            dir = o;
+            yaw = o.yaw;
+            pitch = o.pitch;
             pid_x.compute();
             pid_y.compute();
             tvcx.write(x_out);
@@ -62,6 +62,8 @@ public:
 private:
     Servo tvcx, tvcy;
 
+    double yaw, pitch;
+
     // placeholder values; replace with actual limits
     const double XMIN = 80;  // TVC X Min
     const double XMAX = 100; // TVC X Max
@@ -81,10 +83,9 @@ private:
     const double I = 0.1;
     const double D = 0.1;
 
-    double x_out;
-    double y_out;
+    double x_out = XDEF;
+    double y_out = YDEF;
 
-    Orientation dir;
     boolean locked = false;
 
 };
