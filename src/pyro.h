@@ -11,7 +11,7 @@
 
 
 void fire_pyro(FireTimer t, int pin) {
-    if (!t.fire(false) && t.isRunning) {
+    if (!t.fire(false)) {
         digitalWrite(pin, 1);
     }
     else {
