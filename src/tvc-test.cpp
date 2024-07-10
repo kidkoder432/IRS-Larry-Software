@@ -18,7 +18,6 @@ void setup() {
     delay(200);
     IMU.begin();
     tvc.begin();
-    tvc.lock();
 
     pinMode(LED_BUILTIN, OUTPUT);
 
@@ -53,7 +52,7 @@ void loop() {
 
     Orientation dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, yaw, pitch, biases);
     
-    tvc.update(dir);
+    tvc.update(dir, DELTA_TIME);
     
     yaw = dir.yaw;
     pitch = dir.pitch;
@@ -80,7 +79,16 @@ void loop() {
     Serial.print(tvc.getAngle().yaw);
     Serial.print(" ");
     Serial.println(tvc.getAngle().pitch);
-
+    Serial.print(tvc.pid_x.P());
+    Serial.print(" ");
+    Serial.print(tvc.pid_x.I());
+    Serial.print(" ");
+    Serial.println(tvc.pid_x.D());
+    Serial.print(tvc.pid_y.P());
+    Serial.print(" ");
+    Serial.print(tvc.pid_y.I());
+    Serial.print(" ");
+    Serial.println(tvc.pid_y.D());
     
 
     if (abs(yaw) >= 15) {

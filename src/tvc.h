@@ -1,38 +1,50 @@
 #include <Arduino.h>
 #include <Serial.h>
 #include <Servo.h>
-#include <ArduPID.h>
+#include <pid.h>
 
 
 class TVC {
 public:
+
+    PID pid_x;
+    PID pid_y;
+    
     void begin() {
+        dir = Orientation(0, 0);
         tvcx.attach(5);
         tvcy.attach(6);
 
-        pid_x.begin(&yaw, &x_out, 0, P, I, D);
-        pid_x.setOutputLimits(XMIN, XMAX);
+        pid_x.begin(P, I, D, XDEF, DELTA_TIME, XMIN, XMAX);
         tvcx.write(XDEF);
 
-        pid_y.begin(&pitch, &y_out, 0, P, I, D);
-        pid_y.setOutputLimits(YMIN, YMAX);
+        pid_y.begin(P, I, D, YDEF,DELTA_TIME, YMIN, YMAX);
         tvcy.write(YDEF);
     }
 
-    Orientation update(Orientation o) {
+    Orientation update(Orientation o, double dt) {
         if (!locked) {
-            yaw = o.yaw;
-            pitch = o.pitch;
-            pid_x.compute();
-            pid_y.compute();
+            dir = o;
+            Serial.println(dir.pitch);
+            Serial.println(dir.yaw);
+            x_out = pid_x.update(0, dir.yaw, dt);
+            y_out = pid_y.update(0, dir.pitch, dt);
+            Serial.println(x_out);
+            Serial.println(y_out);
             tvcx.write(x_out);
             tvcy.write(y_out);
+
             return Orientation(x_out, y_out);
 
         }
         else {
-            tvcx.write(XDEF);
+            Serial.println(x_out);
+            Serial.println(y_out);
+            x_out = XDEF;
+            y_out = YDEF;
+            tvcx.write(x_out);
             tvcy.write(YDEF);
+
 
             return Orientation(XDEF, YDEF);
         }
@@ -55,14 +67,14 @@ public:
     }
 
     void unlock() {
+        tvcx.write(XDEF);
+        tvcy.write(YDEF);
         locked = false;
     }
 
 
 private:
     Servo tvcx, tvcy;
-
-    double yaw, pitch;
 
     // placeholder values; replace with actual limits
     const double XMIN = 80;  // TVC X Min
@@ -73,8 +85,7 @@ private:
     const double YDEF = 90;  // TVC Y Default (zero position)
 
     // --------- TVC Control --------- //
-    ArduPID pid_x;
-    ArduPID pid_y;
+  
     // old PID values
     // P = 8.58679935818825;
     // I = 12.4428493210038;
@@ -83,9 +94,10 @@ private:
     const double I = 0.1;
     const double D = 0.1;
 
-    double x_out = XDEF;
-    double y_out = YDEF;
+    double x_out;
+    double y_out;
 
+    Orientation dir;
     boolean locked = false;
 
 };

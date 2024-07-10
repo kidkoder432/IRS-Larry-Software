@@ -17,7 +17,7 @@ struct SensorReadings {
     float gx, gy, gz;
 
 };
-
+ 
 struct Orientation {
     double yaw, pitch;
 

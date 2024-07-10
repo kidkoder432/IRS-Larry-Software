@@ -92,7 +92,7 @@ void loop() {
     IMU.readAcceleration(readings.ay, readings.ax, readings.az);
     IMU.readGyroscope(readings.gx, readings.gy, readings.gz);
 
-    tvc.update(dir);
+    tvc.update(dir, DELTA_TIME);
     dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, yaw, pitch, biases);
     yaw = dir.yaw;
     pitch = dir.pitch;
