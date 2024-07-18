@@ -22,7 +22,13 @@ class PID
             double i = Ki * integrated_error;
             double d = Kd * (error - last_error) / dt;
 
-            integrated_error += error * dt;
+            if (doIntegratorClamp(p + i + d + b, b)) {
+                integrated_error += 0;
+                
+            }
+            else {
+                integrated_error += error * dt; 
+            }
             last_error = error;
 
             return clip(p + i + d + b, min, max);
@@ -51,8 +57,14 @@ class PID
         double integrated_error = 0;
         double error;
         double last_error = 0;
-
         double clip(double value, double min, double max) {
             return min < value && value < max ? value : min < value ? max : min;
+        }
+
+        bool doIntegratorClamp(double out, double b) {
+            bool saturated = out < min || out > max;
+            bool sameSign = sign(out - b) == sign(error);  //TODO: are these signs right?
+
+            return saturated && sameSign;
         }
 };
