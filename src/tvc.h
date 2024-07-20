@@ -72,6 +72,14 @@ public:
         locked = false;
     }
 
+    void abort() {
+        if (abs(dir.pitch) > 30 || abs(dir.yaw) > 30) {
+            tvcx.write(XDEF);
+            tvcy.write(YDEF);
+            locked = true;
+        }
+    }
+
 
 private:
     Servo tvcx, tvcy;
