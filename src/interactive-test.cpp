@@ -6,7 +6,7 @@
 #include <Arduino_BMI270_BMM150.h>
 #include <leds.h>
 #include <datalog.h>
-#include <pyro.h>
+// #include <pyro.h>
 #include <alt.h>
 #include <Servo.h>
 #include <Arduino_LPS22HB.h>
@@ -55,8 +55,8 @@ void setup() {
 
     pinMode(LED_BUILTIN, OUTPUT);
 
-    pinMode(PYRO_LANDING_LEGS_DEPLOY, OUTPUT);
-    pinMode(PYRO_LANDING_MOTOR_IGNITION, OUTPUT);
+//    pinMode(PYRO_LANDING_LEGS_DEPLOY, OUTPUT);
+//    pinMode(PYRO_LANDING_MOTOR_IGNITION, OUTPUT);
 
     pinMode(LEDR, OUTPUT);
     pinMode(LEDG, OUTPUT);
@@ -131,11 +131,11 @@ void loop() {
                 break;
             case 'G':
                 Serial.println("Pyro 1: Motor Ignition");
-                fire_pyro_test(PYRO_LANDING_MOTOR_IGNITION);
+//                fire_pyro_test(PYRO_LANDING_MOTOR_IGNITION);
                 break;
             case 'T':
                 Serial.println("Pyro 2: Landing Legs Deploy");
-                fire_pyro_test(PYRO_LANDING_LEGS_DEPLOY);
+//                fire_pyro_test(PYRO_LANDING_LEGS_DEPLOY);
                 break;
             case 'S':
                 Serial.println("Reading SD Card Info");

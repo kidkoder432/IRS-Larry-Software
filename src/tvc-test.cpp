@@ -72,22 +72,25 @@ void loop() {
         pitch = pitch + 360;
     }
 
+    Serial.print("Yaw: ");
     Serial.print(yaw);
-    Serial.print(" ");
+    Serial.print(" Pitch: ");
     Serial.print(pitch);
-    Serial.print(" ");
+    Serial.print(" TVC Yaw: ");
     Serial.print(tvc.getAngle().yaw);
-    Serial.print(" ");
+    Serial.print(" TVC Pitch: ");
     Serial.println(tvc.getAngle().pitch);
+    Serial.print("Px: ");
     Serial.print(tvc.pid_x.P());
-    Serial.print(" ");
+    Serial.print(" Ix: ");
     Serial.print(tvc.pid_x.I());
-    Serial.print(" ");
+    Serial.print(" Dx: ");
     Serial.println(tvc.pid_x.D());
+    Serial.print("Py: ");
     Serial.print(tvc.pid_y.P());
-    Serial.print(" ");
+    Serial.print(" Iy: ");
     Serial.print(tvc.pid_y.I());
-    Serial.print(" ");
+    Serial.print(" Dy: ");
     Serial.println(tvc.pid_y.D());
     
 

@@ -29,7 +29,9 @@ public:
             Serial.println(dir.yaw);
             x_out = pid_x.update(0, dir.yaw, dt);
             y_out = pid_y.update(0, dir.pitch, dt);
+            Serial.print("X: ");
             Serial.println(x_out);
+            Serial.print("Y: ");
             Serial.println(y_out);
             tvcx.write(x_out);
             tvcy.write(y_out);
@@ -38,7 +40,9 @@ public:
 
         }
         else {
+            Serial.print("X: ");
             Serial.println(x_out);
+            Serial.print("Y: ");
             Serial.println(y_out);
             x_out = XDEF;
             y_out = YDEF;
@@ -77,12 +81,12 @@ private:
     Servo tvcx, tvcy;
 
     // placeholder values; replace with actual limits
-    const double XMIN = 80;  // TVC X Min
-    const double XMAX = 100; // TVC X Max
-    const double YMIN = 80;  // TVC Y Min
-    const double YMAX = 100; // TVC Y Max
-    const double XDEF = 90;  // TVC X Default (zero position)
-    const double YDEF = 90;  // TVC Y Default (zero position)
+    const double XMIN = 83;  // TVC X Min
+    const double XMAX = 107; // TVC X Max
+    const double YMIN = 73;  // TVC Y Min
+    const double YMAX = 97; // TVC Y Max
+    const double XDEF = 95;  // TVC X Default (zero position)
+    const double YDEF = 85;  // TVC Y Default (zero position)
 
     // --------- TVC Control --------- //
   
