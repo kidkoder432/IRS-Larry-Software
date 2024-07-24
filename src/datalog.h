@@ -61,17 +61,44 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
     dataFile.print(p.ki);
     dataFile.print(",");
     dataFile.print(p.kd);
-    dataFile.print(",");
-    dataFile.print(p.b);
-    dataFile.print(",");
-    dataFile.print(p.dt);
-    dataFile.print(",");
-    dataFile.print(p.min);
-    dataFile.print(",");
-    dataFile.print(p.max);
+
 
     dataFile.println();
-
+    Serial.println("Time,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,KP,KI,KD");
+    Serial.print(p.timestamp);
+    Serial.print(",");
+    Serial.print(p.r.ax);
+    Serial.print(",");
+    Serial.print(p.r.ay);
+    Serial.print(",");
+    Serial.print(p.r.az);
+    Serial.print(",");
+    Serial.print(p.r.gx);
+    Serial.print(",");
+    Serial.print(p.r.gy);
+    Serial.print(",");
+    Serial.print(p.r.gz);
+    Serial.print(",");
+    Serial.print(p.o.yaw);
+    Serial.print(",");
+    Serial.print(p.o.pitch);
+    Serial.print(",");
+    Serial.print(p.x_out);
+    Serial.print(",");
+    Serial.print(p.y_out);
+    Serial.print(",");
+    Serial.print(p.alt);
+    Serial.print(",");
+    Serial.print(p.currentState);
+    Serial.print(",");
+    Serial.print(p.vert_vel);
+    Serial.print(",");
+    Serial.print(p.kp);
+    Serial.print(",");
+    Serial.print(p.ki);
+    Serial.print(",");
+    Serial.print(p.kd);
+    Serial.println();
     return true;
 
     // TODO:    

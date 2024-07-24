@@ -32,7 +32,7 @@ bool sensorOutLock = true;
 
 bool logData = true;
 File dataFile;
-char filename[64];
+char filename[64] = "data.csv";
 
 int currentState = 42;   // Test state = 42
 
@@ -77,8 +77,6 @@ void setup() {
     tvc.lock();
 
     delay(1000);
-
-    sprintf(filename, "data_%ld.csv", random(1000000000, 10000000000));
 
     Serial.println("Initialized");
     Serial.println(R"(Welcome to Larry v1 Interactive Test Suite.
@@ -221,9 +219,12 @@ void loop() {
 
         logDataPoint(p, dataFile);
 
-        if (millis() % 100 == 0) {
-            dataFile.flush();
-        }
+        // if (millis() % 100 == 0) {
+        //     dataFile.flush();
+        // }
+        dataFile.close();
+
+        
     }
     else {
         dataFile.close();
