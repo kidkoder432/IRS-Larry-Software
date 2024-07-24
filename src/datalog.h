@@ -12,9 +12,68 @@ struct DataPoint {
     float alt;              // Altitude
     int currentState;       // Current State
     float vert_vel;         // Vertical Velocity
+    float kp, ki, kd;       // PID Params
+
+    
 };
 
-void logDataPoint(DataPoint p) {
+bool logDataPoint(DataPoint p, SDFile dataFile) {
+    if (!SD.begin(10)) {
+        Serial.println("Card failed, or not present");
+        return false;
+    }
+    
+    if (!dataFile) {
+        Serial.println("Couldn't open file");
+        return false;
+    }
+
+    dataFile.print(p.timestamp);
+    dataFile.print(",");
+    dataFile.print(p.r.ax);
+    dataFile.print(",");
+    dataFile.print(p.r.ay);
+    dataFile.print(",");
+    dataFile.print(p.r.az);
+    dataFile.print(",");
+    dataFile.print(p.r.gx);
+    dataFile.print(",");
+    dataFile.print(p.r.gy);
+    dataFile.print(",");
+    dataFile.print(p.r.gz);
+    dataFile.print(",");
+    dataFile.print(p.o.yaw);
+    dataFile.print(",");
+    dataFile.print(p.o.pitch);
+    dataFile.print(",");
+    dataFile.print(p.x_out);
+    dataFile.print(",");
+    dataFile.print(p.y_out);
+    dataFile.print(",");
+    dataFile.print(p.alt);
+    dataFile.print(",");
+    dataFile.print(p.currentState);
+    dataFile.print(",");
+    dataFile.print(p.vert_vel);
+    dataFile.print(",");
+    dataFile.print(p.kp);
+    dataFile.print(",");
+    dataFile.print(p.ki);
+    dataFile.print(",");
+    dataFile.print(p.kd);
+    dataFile.print(",");
+    dataFile.print(p.b);
+    dataFile.print(",");
+    dataFile.print(p.dt);
+    dataFile.print(",");
+    dataFile.print(p.min);
+    dataFile.print(",");
+    dataFile.print(p.max);
+
+    dataFile.println();
+
+    return true;
+
     // TODO:    
 }
 void sdCardInfo() {

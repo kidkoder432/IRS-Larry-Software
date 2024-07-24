@@ -6,7 +6,7 @@
 #include <Arduino_BMI270_BMM150.h>
 #include <leds.h>
 #include <datalog.h>
-// #include <pyro.h>
+#include <pyro.h>
 #include <alt.h>
 #include <Servo.h>
 #include <Arduino_LPS22HB.h>
@@ -14,10 +14,13 @@
 
 double yaw, pitch;
 TVC tvc;
+double x_out, y_out;
 SensorReadings readings;
 Orientation dir;
 Biases biases;
 long long lastMicros = micros();
+
+float vertVel = 0;
 
 double ALPHA = 0.05;
 
@@ -27,6 +30,12 @@ bool newData = false;
 bool dirOutLock = true;
 bool sensorOutLock = true;
 
+bool logData = true;
+File dataFile;
+char filename[64];
+
+int currentState = 42;   // Test state = 42
+
 const char HELP_STR[] =
 R"(Input commands to test the following:
 U: Unlock the TVC
@@ -35,6 +44,7 @@ C: Calibrate the Gyro
 O: Print Orientation
 A: Print Altitude
 R: Print Sensor Readings
+D: Toggle Data Logging
 X: Cancel Printing
 G: Activate Pyro 1 (Motor Ignition)
 T: Activate Pyro 2 (Landing Legs Deploy)
@@ -66,7 +76,9 @@ void setup() {
     tvc.begin();
     tvc.lock();
 
-    delay(2000);
+    delay(1000);
+
+    sprintf(filename, "data_%ld.csv", random(1000000000, 10000000000));
 
     Serial.println("Initialized");
     Serial.println(R"(Welcome to Larry v1 Interactive Test Suite.
@@ -92,7 +104,12 @@ void loop() {
     IMU.readAcceleration(readings.ay, readings.ax, readings.az);
     IMU.readGyroscope(readings.gx, readings.gy, readings.gz);
 
-    tvc.update(dir, DELTA_TIME);
+    vertVel += readings.ay * DELTA_TIME;
+
+    Orientation tvc_out = tvc.update(dir, DELTA_TIME);
+    x_out = tvc_out.yaw;
+    y_out = tvc_out.pitch;
+
     dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, yaw, pitch, biases);
     yaw = dir.yaw;
     pitch = dir.pitch;
@@ -150,7 +167,14 @@ void loop() {
                 Serial.println(HELP_STR);
                 break;
 
-
+            case 'D':
+                logData = !logData;
+                if (logData) {
+                    Serial.println("Logging Data ON");
+                } else {
+                    Serial.println("Logging Data OFF");
+                }
+                break;
             default:
                 Serial.println("Invalid command");
                 break;
@@ -179,6 +203,32 @@ void loop() {
         Serial.print(" ");
         Serial.println(pitch);
     }
+
+    if (logData) {
+        dataFile = SD.open(filename, FILE_WRITE);
+        DataPoint p;
+        p.timestamp = micros();
+        p.r = readings;
+        p.o = dir;
+        p.x_out = x_out;
+        p.y_out = y_out;
+        p.alt = getAltitude();
+        p.currentState = currentState;
+        p.vert_vel = vertVel;
+        p.kp = tvc.pid_x.Kp;
+        p.ki = tvc.pid_x.Ki;
+        p.kd = tvc.pid_x.Kd;
+
+        logDataPoint(p, dataFile);
+
+        if (millis() % 100 == 0) {
+            dataFile.flush();
+        }
+    }
+    else {
+        dataFile.close();
+    }
+
 
     DELTA_TIME = (micros() - lastMicros) / 1000000.0;
     lastMicros = micros();
