@@ -78,6 +78,8 @@ void setup() {
 
     delay(1000);
 
+    // sprintf(filename, "data_%ld.csv", random(1000000000, 10000000000));
+
     Serial.println("Initialized");
     Serial.println(R"(Welcome to Larry v1 Interactive Test Suite.
 This test suite will test all components and features of the flight computer.)");
@@ -102,7 +104,7 @@ void loop() {
     IMU.readAcceleration(readings.ay, readings.ax, readings.az);
     IMU.readGyroscope(readings.gx, readings.gy, readings.gz);
 
-    vertVel += readings.ay * DELTA_TIME;
+    vertVel -= readings.ay * 9.80665 * DELTA_TIME;
 
     Orientation tvc_out = tvc.update(dir, DELTA_TIME);
     x_out = tvc_out.yaw;
@@ -146,11 +148,11 @@ void loop() {
                 break;
             case 'G':
                 Serial.println("Pyro 1: Motor Ignition");
-//                fire_pyro_test(PYRO_LANDING_MOTOR_IGNITION);
+                fire_pyro_test(PYRO_LANDING_MOTOR_IGNITION);
                 break;
             case 'T':
                 Serial.println("Pyro 2: Landing Legs Deploy");
-//                fire_pyro_test(PYRO_LANDING_LEGS_DEPLOY);
+                fire_pyro_test(PYRO_LANDING_LEGS_DEPLOY);
                 break;
             case 'S':
                 Serial.println("Reading SD Card Info");
@@ -219,12 +221,10 @@ void loop() {
 
         logDataPoint(p, dataFile);
 
-        // if (millis() % 100 == 0) {
-        //     dataFile.flush();
-        // }
+        if (millis() % 100 == 0) {
+            dataFile.flush();
+        }
         dataFile.close();
-
-        
     }
     else {
         dataFile.close();
