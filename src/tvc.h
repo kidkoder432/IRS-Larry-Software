@@ -25,14 +25,14 @@ public:
     Orientation update(Orientation o, double dt) {
         if (!locked) {
             dir = o;
-            Serial.println(dir.pitch);
-            Serial.println(dir.yaw);
+            // Serial.println(dir.pitch);
+            // Serial.println(dir.yaw);
             x_out = pid_x.update(0, dir.yaw, dt);
             y_out = pid_y.update(0, dir.pitch, dt);
-            Serial.print("X: ");
-            Serial.println(x_out);
-            Serial.print("Y: ");
-            Serial.println(y_out);
+            // Serial.print("X: ");
+            // Serial.println(x_out);
+            // Serial.print("Y: ");
+            // Serial.println(y_out);
             tvcx.write(x_out);
             tvcy.write(y_out);
 
@@ -40,10 +40,10 @@ public:
 
         }
         else {
-            Serial.print("X: ");
-            Serial.println(x_out);
-            Serial.print("Y: ");
-            Serial.println(y_out);
+            // Serial.print("X: ");
+            // Serial.println(x_out);
+            // Serial.print("Y: ");
+            // Serial.println(y_out);
             x_out = XDEF;
             y_out = YDEF;
             tvcx.write(x_out);
