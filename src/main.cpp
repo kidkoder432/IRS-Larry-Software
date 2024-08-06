@@ -22,10 +22,12 @@ double mag3(double a, double b, double c) {
 
 // --------- TVC --------- //
 TVC tvc;
+double x_out, y_out;
 
 // --------- Sensor Variables --------- //
 struct SensorReadings readings;
 struct Orientation dir;
+
 
 double altitude, maxAltitude = -10000000;
 
@@ -48,7 +50,9 @@ FireTimer pt1, pt2;
 const int PAD_IDLE_LOG_FREQ = 10;   // Pad-Idle logs @ 10 Hz
 const int FLIGHT_LOG_FREQ = 40;     // Inflight logs @ 40 Hz
 FireTimer logTimer;
-
+File dataFile;
+char filename[64] = "data.csv";
+float vertVel;
 // --------- States --------- //
 int currentState = 0;
 
@@ -99,6 +103,12 @@ void loop() {
 
     // --- Angle Calc --- //
     dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, dir.yaw, dir.pitch, biases);
+    
+    // TVC Update
+    Orientation tvc_out = tvc.update(dir, DELTA_TIME);
+    Orientation tvc_out = tvc.update(dir, DELTA_TIME);
+    x_out = tvc_out.yaw;
+    y_out = tvc_out.pitch;
 
     Serial.print(dir.yaw);
     Serial.print(" -x  y- ");
@@ -136,6 +146,8 @@ void loop() {
     fire_pyro(pt2, PYRO_LANDING_LEGS_DEPLOY);
 
 
+    // --- Pyro Timers --- //
+
     long long msFire = 0;
     if (abs(altitude - ALT_LAND_ENGINE_START) <= 0.07 && pyro1Arm) {
         msFire = millis();
@@ -148,6 +160,31 @@ void loop() {
         pt2.begin(LANDING_DEPLOY_PYRO_ON);
         pyro2Arm = false;
 
+    }
+
+    // --- Data Logging --- //
+    vertVel += readings.ay * 9.81 * DELTA_TIME;
+    if (logTimer.fire()) {
+        dataFile = SD.open(filename, FILE_WRITE);
+        DataPoint p;
+        p.timestamp = micros();
+        p.r = readings;
+        p.o = dir;
+        p.x_out = x_out;
+        p.y_out = y_out;
+        p.alt = getAltitude();
+        p.currentState = currentState;
+        p.vert_vel = vertVel;
+        p.kp = tvc.pid_x.Kp;
+        p.ki = tvc.pid_x.Ki;
+        p.kd = tvc.pid_x.Kd;
+
+        logDataPoint(p, dataFile);
+
+        // if (millis() % 100 == 0) {
+        //     dataFile.flush();
+        // }
+        dataFile.close();
     }
 
 
