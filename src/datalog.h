@@ -62,7 +62,6 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
     dataFile.print(",");
     dataFile.print(p.kd);
 
-
     dataFile.println();
     Serial.println("Time,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,KP,KI,KD");
     Serial.print(p.timestamp);

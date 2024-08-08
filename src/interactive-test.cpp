@@ -209,7 +209,7 @@ void loop() {
         DataPoint p;
         p.timestamp = micros();
         p.r = readings;
-        p.o = dir;
+        p.o = Orientation(yaw, pitch);
         p.x_out = x_out;
         p.y_out = y_out;
         p.alt = getAltitude();
