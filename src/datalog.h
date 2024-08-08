@@ -5,7 +5,7 @@
 
 
 struct DataPoint {
-    long long timestamp;    // Microseconds
+    long timestamp;    // Microseconds
     SensorReadings r;       // Sensor Readings
     Orientation o;          // Current Orientation
     float x_out, y_out;     // TVC Outputs
@@ -61,7 +61,6 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
     dataFile.print(p.ki);
     dataFile.print(",");
     dataFile.print(p.kd);
-
 
     dataFile.println();
     Serial.println("Time,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,KP,KI,KD");

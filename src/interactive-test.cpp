@@ -209,7 +209,7 @@ void loop() {
         DataPoint p;
         p.timestamp = micros();
         p.r = readings;
-        p.o = dir;
+        p.o = Orientation(yaw, pitch);
         p.x_out = x_out;
         p.y_out = y_out;
         p.alt = getAltitude();
@@ -221,14 +221,9 @@ void loop() {
 
         logDataPoint(p, dataFile);
 
-        if (millis() % 100 == 0) {
-            dataFile.flush();
-        }
         dataFile.close();
     }
-    else {
-        dataFile.close();
-    }
+
 
 
     DELTA_TIME = (micros() - lastMicros) / 1000000.0;
