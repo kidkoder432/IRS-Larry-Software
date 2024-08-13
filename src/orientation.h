@@ -26,7 +26,7 @@ struct Orientation {
 
 };
 
-int sign(auto x) {
+int sign(double x) {
     if (x == 0) return 0;
     return x > 0 ? 1 : -1;
 }

@@ -31,7 +31,7 @@ void off() {
 }
 
 void flash(Color c) {
-    if ((millis() / DELAY_MS) & 1 == 1) {
+    if (((millis() / DELAY_MS) & 1) == 1) {
         showColor(c);
     }
     else {

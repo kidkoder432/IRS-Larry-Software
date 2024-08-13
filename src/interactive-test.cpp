@@ -11,6 +11,7 @@
 #include <Servo.h>
 #include <Arduino_LPS22HB.h>
 #include <tvc.h>
+#include <config.h>
 
 double yaw, pitch;
 TVC tvc;
@@ -18,6 +19,8 @@ double x_out, y_out;
 SensorReadings readings;
 Orientation dir;
 Biases biases;
+Kalman kx, ky;
+Config config;
 long long lastMicros = micros();
 
 float vertVel = 0;
@@ -53,20 +56,24 @@ Q: Reset Angles
 H: Help)";
 
 void setup() {
+
+    // Init serial and sensors
     Serial.begin(9600);
     IMU.begin();
     BARO.begin();
-    pinMode(LED_BUILTIN, OUTPUT);
 
+    // Init angles
     float ax, ay, az;
     IMU.readAcceleration(ay, ax, az);
     yaw = atan2(ax, -sign(ay) * sqrt(az * az + ay * ay)) * 180 / PI;
     pitch = atan2(az, -ay) * 180 / PI;
 
-    pinMode(LED_BUILTIN, OUTPUT);
+    // Init pyros
+    pinMode(PYRO_LANDING_LEGS_DEPLOY, OUTPUT);
+    pinMode(PYRO_LANDING_MOTOR_IGNITION, OUTPUT);
 
-//    pinMode(PYRO_LANDING_LEGS_DEPLOY, OUTPUT);
-//    pinMode(PYRO_LANDING_MOTOR_IGNITION, OUTPUT);
+    // Init LEDs
+    pinMode(LED_BUILTIN, OUTPUT);
 
     pinMode(LEDR, OUTPUT);
     pinMode(LEDG, OUTPUT);
@@ -76,9 +83,17 @@ void setup() {
     tvc.begin();
     tvc.lock();
 
-    delay(1000);
+    Config config = readConfig();
 
-    // sprintf(filename, "data_%ld.csv", random(1000000000, 10000000000));
+    if (config.FILTER_KALMAN) {
+        kx.setAngle(yaw);
+        ky.setAngle(pitch);
+    }
+
+    tvc.updatePID(tvc.pid_x, config.Kp, config.Ki, config.Kd);
+    tvc.updatePID(tvc.pid_y, config.Kp, config.Ki, config.Kd);
+
+    delay(1000);
 
     Serial.println("Initialized");
     Serial.println(R"(Welcome to Larry v1 Interactive Test Suite.
@@ -110,7 +125,15 @@ void loop() {
     x_out = tvc_out.yaw;
     y_out = tvc_out.pitch;
 
-    dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, yaw, pitch, biases);
+    if (config.FILTER_KALMAN) {
+        dir = get_angles_kalman(DELTA_TIME, readings, kx, ky, biases);
+
+    }
+
+    else {
+        dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, yaw, pitch, biases);
+
+    }
     yaw = dir.yaw;
     pitch = dir.pitch;
 
@@ -135,7 +158,7 @@ void loop() {
                 break;
             case 'A':
                 Serial.print("Altitude: ");
-                Serial.println(getAltitude());
+                Serial.println(getAltitude(config.PRESSURE_0));
                 break;
             case 'R':
                 Serial.println("Sensor Readings: ");
@@ -212,7 +235,7 @@ void loop() {
         p.o = Orientation(yaw, pitch);
         p.x_out = x_out;
         p.y_out = y_out;
-        p.alt = getAltitude();
+        p.alt = getAltitude(config.PRESSURE_0);
         p.currentState = currentState;
         p.vert_vel = vertVel;
         p.kp = tvc.pid_x.Kp;

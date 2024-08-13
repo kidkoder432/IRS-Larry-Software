@@ -10,6 +10,12 @@ public:
     PID pid_x;
     PID pid_y;
     
+    void updatePID(PID& pid, double _Kp, double _Ki, double _Kd) {
+        pid.Kp = _Kp;
+        pid.Ki = _Ki;
+        pid.Kd = _Kd;
+    }
+
     void begin() {
         dir = Orientation(0, 0);
         tvcx.attach(5);
