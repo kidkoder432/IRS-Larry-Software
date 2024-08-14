@@ -5,8 +5,6 @@
 #include <Arduino_BMI270_BMM150.h>
 #include <Kalman.h>
 
-#define PI 3.14159265358979323846
-
 // ========= Angles & Orientation ========= //
 
 double DELTA_TIME = 0.01; // Time step
