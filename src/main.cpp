@@ -13,7 +13,7 @@
 #include <datalog.h>  // TODO: Implement
 #include <alt.h>
 #include "tvc.h"
-
+#include "config.h"
 
 // --------- Helper functions --------- //
 double mag3(double a, double b, double c) {
@@ -27,13 +27,14 @@ double x_out, y_out;
 // --------- Sensor Variables --------- //
 struct SensorReadings readings;
 struct Orientation dir;
-
+double yaw, pitch;
 
 double altitude, maxAltitude = -10000000;
 
 // --------- Filter Init --------- //
 Biases biases;
 float ALPHA = 0.05;
+Kalman kx, ky;
 
 // --------- Landing --------- //
 const double ALT_LAND_ENGINE_START = 15; // meters AGL to start land burn
@@ -56,33 +57,48 @@ float vertVel;
 // --------- States --------- //
 int currentState = 0;
 
+// --------- Config --------- //
+Config config;
+
 void setup() {
+
+    // Init serial and sensors
     Serial.begin(9600);
     IMU.begin();
     BARO.begin();
 
-    tvc.begin();
-    tvc.lock();
-
-    delay(500);
-
-
+    // Init angles
     float ax, ay, az;
-    IMU.readAcceleration(ax, ay, az);
-    Serial.println(atan2(ax, az) * 180 / PI);
-    dir.yaw = atan2(ay, az) * 180 / PI - 90;
-    dir.pitch = atan2(ax, az) * 180 / PI - 90;
+    IMU.readAcceleration(ay, ax, az);
+    yaw = atan2(ax, -sign(ay) * sqrt(az * az + ay * ay)) * 180 / PI;
+    pitch = atan2(az, -ay) * 180 / PI;
 
-    pinMode(LED_BUILTIN, OUTPUT);
-    biases = calibrateGyro();
-
+    // Init pyros
     pinMode(PYRO_LANDING_LEGS_DEPLOY, OUTPUT);
     pinMode(PYRO_LANDING_MOTOR_IGNITION, OUTPUT);
+
+    // Init LEDs
+    pinMode(LED_BUILTIN, OUTPUT);
 
     pinMode(LEDR, OUTPUT);
     pinMode(LEDG, OUTPUT);
     pinMode(LEDB, OUTPUT);
     showColor(COLOR_OFF);
+
+    tvc.begin();
+    tvc.lock();
+
+    config = readConfig();
+
+    if (config.FILTER_KALMAN) {
+        kx.setAngle(yaw);
+        ky.setAngle(pitch);
+    }
+
+    tvc.updatePID(tvc.pid_x, config.Kp, config.Ki, config.Kd);
+    tvc.updatePID(tvc.pid_y, config.Kp, config.Ki, config.Kd);
+
+    delay(1000);
 
     logTimer.begin(1000L / PAD_IDLE_LOG_FREQ);
     tvc.unlock();
@@ -100,12 +116,19 @@ void loop() {
     IMU.readAcceleration(readings.ay, readings.ax, readings.az);
     IMU.readGyroscope(readings.gx, readings.gy, readings.gz);
 
-    altitude = getAltitude();
+    altitude = getAltitude(config.PRESSURE_0);
     maxAltitude = max(altitude, maxAltitude);
 
     // --- Angle Calc --- //
-    dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, dir.yaw, dir.pitch, biases);
-    
+    if (config.FILTER_KALMAN) {
+        dir = get_angles_kalman(DELTA_TIME, readings, kx, ky, biases);
+
+    }
+
+    else {
+        dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, yaw, pitch, biases);
+
+    }
     // TVC Update
     Orientation tvc_out = tvc.update(dir, DELTA_TIME);
     Orientation tvc_out = tvc.update(dir, DELTA_TIME);
@@ -176,7 +199,7 @@ void loop() {
         p.o = dir;
         p.x_out = x_out;
         p.y_out = y_out;
-        p.alt = getAltitude();
+        p.alt = getAltitude(config.PRESSURE_0);
         p.currentState = currentState;
         p.vert_vel = vertVel;
         p.kp = tvc.pid_x.Kp;

@@ -37,6 +37,8 @@ bool logData = true;
 File dataFile;
 char filename[64] = "data.csv";
 
+Config config;
+
 int currentState = 42;   // Test state = 42
 
 const char HELP_STR[] =
@@ -83,7 +85,7 @@ void setup() {
     tvc.begin();
     tvc.lock();
 
-    Config config = readConfig();
+    config = readConfig();
 
     if (config.FILTER_KALMAN) {
         kx.setAngle(yaw);
