@@ -1,7 +1,6 @@
 // ORIENTATION CALCULATION
 
 #include <math.h>
-#include <MadgwickAHRS.h>
 #include <Arduino_BMI270_BMM150.h>
 #include <Kalman.h>
 
@@ -98,29 +97,11 @@ Orientation get_angles_complementary(double A, double dt, SensorReadings r, doub
     return Orientation(angle_x, angle_y);
 }
 
-// MADGWICK FILTERING (Using library Madgwick)
-Orientation get_angles_madgwick(SensorReadings r, Madgwick& f, Biases b) {
 
-
-    f.updateIMU(
-        r.gy - b.by, r.gx - b.bx, r.gz - b.bz,
-        r.ay, r.ax, r.az);
-
-    double angle_x = f.getRoll();
-    double angle_y = f.getYaw();
-
-    return Orientation(angle_x, angle_y);
-}
-
+// KALMAN FILTERING
 Orientation get_angles_kalman(double dt, SensorReadings r, Kalman& kx, Kalman& ky, Biases b) {
     double accel_angle_x = atan2(r.ax, -r.ay) * 180 / PI;
     double accel_angle_y = atan2(r.az, -r.ay) * 180 / PI;
-    // Serial.print(r.ax);
-    // Serial.print(" ");
-    // Serial.print(r.ay);
-    // Serial.print(" ");
-    // Serial.println(r.az);
-
 
     double kal_x = kx.getAngle(accel_angle_x, r.gz - b.bz, dt);
     double kal_y = ky.getAngle(accel_angle_y, r.gx - b.bx, dt);
