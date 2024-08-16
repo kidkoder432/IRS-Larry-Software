@@ -90,6 +90,8 @@ void setup() {
 
 // Main Control Loop
 long long lastMicros = micros();
+long long msSinceEngineFire = 0;
+
 void loop() {
 
     lastMicros = micros();
@@ -140,30 +142,32 @@ void loop() {
             break;
     }
 
-    // --- Pyro Channels --- //
-
-    fire_pyro(pt1, PYRO_LANDING_MOTOR_IGNITION);
-    fire_pyro(pt2, PYRO_LANDING_LEGS_DEPLOY);
-
-
     // --- Pyro Timers --- //
 
-    long long msFire = 0;
-    if (abs(altitude - ALT_LAND_ENGINE_START) <= 0.07 && pyro1Arm) {
-        msFire = millis();
-        pt2.begin(ENGINE_START_PYRO_ON);
-        pyro1Arm = false;
+    if (altitude <= ALT_LAND_ENGINE_START && (currentState == 3 || currentState == 4)) {
+        msSinceEngineFire = millis();
+        if (pyro1Arm) {
+            pt1.begin(ENGINE_START_PYRO_ON);
+            msSinceEngineFire = millis();
+            pyro1Arm = false;
+        }
+        fire_pyro(pt1, PYRO_LANDING_MOTOR_IGNITION);
 
     }
 
-    if ((millis() - msFire) >= LANDING_LEGS_DEPLOY_DELAY && pyro2Arm) {
-        pt2.begin(LANDING_DEPLOY_PYRO_ON);
-        pyro2Arm = false;
+    // Deploy Legs after engine ignition
+    if ((millis() - msSinceEngineFire) >= LANDING_LEGS_DEPLOY_DELAY && (currentState == 3 || currentState == 4)) {
+        if (pyro2Arm) {
+            pt2.begin(LANDING_DEPLOY_PYRO_ON);
+            pyro2Arm = false;
+        }
+
+        fire_pyro(pt2, PYRO_LANDING_LEGS_DEPLOY);
 
     }
 
     // --- Data Logging --- //
-    vertVel += readings.ay * 9.81 * DELTA_TIME;
+    vertVel -= readings.ay * 9.81 * DELTA_TIME;
     if (logTimer.fire()) {
         dataFile = SD.open(filename, FILE_WRITE);
         DataPoint p;
@@ -207,7 +211,7 @@ void loop() {
     // }
 
     // STAGE 1 BURNOUT: State 1 -> 3
-    if (currentState == 1 && mag3(readings.ax, readings.ay, readings.az) <= 1.5) {
+    if (currentState == 1 && mag3(readings.ax, readings.ay, readings.az) <= 1.1) {
         currentState = 3;
     }
 
