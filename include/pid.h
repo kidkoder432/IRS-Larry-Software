@@ -19,16 +19,16 @@ public:
 
     double update(double target, double current, double _dt) {
         dt = _dt;
-        alpha = 1 - exp(-dt/N);
+        alpha = N * dt;
+        b = alpha / (alpha + 2);
         error = target - current;
         // Proportional
         double p = Kp * error;
 
         // Integral
         double i = Ki * integrated_error;
-
         // Derivative + low-pass filtering
-        double filtered_error = (1-alpha) * (last_filter) + alpha * error;
+        filtered_error = b * (error + last_error) + (1 - b * 2) * last_filter;
         double d = Kd * (filtered_error - last_filter) / dt;
 
         // Integrator clamping
@@ -57,7 +57,7 @@ public:
 
     double D() {
 
-        return Kd * (error - last_error) / dt;
+        return Kd * (filtered_error - last_filter) / dt;
     }
 private:
 
@@ -68,10 +68,12 @@ private:
     double integrated_error = 0;
     double error;
     double last_error = 0;
+    double filtered_error = 0;
     double last_filter = 0;
 
 
     double alpha = 0;
+    double b = 0;
     double clip(double value, double min, double max) {
         return min < value && value < max ? value : min < value ? max : min;
     }
