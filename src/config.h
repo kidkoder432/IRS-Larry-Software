@@ -8,9 +8,9 @@ const int chipSelect = 10; // Adjust pin according to your SD card module
 
 struct Config {
 
-    float PRESSURE_0;
-    float Kp, Ki, Kd;
-    bool FILTER_KALMAN;
+    float PRESSURE_0 = 101.325;
+    float Kp = 0.0, Ki = 0.0, Kd = 0.0, N = 0.0;
+    int FILTER_KALMAN = false;
 
 };
 
@@ -21,13 +21,13 @@ Config readConfig() {
     SDConfig cfg;
     // Open the configuration file.
     if (!cfg.begin("config.cfg", maxLineLength)) {
-        Serial.print("Failed to open configuration file: ");
+        Serial.println("Failed to open configuration file: ");
         return config;
     }
     // Read each setting from the file.
     while (cfg.readNextSetting()) {
         // Put a nameIs() block here for each setting you have.
-        // doDelay
+
         if (cfg.nameIs("PRESSURE_0")) {
             config.PRESSURE_0 = atof(cfg.getValue());
         }
@@ -40,8 +40,11 @@ Config readConfig() {
         else if (cfg.nameIs("Kd")) {
             config.Kd = atof(cfg.getValue());;
         }
+        else if (cfg.nameIs("N")) {
+            config.N = atof(cfg.getValue());
+        }
         else if (cfg.nameIs("FILTER_KALMAN")) {
-            config.FILTER_KALMAN = cfg.getBooleanValue();
+            config.FILTER_KALMAN = cfg.getIntValue();
         }
     }
     // clean up

@@ -7,7 +7,7 @@
 
 
 SensorReadings readings;
-Orientation dir;
+Vec2D dir;
 Biases biases;
 Quaternion attitude;
 

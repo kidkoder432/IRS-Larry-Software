@@ -6,7 +6,7 @@
 
 double yaw, pitch;
 SensorReadings readings;
-Orientation dir;
+Vec2D dir;
 Biases biases;
 TVC tvc;
 
@@ -50,12 +50,12 @@ void loop() {
     // Serial.print(" ");
     // Serial.println(readings.gz - biases.bz);
 
-    Orientation dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, yaw, pitch, biases);
-    
+    Vec2D dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, yaw, pitch, biases);
+
     tvc.update(dir, DELTA_TIME);
-    
-    yaw = dir.yaw;
-    pitch = dir.pitch;
+
+    yaw = dir.x;
+    pitch = dir.y;
 
     if (yaw > 180) {
         yaw = yaw - 360;
@@ -77,9 +77,9 @@ void loop() {
     Serial.print(" Pitch: ");
     Serial.print(pitch);
     Serial.print(" TVC Yaw: ");
-    Serial.print(tvc.getAngle().yaw);
+    Serial.print(tvc.getAngle().x);
     Serial.print(" TVC Pitch: ");
-    Serial.println(tvc.getAngle().pitch);
+    Serial.println(tvc.getAngle().y);
     Serial.print("Px: ");
     Serial.print(tvc.pid_x.P());
     Serial.print(" Ix: ");
@@ -92,7 +92,7 @@ void loop() {
     Serial.print(tvc.pid_y.I());
     Serial.print(" Dy: ");
     Serial.println(tvc.pid_y.D());
-    
+
 
     if (abs(yaw) >= 15) {
         showColor(COLOR_RED);

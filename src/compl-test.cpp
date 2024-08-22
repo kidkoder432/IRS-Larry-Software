@@ -7,7 +7,7 @@
 
 double yaw, pitch;
 SensorReadings readings;
-Orientation dir;
+Vec2D dir;
 Biases biases;
 
 double ALPHA = 0.05;
@@ -46,9 +46,9 @@ void loop() {
     // Serial.print(" ");
     // Serial.println(readings.gz - biases.bz);
 
-    Orientation dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, yaw, pitch, biases);
-    yaw = dir.yaw;
-    pitch = dir.pitch;
+    Vec2D dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, yaw, pitch, biases);
+    yaw = dir.x;
+    pitch = dir.y;
 
     if (yaw > 180) {
         yaw = yaw - 360;

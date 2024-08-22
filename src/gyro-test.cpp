@@ -7,7 +7,7 @@
 
 double yaw, pitch;
 SensorReadings readings;
-Orientation dir;
+Vec2D dir;
 Biases biases;
 
 void setup() {

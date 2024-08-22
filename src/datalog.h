@@ -7,22 +7,30 @@
 struct DataPoint {
     long timestamp;    // Microseconds
     SensorReadings r;       // Sensor Readings
-    Orientation o;          // Current Orientation
+    Vec2D o;          // Current Orientation
     float x_out, y_out;     // TVC Outputs
     float alt;              // Altitude
     int currentState;       // Current State
     float vert_vel;         // Vertical Velocity
     float kp, ki, kd;       // PID Params
 
-    
+
+};
+
+bool logStatus(char* msg, SDFile logFile) {
+    if (!logFile) {
+        Serial.println("Couldn't open file");
+        return false;
+    }
+    long long t = micros();
+    logFile.print(t);
+    logFile.print(" - ");
+    logFile.println(msg);
+    return true;
 };
 
 bool logDataPoint(DataPoint p, SDFile dataFile) {
-    if (!SD.begin(10)) {
-        Serial.println("Card failed, or not present");
-        return false;
-    }
-    
+
     if (!dataFile) {
         Serial.println("Couldn't open file");
         return false;
@@ -42,9 +50,9 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
     dataFile.print(",");
     dataFile.print(p.r.gz);
     dataFile.print(",");
-    dataFile.print(p.o.yaw);
+    dataFile.print(p.o.x);
     dataFile.print(",");
-    dataFile.print(p.o.pitch);
+    dataFile.print(p.o.y);
     dataFile.print(",");
     dataFile.print(p.x_out);
     dataFile.print(",");
@@ -78,9 +86,9 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
     Serial.print(",");
     Serial.print(p.r.gz);
     Serial.print(",");
-    Serial.print(p.o.yaw);
+    Serial.print(p.o.x);
     Serial.print(",");
-    Serial.print(p.o.pitch);
+    Serial.print(p.o.y);
     Serial.print(",");
     Serial.print(p.x_out);
     Serial.print(",");

@@ -6,7 +6,7 @@ public:
     double Kp;
     double Ki;
     double Kd;
-    double cutoff;
+    double N;
     void begin(double _Kp, double _Ki, double _Kd, double _b, double _dt, double _min, double _max) {
         Kp = _Kp;
         Ki = _Ki;
@@ -19,7 +19,7 @@ public:
 
     double update(double target, double current, double _dt) {
         dt = _dt;
-        alpha = dt / (dt + 1/cutoff);
+        alpha = 1 - exp(-dt/N);
         error = target - current;
         // Proportional
         double p = Kp * error;
@@ -69,7 +69,9 @@ private:
     double error;
     double last_error = 0;
     double last_filter = 0;
-    double alpha;
+
+
+    double alpha = 0;
     double clip(double value, double min, double max) {
         return min < value && value < max ? value : min < value ? max : min;
     }

@@ -9,32 +9,33 @@ public:
 
     PID pid_x;
     PID pid_y;
-    
-    void updatePID(PID& pid, double _Kp, double _Ki, double _Kd) {
+
+    void updatePID(PID& pid, double _Kp, double _Ki, double _Kd, double filterN) {
         pid.Kp = _Kp;
         pid.Ki = _Ki;
         pid.Kd = _Kd;
+        pid.N = filterN;
     }
 
     void begin() {
-        dir = Orientation(0, 0);
+        dir = Vec2D(0, 0);
         tvcx.attach(5);
         tvcy.attach(6);
 
         pid_x.begin(P, I, D, XDEF, DELTA_TIME, XMIN, XMAX);
         tvcx.write(XDEF);
 
-        pid_y.begin(P, I, D, YDEF,DELTA_TIME, YMIN, YMAX);
+        pid_y.begin(P, I, D, YDEF, DELTA_TIME, YMIN, YMAX);
         tvcy.write(YDEF);
     }
 
-    Orientation update(Orientation o, double dt) {
+    Vec2D update(Vec2D o, double dt) {
         if (!locked) {
             dir = o;
             // Serial.println(dir.pitch);
             // Serial.println(dir.yaw);
-            x_out = pid_x.update(0, dir.yaw, dt);
-            y_out = pid_y.update(0, dir.pitch, dt);
+            x_out = pid_x.update(0, dir.x, dt);
+            y_out = pid_y.update(0, dir.y, dt);
             // Serial.print("X: ");
             // Serial.println(x_out);
             // Serial.print("Y: ");
@@ -42,7 +43,7 @@ public:
             tvcx.write(x_out);
             tvcy.write(y_out);
 
-            return Orientation(x_out, y_out);
+            return Vec2D(x_out, y_out);
 
         }
         else {
@@ -56,7 +57,7 @@ public:
             tvcy.write(YDEF);
 
 
-            return Orientation(XDEF, YDEF);
+            return Vec2D(XDEF, YDEF);
         }
 
     }
@@ -68,8 +69,8 @@ public:
         tvcy.write(y + 90);
     }
 
-    Orientation getAngle() {
-        return Orientation(x_out, y_out);
+    Vec2D getAngle() {
+        return Vec2D(x_out, y_out);
     }
 
     void lock() {
@@ -83,7 +84,7 @@ public:
     }
 
     void abort() {
-        if (abs(dir.pitch) > 30 || abs(dir.yaw) > 30) {
+        if (abs(dir.y) > 30 || abs(dir.x) > 30) {
             tvcx.write(XDEF);
             tvcy.write(YDEF);
             locked = true;
@@ -103,7 +104,7 @@ private:
     const double YDEF = 85;  // TVC Y Default (zero position)
 
     // --------- TVC Control --------- //
-  
+
     // old PID values
     // P = 8.58679935818825;
     // I = 12.4428493210038;
@@ -115,7 +116,7 @@ private:
     double x_out;
     double y_out;
 
-    Orientation dir;
+    Vec2D dir;
     boolean locked = false;
 
 };

@@ -23,10 +23,11 @@ double mag3(double a, double b, double c) {
 // --------- TVC --------- //
 TVC tvc;
 double x_out, y_out;
+Vec2D tvc_out;
 
 // --------- Sensor Variables --------- //
 struct SensorReadings readings;
-struct Orientation dir;
+struct Vec2D dir;
 double yaw, pitch;
 
 double altitude, maxAltitude = -10000000;
@@ -130,14 +131,13 @@ void loop() {
 
     }
     // TVC Update
-    Orientation tvc_out = tvc.update(dir, DELTA_TIME);
-    Orientation tvc_out = tvc.update(dir, DELTA_TIME);
-    x_out = tvc_out.yaw;
-    y_out = tvc_out.pitch;
+    tvc_out = tvc.update(dir, DELTA_TIME);
+    x_out = tvc_out.x;
+    y_out = tvc_out.y;
 
-    Serial.print(dir.yaw);
+    Serial.print(dir.x);
     Serial.print(" -x  y- ");
-    Serial.println(dir.pitch);
+    Serial.println(dir.y);
 
     // --- LED Control --- //
     LED(currentState);

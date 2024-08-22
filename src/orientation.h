@@ -14,12 +14,12 @@ struct SensorReadings {
     float gx, gy, gz;
 
 };
- 
-struct Orientation {
-    double yaw, pitch;
 
-    Orientation() { yaw = 0; pitch = 0; }
-    Orientation(double x, double y) : yaw(x), pitch(y) {}
+struct Vec2D {
+    double x, y;
+
+    Vec2D() { x = 0; y = 0; }
+    Vec2D(double x, double y) : x(x), y(y) {}
 
 };
 
@@ -67,7 +67,7 @@ Biases calibrateGyro() {
     return Biases(bx, by, bz);
 }
 
-Orientation local_to_global(SensorReadings r, Biases b, double yaw, double pitch) {
+Vec2D local_to_global(SensorReadings r, Biases b, double yaw, double pitch) {
     double p = r.gx - b.bx * PI / 180;
     double q = r.gy - b.by * PI / 180;
     double r_ = r.gz - b.bz * PI / 180;
@@ -75,38 +75,38 @@ Orientation local_to_global(SensorReadings r, Biases b, double yaw, double pitch
     double phidot = p + q * sin(yaw) * tan(pitch) + r_ * cos(yaw) * tan(pitch);
     double thetadot = q * cos(yaw) - r_ * sin(yaw);
 
-    return Orientation(phidot * 180 / PI, thetadot * 180 / PI);
+    return Vec2D(phidot * 180 / PI, thetadot * 180 / PI);
 
 }
 
 // COMPLEMENTARY FILTERING (Written by hand)
-Orientation get_angles_complementary(double A, double dt, SensorReadings r, double yaw, double pitch, Biases b) {
+Vec2D get_angles_complementary(double A, double dt, SensorReadings r, double yaw, double pitch, Biases b) {
 
     // Orientation w = local_to_global(r, b, yaw, pitch);
-    Orientation w = Orientation(r.gz - b.bz, r.gx - b.bx);
+    Vec2D w = Vec2D(r.gz - b.bz, r.gx - b.bx);
     double accel_angle_x = atan2(r.ax, -sign(r.ay) * sqrt(r.az * r.az + r.ay * r.ay)) * 180 / PI;
-    double gyro_angle_x = yaw - (w.yaw) * dt;
+    double gyro_angle_x = yaw - (w.x) * dt;
 
     double angle_x = accel_angle_x * (1.0 - A) + gyro_angle_x * A;
 
     double accel_angle_y = atan2(r.az, -r.ay) * 180 / PI;
-    double gyro_angle_y = pitch + (w.pitch) * dt;
+    double gyro_angle_y = pitch + (w.y) * dt;
 
     double angle_y = accel_angle_y * (1.0 - A) + gyro_angle_y * A;
 
-    return Orientation(angle_x, angle_y);
+    return Vec2D(angle_x, angle_y);
 }
 
 
 // KALMAN FILTERING
-Orientation get_angles_kalman(double dt, SensorReadings r, Kalman& kx, Kalman& ky, Biases b) {
+Vec2D get_angles_kalman(double dt, SensorReadings r, Kalman& kx, Kalman& ky, Biases b) {
     double accel_angle_x = atan2(r.ax, -r.ay) * 180 / PI;
     double accel_angle_y = atan2(r.az, -r.ay) * 180 / PI;
 
     double kal_x = kx.getAngle(accel_angle_x, r.gz - b.bz, dt);
     double kal_y = ky.getAngle(accel_angle_y, r.gx - b.bx, dt);
 
-    return Orientation(kal_x, kal_y);
+    return Vec2D(kal_x, kal_y);
 
 }
 
