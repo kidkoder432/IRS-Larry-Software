@@ -54,7 +54,9 @@ public:
             x_out = XDEF;
             y_out = YDEF;
             tvcx.write(x_out);
-            tvcy.write(YDEF);
+            tvcy.write(y_out);
+            pid_x.reset();
+            pid_y.reset();
 
 
             return Vec2D(XDEF, YDEF);

@@ -5,19 +5,19 @@
 
 
 struct DataPoint {
-    long timestamp;    // Microseconds
+    long timestamp;         // Microseconds
     SensorReadings r;       // Sensor Readings
-    Vec2D o;          // Current Orientation
+    Vec2D o;                // Current Orientation
     float x_out, y_out;     // TVC Outputs
     float alt;              // Altitude
     int currentState;       // Current State
     float vert_vel;         // Vertical Velocity
-    float kp, ki, kd;       // PID Params
+    float kp, ki, kd;       // PID Gains
 
 
 };
 
-bool logStatus(char* msg, SDFile logFile) {
+bool logStatus(const char* msg, SDFile logFile) {
     if (!logFile) {
         Serial.println("Couldn't open file");
         return false;
@@ -26,6 +26,15 @@ bool logStatus(char* msg, SDFile logFile) {
     logFile.print(t);
     logFile.print(" - ");
     logFile.println(msg);
+
+    bool doFlush = true;
+    if (millis() % 1000 < 100 && doFlush) {
+        logFile.flush();
+        doFlush = false;
+    }
+    else {
+        doFlush = true;
+    }
     return true;
 };
 
@@ -34,6 +43,10 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
     if (!dataFile) {
         Serial.println("Couldn't open file");
         return false;
+    }
+
+    if (millis() % 300 == 0) {
+        dataFile.flush();
     }
 
     dataFile.print(p.timestamp);
@@ -107,14 +120,12 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
     Serial.print(p.kd);
     Serial.println();
     return true;
-
-    // TODO:    
+ 
 }
 void sdCardInfo() {
     Sd2Card card;
     SdVolume volume;
     SdFile root;
-
 
     Serial.print("\nInitializing SD card...");
     // we'll use the initialization code from the utility libraries

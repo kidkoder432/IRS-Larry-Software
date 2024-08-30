@@ -37,7 +37,6 @@ bool logData = true;
 bool led = true;
 File dataFile;
 File logFile;
-char filename[64] = "data.csv";
 
 int currentState = 42;   // Test state = 42
 
@@ -83,30 +82,18 @@ void setup() {
     pinMode(LEDB, OUTPUT);
     showColor(COLOR_OFF);
 
+    // Init SD Card | Read Config
+    SD.begin(10);
+    logFile = SD.open("log.txt", O_WRITE);
+    logStatus("Initialized", logFile);
+    config = readConfig();
+    logStatus("Config read successfully", logFile);
+
+    // Init TVC
     tvc.begin();
     tvc.lock();
-
-    SD.begin(10);
-
-    logFile = SD.open("log.txt", FILE_WRITE);
-    logStatus("Initialized", logFile);
-
-    Serial.println("Reading config...");
-    config = readConfig();
-    Serial.println("Config read successfully");
-    Serial.print("Kp: ");
-    Serial.println(config.Kp);
-    Serial.print("Ki: ");
-    Serial.println(config.Ki);
-    Serial.print("Kd: ");
-    Serial.println(config.Kd);
-    Serial.print("N: ");
-    Serial.println(config.N);
-    Serial.print("FILTER_KALMAN: ");
-    Serial.println(config.FILTER_KALMAN);
-    Serial.print("Pressure Reference: ");
-    Serial.println(config.PRESSURE_0);
-    logStatus("Config read successfully", logFile);
+    tvc.updatePID(tvc.pid_x, config.Kp, config.Ki, config.Kd, config.N);
+    tvc.updatePID(tvc.pid_y, config.Kp, config.Ki, config.Kd, config.N);
 
     if (config.FILTER_KALMAN == 1) {
         Serial.println("Initializing Kalman filter...");
@@ -119,20 +106,31 @@ void setup() {
         logStatus("Using complementary filter", logFile);
     }
 
-    tvc.updatePID(tvc.pid_x, config.Kp, config.Ki, config.Kd, config.N);
-    tvc.updatePID(tvc.pid_y, config.Kp, config.Ki, config.Kd, config.N);
+    
 
     delay(1000);
+
+    // Calibrate Gyro
+    Serial.println("Calibrating Gyro...");
+    logStatus("Calibrating Gyro", logFile);
+    biases = calibrateGyro();
+
+    char buf[64];
+    snprintf(buf, sizeof(buf), "bx = %f, by = %f, bz = %f", biases.bx, biases.by, biases.bz);
+
+    logStatus("Calibration complete", logFile); 
+    logStatus(strcat(buf, "Calibration values: "), logFile);
 
     Serial.println("Initialized");
     Serial.println(R"(Welcome to Larry v1 Interactive Test Suite.
 This test suite will test all components and features of the flight computer.)");
 
     // Serial.println(HELP_STR);
-
-    dataFile = SD.open(filename, FILE_WRITE);
+    
+    // Open data file
+    dataFile = SD.open("data.csv", O_WRITE);
+    dataFile.println("Time,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,KP,KI,KD");
     delay(200);
-    Serial.println(dataFile);
 
 }
 
@@ -152,7 +150,7 @@ void loop() {
     IMU.readAcceleration(readings.ay, readings.ax, readings.az);
     IMU.readGyroscope(readings.gx, readings.gy, readings.gz);
 
-    vertVel -= readings.ay * 9.80665 * DELTA_TIME;
+    vertVel -= readings.ax * 9.80665 * DELTA_TIME;
 
     Vec2D tvc_out = tvc.update(dir, DELTA_TIME);
     x_out = tvc_out.x;
@@ -326,9 +324,6 @@ void loop() {
 
         logDataPoint(p, dataFile);
 
-        if (millis() % 100 == 0) {
-            dataFile.flush();
-        }
     }
 
 

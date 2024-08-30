@@ -80,18 +80,6 @@ void loop() {
     Serial.print(tvc.getAngle().x);
     Serial.print(" TVC Pitch: ");
     Serial.println(tvc.getAngle().y);
-    Serial.print("Px: ");
-    Serial.print(tvc.pid_x.P());
-    Serial.print(" Ix: ");
-    Serial.print(tvc.pid_x.I());
-    Serial.print(" Dx: ");
-    Serial.println(tvc.pid_x.D());
-    Serial.print("Py: ");
-    Serial.print(tvc.pid_y.P());
-    Serial.print(" Iy: ");
-    Serial.print(tvc.pid_y.I());
-    Serial.print(" Dy: ");
-    Serial.println(tvc.pid_y.D());
 
 
     if (abs(yaw) >= 15) {

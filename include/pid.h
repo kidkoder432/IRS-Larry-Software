@@ -11,7 +11,7 @@ public:
         Kp = _Kp;
         Ki = _Ki;
         Kd = _Kd;
-        b = _b;
+        bias = _b;
         dt = _dt;
         min = _min;
         max = _max;
@@ -22,17 +22,19 @@ public:
         alpha = N * dt;
         b = alpha / (alpha + 2);
         error = target - current;
+        
         // Proportional
         double p = Kp * error;
 
         // Integral
         double i = Ki * integrated_error;
+
         // Derivative + low-pass filtering
         filtered_error = b * (error + last_error) + (1 - b * 2) * last_filter;
         double d = Kd * (filtered_error - last_filter) / dt;
 
         // Integrator clamping
-        if (doIntegratorClamp(p + i + d + b, b)) {
+        if (doIntegratorClamp(p + i + d + bias, bias)) {
             integrated_error += 0;
         }
         else {
@@ -44,24 +46,19 @@ public:
         last_error = error;
 
         // Output saturation
-        return clip(p + i + d + b, min, max);
+        return clip(p + i + d + bias, min, max);
     }
 
-    double P() {
-        return Kp * error;
-    }
-
-    double I() {
-        return Ki * integrated_error;
-    }
-
-    double D() {
-
-        return Kd * (filtered_error - last_filter) / dt;
+    void reset() {
+        integrated_error = 0;
+        last_filter = 0;
+        last_error = 0;
+        filtered_error = 0;
+        error = 0;
     }
 private:
 
-    double b;
+    double bias;
     double dt;
     double min;
     double max;
