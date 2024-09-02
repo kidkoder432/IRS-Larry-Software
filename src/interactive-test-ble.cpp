@@ -60,7 +60,26 @@ T: Activate Pyro 2 (Landing Legs Deploy)
 S: Read SD Card
 Q: Reset Angles
 P: Print PID Values
+Z: Switch Bluetooth to USB (override)
 H: Help)";
+
+void recvOneChar() {
+    if (Serial.available() > 0) {
+        receivedChar = Serial.read();
+        receivedChar = toupper(receivedChar);
+        Serial.println(receivedChar);
+        newCommand = true;
+    }
+    if (bleSerial.available() > 0) {
+        receivedChar = bleSerial.read();
+        receivedChar = toupper(receivedChar);
+        Serial.println(receivedChar);
+        newCommand = true;
+    }
+    if (receivedChar == '\n' || receivedChar == '\r') {
+        newCommand = false;
+    }
+}
 
 void setup() {
 
@@ -144,10 +163,26 @@ void setup() {
     }
 
     int waits = 0;
-    while (!bleSerial && waits < 30) {
+    bool override = false;
+    while (!bleSerial && waits < 30 and !override) {
+        
+        recvOneChar();
+        if (newCommand) {
+            switch (receivedChar) {
+                case 'Z':
+                    override = true;
+                    break;
+                default:
+                    override = false;
+                    break;
+            }
+        }
+        
         if (millis() % 1000 == 0) {
             Serial.println("BLE not connected, waiting...");
+            waits++;
         }
+        delay(20);
     }
 
     if (bleSerial) {
@@ -156,7 +191,7 @@ void setup() {
     }
     else {
         Serial.println("BLE not connected! Using USB serial...");
-        logStatus("ERR: BLE not connected! Using USB serial...", logFile);
+        logStatus("WARN: BLE not connected! Using USB serial...", logFile);
 
     }
 
@@ -179,25 +214,6 @@ This test suite will test all components and features of the flight computer.)")
 This test suite will test all components and features of the flight computer.)");
     delay(200);
 
-}
-
-
-void recvOneChar() {
-    if (Serial.available() > 0) {
-        receivedChar = Serial.read();
-        receivedChar = toupper(receivedChar);
-        Serial.println(receivedChar);
-        newCommand = true;
-    }
-    if (bleSerial.available() > 0) {
-        receivedChar = bleSerial.read();
-        receivedChar = toupper(receivedChar);
-        Serial.println(receivedChar);
-        newCommand = true;
-    }
-    if (receivedChar == '\n' || receivedChar == '\r') {
-        newCommand = false;
-    }
 }
 
 void loop() {
