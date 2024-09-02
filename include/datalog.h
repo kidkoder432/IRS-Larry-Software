@@ -12,7 +12,8 @@ struct DataPoint {
     float alt;              // Altitude
     int currentState;       // Current State
     float vert_vel;         // Vertical Velocity
-    float kp, ki, kd;       // PID Gains
+    float px, ix, dx;       // PID Values (X)
+    float py, iy, dy;       // PID Values (Y)
 
 
 };
@@ -77,14 +78,20 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
     dataFile.print(",");
     dataFile.print(p.vert_vel);
     dataFile.print(",");
-    dataFile.print(p.kp);
+    dataFile.print(p.px);
     dataFile.print(",");
-    dataFile.print(p.ki);
+    dataFile.print(p.ix);
     dataFile.print(",");
-    dataFile.print(p.kd);
+    dataFile.print(p.dx);
+    dataFile.print(",");
+    dataFile.print(p.py);
+    dataFile.print(",");
+    dataFile.print(p.iy);
+    dataFile.print(",");
+    dataFile.println(p.dy);
 
     dataFile.println();
-    Serial.println("Time,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,KP,KI,KD");
+    Serial.println("Time,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
     Serial.print(p.timestamp);
     Serial.print(",");
     Serial.print(p.r.ax);
@@ -113,15 +120,23 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
     Serial.print(",");
     Serial.print(p.vert_vel);
     Serial.print(",");
-    Serial.print(p.kp);
+    Serial.print(p.px);
     Serial.print(",");
-    Serial.print(p.ki);
+    Serial.print(p.ix);
     Serial.print(",");
-    Serial.print(p.kd);
+    Serial.print(p.dx);
+    Serial.print(",");
+    Serial.print(p.py);
+    Serial.print(",");
+    Serial.print(p.iy);
+    Serial.print(",");
+    Serial.println(p.dy);
+
     Serial.println();
     return true;
- 
+
 }
+
 void sdCardInfo() {
     Sd2Card card;
     SdVolume volume;

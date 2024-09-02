@@ -6,6 +6,11 @@ public:
     double Kp;
     double Ki;
     double Kd;
+
+    double p;
+    double i;
+    double d;
+
     double N;
     void begin(double _Kp, double _Ki, double _Kd, double _b, double _dt, double _min, double _max) {
         Kp = _Kp;
@@ -24,14 +29,14 @@ public:
         error = target - current;
         
         // Proportional
-        double p = Kp * error;
+        p = Kp * error;
 
         // Integral
-        double i = Ki * integrated_error;
+        i = Ki * integrated_error;
 
         // Derivative + low-pass filtering
         filtered_error = b * (error + last_error) + (1 - b * 2) * last_filter;
-        double d = Kd * (filtered_error - last_filter) / dt;
+        d = Kd * (filtered_error - last_filter) / dt;
 
         // Integrator clamping
         if (doIntegratorClamp(p + i + d + bias, bias)) {

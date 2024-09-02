@@ -28,7 +28,7 @@ float vertVel = 0;
 double ALPHA = 0.05;
 
 char receivedChar;
-bool newData = false;
+bool newCommand = false;
 
 bool dirOutLock = true;
 bool sensorOutLock = true;
@@ -106,7 +106,7 @@ void setup() {
         logStatus("Using complementary filter", logFile);
     }
 
-    
+
 
     delay(1000);
 
@@ -118,7 +118,7 @@ void setup() {
     char buf[64];
     snprintf(buf, sizeof(buf), "bx = %f, by = %f, bz = %f", biases.bx, biases.by, biases.bz);
 
-    logStatus("Calibration complete", logFile); 
+    logStatus("Calibration complete", logFile);
     logStatus(strcat(buf, "Calibration values: "), logFile);
 
     Serial.println("Initialized");
@@ -126,7 +126,7 @@ void setup() {
 This test suite will test all components and features of the flight computer.)");
 
     // Serial.println(HELP_STR);
-    
+
     // Open data file
     dataFile = SD.open("data.csv", O_WRITE);
     dataFile.println("Time,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,KP,KI,KD");
@@ -140,7 +140,7 @@ void recvOneChar() {
         receivedChar = Serial.read();
         receivedChar = toupper(receivedChar);
         Serial.println(receivedChar);
-        newData = true;
+        newCommand = true;
     }
 }
 
@@ -183,7 +183,7 @@ void loop() {
         pitch = pitch + 360;
     }
 
-    if (newData == true) {
+    if (newCommand == true) {
         switch (receivedChar) {
             case 'U':
                 Serial.println("Unlocking TVC");
@@ -264,7 +264,7 @@ void loop() {
                 Serial.println("Invalid command");
                 break;
         }
-        newData = false;
+        newCommand = false;
     }
 
     if (led) {
@@ -318,9 +318,6 @@ void loop() {
         p.alt = getAltitude(config.PRESSURE_0);
         p.currentState = currentState;
         p.vert_vel = vertVel;
-        p.kp = tvc.pid_x.Kp;
-        p.ki = tvc.pid_x.Ki;
-        p.kd = tvc.pid_x.Kd;
 
         logDataPoint(p, dataFile);
 
