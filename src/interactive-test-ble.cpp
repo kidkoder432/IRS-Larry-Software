@@ -12,10 +12,12 @@
 #include <Arduino_LPS22HB.h>
 #include <tvc.h>
 #include <config.h>
+#include <prints.h>
 
 #include <HardwareBLESerial.h>
 
 HardwareBLESerial& bleSerial = HardwareBLESerial::getInstance();
+bool bleOn = false;
 
 double yaw, pitch;
 TVC tvc;
@@ -25,7 +27,7 @@ Vec2D dir;
 Biases biases;
 Kalman kx, ky;
 Config config;
-long long lastMicros = micros();
+long long lastMicros;
 
 float vertVel = 0;
 
@@ -41,6 +43,8 @@ bool logData = true;
 bool led = true;
 File dataFile;
 File logFile;
+
+double pressureOffset = 0;
 
 int currentState = 42;   // Test state = 42
 
@@ -67,13 +71,13 @@ void recvOneChar() {
     if (Serial.available() > 0) {
         receivedChar = Serial.read();
         receivedChar = toupper(receivedChar);
-        Serial.println(receivedChar);
+        msgPrintln(bleOn, bleSerial, receivedChar);
         newCommand = true;
     }
     if (bleSerial.available() > 0) {
         receivedChar = bleSerial.read();
         receivedChar = toupper(receivedChar);
-        Serial.println(receivedChar);
+        msgPrintln(bleOn, bleSerial, receivedChar);
         newCommand = true;
     }
     if (receivedChar == '\n' || receivedChar == '\r') {
@@ -108,26 +112,36 @@ void setup() {
 
     // Init SD Card | Read Config
     SD.begin(10);
-    logFile = SD.open("log.txt", O_WRITE);
+    logFile = SD.open("log.txt", O_TRUNC | O_WRITE);
 
     if (!logFile) {
-        Serial.println("Failed to open log file!");
+        msgPrintln(bleOn, bleSerial, "Failed to open log file!");
+        while (1) {
+            flash(COLOR_RED);
 
-        while (1) {}
+        }
     }
 
     logStatus("Initialized", logFile);
     config = readConfig();
     logStatus("Config read successfully", logFile);
 
+    logStatus("Calibrating Barometer", logFile);
+    pressureOffset = calculateOffset(config.PRESSURE_0);
+    logStatus("Barometer calibrated", logFile);
+
+
     // Open data file
-    dataFile = SD.open("data.csv", O_WRITE);
+    dataFile = SD.open("data.csv", O_TRUNC | O_WRITE);
 
     if (!dataFile) {
-        Serial.println("Failed to open data file!");
-        while (1) {}
+        msgPrintln(bleOn, bleSerial, "Failed to open data file!");
+        while (1) {
+            flash(COLOR_RED);
+
+        }
     }
-    dataFile.println("Time,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
+    dataFile.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
 
     // Init TVC
     tvc.begin();
@@ -136,13 +150,13 @@ void setup() {
     tvc.updatePID(tvc.pid_y, config.Kp, config.Ki, config.Kd, config.N);
 
     if (config.FILTER_KALMAN == 1) {
-        Serial.println("Initializing Kalman filter...");
+        msgPrintln(bleOn, bleSerial, "Initializing Kalman filter...");
         logStatus("Initializing Kalman filter", logFile);
         kx.setAngle(yaw);
         ky.setAngle(pitch);
     }
     else {
-        Serial.println("Using complementary filter");
+        msgPrintln(bleOn, bleSerial, "Using complementary filter");
         logStatus("Using complementary filter", logFile);
     }
 
@@ -151,25 +165,29 @@ void setup() {
     delay(1000);
 
     // Init BLE
-    Serial.println("Initializing BLE...");
+    msgPrintln(bleOn, bleSerial, "Initializing BLE...");
     logStatus("Initializing BLE", logFile);
 
     if (!bleSerial.beginAndSetupBLE("Tax Collector")) {
-        Serial.println("Failed to initialize BLE!");
+        msgPrintln(bleOn, bleSerial, "Failed to initialize BLE!");
         logStatus("ERR: Failed to initialize BLE! ", logFile);
         logFile.close();
         dataFile.close();
-        while (1) {}
+        while (1) {
+            flash(COLOR_PURPLE);
+
+        }
     }
 
     int waits = 0;
     bool override = false;
     while (!bleSerial && waits < 30 and !override) {
-        
+        flash(COLOR_BLUE);
         recvOneChar();
         if (newCommand) {
             switch (receivedChar) {
                 case 'Z':
+                    bleOn = false;
                     override = true;
                     break;
                 default:
@@ -177,26 +195,30 @@ void setup() {
                     break;
             }
         }
-        
-        if (millis() % 1000 == 0) {
-            Serial.println("BLE not connected, waiting...");
+
+        if (millis() % 1000 < 40) {
+            msgPrintln(bleOn, bleSerial, "BLE not connected, waiting...");
             waits++;
+            delay(50);
+            showColor(COLOR_OFF);
+
         }
-        delay(20);
     }
 
     if (bleSerial) {
-        Serial.println("HardwareBLESerial central device connected!");
+        bleOn = true;
+        msgPrintln(bleOn, bleSerial, "HardwareBLESerial central device connected!");
         logStatus("HardwareBLESerial central device connected!", logFile);
     }
     else {
-        Serial.println("BLE not connected! Using USB serial...");
+        bleOn = false;
+        msgPrintln(bleOn, bleSerial, "BLE not connected! Using USB serial...");
         logStatus("WARN: BLE not connected! Using USB serial...", logFile);
 
     }
 
     // Calibrate Gyro
-    Serial.println("Calibrating Gyro...");
+    msgPrintln(bleOn, bleSerial, "Calibrating Gyro...");
     logStatus("Calibrating Gyro", logFile);
     biases = calibrateGyro();
 
@@ -206,13 +228,12 @@ void setup() {
     logStatus("Calibration complete", logFile);
     logStatus(strcat(buf, "Calibration values: "), logFile);
 
-    Serial.println("Initialized");
-    bleSerial.println("Initialized");
-    Serial.println(R"(Welcome to Larry v1 Interactive Test Suite.
+    msgPrintln(bleOn, bleSerial, "Initialized");
+    msgPrintln(bleOn, bleSerial, R"(Welcome to Larry v1 Interactive Test Suite.
 This test suite will test all components and features of the flight computer.)");
-    bleSerial.println(R"(Welcome to Larry v1 Interactive Test Suite.
-This test suite will test all components and features of the flight computer.)");
+
     delay(200);
+    lastMicros = micros();
 
 }
 
@@ -223,7 +244,7 @@ void loop() {
     recvOneChar();
 
     IMU.readAcceleration(readings.ay, readings.ax, readings.az);
-    IMU.readGyroscope(readings.gx, readings.gy, readings.gz);
+    IMU.readGyroscope(readings.gy, readings.gx, readings.gz);
 
     vertVel -= readings.ax * 9.80665 * DELTA_TIME;
 
@@ -261,46 +282,38 @@ void loop() {
     if (newCommand == true) {
         switch (receivedChar) {
             case 'U':
-                Serial.println("Unlocking TVC");
-                bleSerial.println("Unlocking TVC");
+                msgPrintln(bleOn, bleSerial, "Unlocking TVC");
                 logStatus("Unlocking TVC", logFile);
                 tvc.pid_x.reset();
                 tvc.pid_y.reset();
                 tvc.unlock();
                 break;
             case 'L':
-                Serial.println("Locking TVC");
-                bleSerial.println("Locking TVC");
+                msgPrintln(bleOn, bleSerial, "Locking TVC");
                 logStatus("Locking TVC", logFile);
                 tvc.lock();
                 break;
             case 'K':
-                Serial.println("Toggling LEDs");
-                bleSerial.println("Toggling LEDs");
+                msgPrintln(bleOn, bleSerial, "Toggling LEDs");
                 logStatus("Toggling LEDs", logFile);
                 led = !led;
                 break;
             case 'C':
-                Serial.println("Calibrating Gyro");
-                bleSerial.println("Calibrating Gyro");
+                msgPrintln(bleOn, bleSerial, "Calibrating Gyro");
                 logStatus("Calibrating Gyro", logFile);
                 calibrateGyro();
                 break;
             case 'O':
-                Serial.print("Orientation: ");
-                bleSerial.print("Orientation: ");
+                msgPrint(bleOn, bleSerial, "Orientation: ");
                 sensorOutLock = true;
                 dirOutLock = false;
                 break;
             case 'A':
-                Serial.print("Altitude: ");
-                bleSerial.print("Altitude: ");
-                Serial.println(getAltitude(config.PRESSURE_0));
-                bleSerial.println(getAltitude(config.PRESSURE_0));
+                msgPrint(bleOn, bleSerial, "Altitude: ");
+                msgPrintln(bleOn, bleSerial, getAltitude(config.PRESSURE_0, pressureOffset));
                 break;
             case 'R':
-                Serial.println("Sensor Readings: ");
-                bleSerial.println("Sensor Readings: ");
+                msgPrintln(bleOn, bleSerial, "Sensor Readings: ");
                 dirOutLock = true;
                 sensorOutLock = false;
                 break;
@@ -309,87 +322,63 @@ void loop() {
                 dirOutLock = true;
                 break;
             case 'G':
-                Serial.println("Pyro 1: Motor Ignition");
-                bleSerial.println("Pyro 1: Motor Ignition");
+                msgPrintln(bleOn, bleSerial, "Pyro 1: Motor Ignition");
                 logStatus("Pyro 1: Motor Ignition", logFile);
                 fire_pyro_test(PYRO_LANDING_MOTOR_IGNITION);
                 break;
             case 'T':
-                Serial.println("Pyro 2: Landing Legs Deploy");
-                bleSerial.println("Pyro 2: Landing Legs Deploy");
+                msgPrintln(bleOn, bleSerial, "Pyro 2: Landing Legs Deploy");
                 logStatus("Pyro 2: Landing Legs Deploy", logFile);
                 fire_pyro_test(PYRO_LANDING_LEGS_DEPLOY);
                 break;
             case 'S':
-                Serial.println("Reading SD Card Info");
-                bleSerial.println("Reading SD Card Info");
+                msgPrintln(bleOn, bleSerial, "Reading SD Card Info");
                 logStatus("Reading SD Card Info", logFile);
                 sdCardInfo();
                 break;
             case 'Q':
-                Serial.println("Resetting Angles");
-                bleSerial.println("Resetting Angles");
+                msgPrintln(bleOn, bleSerial, "Resetting Angles");
                 logStatus("Resetting Angles", logFile);
                 yaw = 0;
                 pitch = 0;
                 break;
             case 'H':
-                Serial.println(HELP_STR);
-                bleSerial.println(HELP_STR);
+                msgPrintln(bleOn, bleSerial, HELP_STR);
                 break;
 
             case 'D':
                 logData = !logData;
                 if (logData) {
                     SD.begin(10);
-                    Serial.println("Logging Data ON");
-                    bleSerial.println("Logging Data ON");
+                    msgPrintln(bleOn, bleSerial, "Logging Data ON");
                     logStatus("Logging Data ON", logFile);
                 }
                 else {
-                    Serial.println("Logging Data OFF");
-                    bleSerial.println("Logging Data OFF");
+                    msgPrintln(bleOn, bleSerial, "Logging Data OFF");
                     logStatus("Logging Data OFF", logFile);
                 }
                 break;
             case 'P':
-                Serial.print("Px: ");
-                bleSerial.print("Px: ");
-                Serial.print(tvc.pid_x.p);
-                bleSerial.print(tvc.pid_x.p);
-                Serial.print("; ");
-                bleSerial.print("; ");
-                Serial.print("Ix: ");
-                bleSerial.print("Ix: ");
-                Serial.print(tvc.pid_x.i);
-                bleSerial.print(tvc.pid_x.i);
-                Serial.print("; ");
-                bleSerial.print("; ");
-                Serial.print("Dx: ");
-                bleSerial.print("Dx: ");
-                Serial.println(tvc.pid_x.d);
-                bleSerial.println(tvc.pid_x.d);
+                msgPrint(bleOn, bleSerial, "Px: ");
+                msgPrint(bleOn, bleSerial, tvc.pid_x.p);
+                msgPrint(bleOn, bleSerial, "; ");
+                msgPrint(bleOn, bleSerial, "Ix: ");
+                msgPrint(bleOn, bleSerial, tvc.pid_x.i);
+                msgPrint(bleOn, bleSerial, "; ");
+                msgPrint(bleOn, bleSerial, "Dx: ");
+                msgPrintln(bleOn, bleSerial, tvc.pid_x.d);
 
-                Serial.print("Py: ");
-                bleSerial.print("Py: ");
-                Serial.print(tvc.pid_y.p);
-                bleSerial.print(tvc.pid_y.p);
-                Serial.print("; ");
-                bleSerial.print("; ");
-                Serial.print("Iy: ");
-                bleSerial.print("Iy: ");
-                Serial.print(tvc.pid_y.i);
-                bleSerial.print(tvc.pid_y.i);
-                Serial.print("; ");
-                bleSerial.print("; ");
-                Serial.print("Dy: ");
-                bleSerial.print("Dy: ");
-                Serial.println(tvc.pid_y.d);
-                bleSerial.println(tvc.pid_y.d);
+                msgPrint(bleOn, bleSerial, "Py: ");
+                msgPrint(bleOn, bleSerial, tvc.pid_y.p);
+                msgPrint(bleOn, bleSerial, "; ");
+                msgPrint(bleOn, bleSerial, "Iy: ");
+                msgPrint(bleOn, bleSerial, tvc.pid_y.i);
+                msgPrint(bleOn, bleSerial, "; ");
+                msgPrint(bleOn, bleSerial, "Dy: ");
+                msgPrintln(bleOn, bleSerial, tvc.pid_y.d);
                 break;
             default:
-                Serial.println("Invalid command");
-                bleSerial.println("Invalid command");
+                msgPrintln(bleOn, bleSerial, "Invalid command");
                 break;
         }
         newCommand = false;
@@ -414,51 +403,37 @@ void loop() {
     }
 
     if (!sensorOutLock) {
-        Serial.print("Accelerometer: ");
-        bleSerial.print("Accelerometer: ");
-        Serial.print(readings.ax);
-        bleSerial.print(readings.ax);
-        Serial.print(" ");
-        bleSerial.print(" ");
-        Serial.print(readings.ay);
-        bleSerial.print(readings.ay);
-        Serial.print(" ");
-        bleSerial.print(" ");
-        Serial.println(readings.az);
-        bleSerial.println(readings.az);
+        msgPrint(bleOn, bleSerial, "Accelerometer: ");
+        msgPrint(bleOn, bleSerial, readings.ax);
+        msgPrint(bleOn, bleSerial, " ");
+        msgPrint(bleOn, bleSerial, readings.ay);
+        msgPrint(bleOn, bleSerial, " ");
+        msgPrintln(bleOn, bleSerial, readings.az);
 
-        Serial.print("Gyroscope: ");
-        bleSerial.print("Gyroscope: ");
-        Serial.print(readings.gx);
-        bleSerial.print(readings.gx);
-        Serial.print(" ");
-        bleSerial.print(" ");
-        Serial.print(readings.gy);
-        bleSerial.print(readings.gy);
-        Serial.print(" ");
-        bleSerial.print(" ");
-        Serial.println(readings.gz);
-        bleSerial.println(readings.gz);
+        msgPrint(bleOn, bleSerial, "Gyroscope: ");
+        msgPrint(bleOn, bleSerial, readings.gx);
+        msgPrint(bleOn, bleSerial, " ");
+        msgPrint(bleOn, bleSerial, readings.gy);
+        msgPrint(bleOn, bleSerial, " ");
+        msgPrintln(bleOn, bleSerial, readings.gz);
     }
 
     if (!dirOutLock) {
-        Serial.print(yaw);
-        bleSerial.print(yaw);
-        Serial.print(" ");
-        bleSerial.print(" ");
-        Serial.println(pitch);
-        bleSerial.println(pitch);
+        msgPrint(bleOn, bleSerial, yaw);
+        msgPrint(bleOn, bleSerial, " ");
+        msgPrintln(bleOn, bleSerial, pitch);
     }
 
     if (logData) {
 
         DataPoint p;
-        p.timestamp = micros();
+        p.timestamp = lastMicros;
+        p.DELTA_T = DELTA_TIME;
         p.r = readings;
         p.o = Vec2D(yaw, pitch);
         p.x_out = x_out;
         p.y_out = y_out;
-        p.alt = getAltitude(config.PRESSURE_0);
+        p.alt = getAltitude(config.PRESSURE_0, pressureOffset);
         p.currentState = currentState;
         p.vert_vel = vertVel;
         p.px = tvc.pid_x.p;

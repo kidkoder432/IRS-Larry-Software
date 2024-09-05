@@ -18,6 +18,9 @@ void setup() {
     IMU.begin();
 
     pinMode(LED_BUILTIN, OUTPUT);
+    pinMode(LEDR, OUTPUT);
+    pinMode(LEDG, OUTPUT);
+    pinMode(LEDB, OUTPUT);
     biases = calibrateGyro();
     Serial.print(biases.bx);
     Serial.print(" ");
@@ -69,13 +72,6 @@ void loop() {
     Serial.print(" ");
     Serial.println(pitch);
 
-    if (digitalRead(3) == LOW) {
-        delay(20);
-        if (digitalRead(3) == LOW) {
-            showColor(COLOR_YELLOW);
-            yaw = pitch = 0;
-        }
-    }
 
     if (abs(yaw) >= 15) {
         showColor(COLOR_RED);
@@ -92,7 +88,7 @@ void loop() {
     }
 
 
-    delay(10);
+    delay(35);
     DELTA_TIME = (micros() - lastMicros) / 1000000.;
     lastMicros = micros();
 }

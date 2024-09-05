@@ -6,6 +6,7 @@
 
 struct DataPoint {
     long timestamp;         // Microseconds
+    float DELTA_T;           // Delta Time
     SensorReadings r;       // Sensor Readings
     Vec2D o;                // Current Orientation
     float x_out, y_out;     // TVC Outputs
@@ -52,86 +53,85 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
 
     dataFile.print(p.timestamp);
     dataFile.print(",");
-    dataFile.print(p.r.ax);
+    dataFile.print(p.DELTA_T, 6);
     dataFile.print(",");
-    dataFile.print(p.r.ay);
+    dataFile.print(p.r.ay, 6);
     dataFile.print(",");
-    dataFile.print(p.r.az);
+    dataFile.print(p.r.az, 6);
     dataFile.print(",");
-    dataFile.print(p.r.gx);
+    dataFile.print(p.r.gx, 6);
     dataFile.print(",");
-    dataFile.print(p.r.gy);
+    dataFile.print(p.r.gy, 6);
     dataFile.print(",");
-    dataFile.print(p.r.gz);
+    dataFile.print(p.r.gz, 6);
     dataFile.print(",");
-    dataFile.print(p.o.x);
+    dataFile.print(p.o.x, 6);
     dataFile.print(",");
-    dataFile.print(p.o.y);
+    dataFile.print(p.o.y, 6);
     dataFile.print(",");
-    dataFile.print(p.x_out);
+    dataFile.print(p.x_out, 6);
     dataFile.print(",");
-    dataFile.print(p.y_out);
+    dataFile.print(p.y_out, 6);
     dataFile.print(",");
-    dataFile.print(p.alt);
+    dataFile.print(p.alt, 6);
     dataFile.print(",");
     dataFile.print(p.currentState);
     dataFile.print(",");
-    dataFile.print(p.vert_vel);
+    dataFile.print(p.vert_vel, 6);
     dataFile.print(",");
-    dataFile.print(p.px);
+    dataFile.print(p.px, 6);
     dataFile.print(",");
-    dataFile.print(p.ix);
+    dataFile.print(p.ix, 6);
     dataFile.print(",");
-    dataFile.print(p.dx);
+    dataFile.print(p.dx, 6);
     dataFile.print(",");
-    dataFile.print(p.py);
+    dataFile.print(p.py, 6);
     dataFile.print(",");
-    dataFile.print(p.iy);
+    dataFile.print(p.iy, 6);
     dataFile.print(",");
-    dataFile.println(p.dy);
+    dataFile.print(p.dy, 6);
 
     dataFile.println();
-    Serial.println("Time,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
-    Serial.print(p.timestamp);
+    Serial.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
+    Serial.print(p.timestamp, 6);
     Serial.print(",");
-    Serial.print(p.r.ax);
+    Serial.print(p.DELTA_T, 6);
     Serial.print(",");
-    Serial.print(p.r.ay);
+    Serial.print(p.r.ay, 6);
     Serial.print(",");
-    Serial.print(p.r.az);
+    Serial.print(p.r.az, 6);
     Serial.print(",");
-    Serial.print(p.r.gx);
+    Serial.print(p.r.gx, 6);
     Serial.print(",");
-    Serial.print(p.r.gy);
+    Serial.print(p.r.gy, 6);
     Serial.print(",");
-    Serial.print(p.r.gz);
+    Serial.print(p.r.gz, 6);
     Serial.print(",");
-    Serial.print(p.o.x);
+    Serial.print(p.o.x, 6);
     Serial.print(",");
-    Serial.print(p.o.y);
+    Serial.print(p.o.y, 6);
     Serial.print(",");
-    Serial.print(p.x_out);
+    Serial.print(p.x_out, 6);
     Serial.print(",");
-    Serial.print(p.y_out);
+    Serial.print(p.y_out, 6);
     Serial.print(",");
-    Serial.print(p.alt);
+    Serial.print(p.alt, 6);
     Serial.print(",");
     Serial.print(p.currentState);
     Serial.print(",");
-    Serial.print(p.vert_vel);
+    Serial.print(p.vert_vel, 6);
     Serial.print(",");
-    Serial.print(p.px);
+    Serial.print(p.px, 6);
     Serial.print(",");
-    Serial.print(p.ix);
+    Serial.print(p.ix, 6);
     Serial.print(",");
-    Serial.print(p.dx);
+    Serial.print(p.dx, 6);
     Serial.print(",");
-    Serial.print(p.py);
+    Serial.print(p.py, 6);
     Serial.print(",");
-    Serial.print(p.iy);
+    Serial.print(p.iy, 6);
     Serial.print(",");
-    Serial.println(p.dy);
-
+    Serial.println(p.dy, 6);
     Serial.println();
     return true;
 
