@@ -89,7 +89,7 @@ Vec2D get_angles_complementary(double A, double dt, SensorReadings r, double yaw
 
     double angle_x = accel_angle_x * (1.0 - A) + gyro_angle_x * A;
 
-    double accel_angle_y = atan2(r.az, -sign(r.ay) * sqrt(r.az * r.az + r.ay * r.ay)) * 180 / PI;
+    double accel_angle_y = atan2(r.az, -r.ay) * 180 / PI;
     double gyro_angle_y = pitch + (w.y) * dt;
 
     double angle_y = accel_angle_y * (1.0 - A) + gyro_angle_y * A;
