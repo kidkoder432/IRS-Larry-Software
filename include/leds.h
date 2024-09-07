@@ -2,7 +2,7 @@
 
 #include <Arduino.h>
 
-const int DELAY_MS = 300;
+const int DELAY_MS = 100;
 
 struct Color {
     char r, g, b;
