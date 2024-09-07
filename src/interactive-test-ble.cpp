@@ -39,6 +39,8 @@ bool newCommand = false;
 bool dirOutLock = true;
 bool sensorOutLock = true;
 
+bool experimentMode = false;
+
 bool logData = true;
 bool led = true;
 File dataFile;
@@ -64,6 +66,7 @@ T: Activate Pyro 2 (Landing Legs Deploy)
 S: Read SD Card
 Q: Reset Angles
 P: Print PID Values
+E: Toggle Experiment/Test Mode
 Z: Switch Bluetooth to USB (override)
 H: Help)";
 
@@ -377,6 +380,20 @@ void loop() {
                 msgPrint(bleOn, bleSerial, "Dy: ");
                 msgPrintln(bleOn, bleSerial, tvc.pid_y.d);
                 break;
+            
+            case 'E':
+                experimentMode = !experimentMode;
+                break;
+                if (experimentMode) {
+                    currentState = 127;
+                    msgPrintln(bleOn, bleSerial, "Experiment Mode ON");
+                }
+                else {
+                    currentState = 42;
+                    msgPrintln(bleOn, bleSerial, "Experiment Mode OFF");
+                }
+                break;
+
             default:
                 msgPrintln(bleOn, bleSerial, "Invalid command");
                 break;
@@ -400,6 +417,11 @@ void loop() {
     }
     else {
         showColor(COLOR_OFF);
+    }
+
+    if (experimentMode) {
+        tvc.unlock();
+        logData = true;
     }
 
     if (!sensorOutLock) {
