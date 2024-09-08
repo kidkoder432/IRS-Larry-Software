@@ -38,7 +38,7 @@ long long lastMicros = micros();
 void loop() {
     // --- Read Sensors --- //
     IMU.readAcceleration(readings.ay, readings.ax, readings.az);
-    IMU.readGyroscope(readings.gx, readings.gy, readings.gz);
+    IMU.readGyroscope(readings.gy, readings.gx, readings.gz);
 
     // Serial.print(readings.gx - biases.bx);
     // Serial.print(" ");
@@ -51,7 +51,6 @@ void loop() {
     double wz = (readings.gz - biases.bz) * PI / 180;
 
     float norm = sqrt(pow(wx, 2) + pow(wy, 2) + pow(wz, 2));
-
 
     Quaternion QM = Quaternion::from_axis_angle(norm * DELTA_TIME, wx / norm, wy / norm, wz / norm);
 
@@ -85,16 +84,6 @@ void loop() {
             showColor(COLOR_LIGHTBLUE);
         }
     }
-
-    // Reset attitude if button is pressed (handle axis change with manual override)
-    if (digitalRead(3) == LOW) {
-        delay(20);
-        if (digitalRead(3) == LOW) {
-            showColor(COLOR_YELLOW);
-            attitude = Quaternion();
-        }
-    }
-
 
     delay(10);
     DELTA_TIME = (micros() - lastMicros) / 1000000.;

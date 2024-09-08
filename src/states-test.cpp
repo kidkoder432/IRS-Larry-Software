@@ -50,41 +50,49 @@ void loop() {
 
         case 4:
             showColor(COLOR_YELLOW);
+            break;
 
         case 5:
             showColor(COLOR_BLUE);
             break;
     }
 
-    // --- State Transitions --- //
+    if (millis() % 1000 < 10) {
+        // --- State Transitions --- //
 
-    // TOUCHDOWN: State 4 -> 5
-    if (currentState == 4 && mag3(readings.ax, readings.ay, readings.az) <= 1.5) {
-        Serial.println("Touchdown!");
-        Serial.println("Current State has changed from 4 (Powered Descent) to 5 (Landing Idle).");
-        Serial.println("Press RESET to restart.");
-        currentState = 5;
-    }
+        // TOUCHDOWN: State 4 -> 5
+        if (currentState == 4 && mag3(readings.ax, readings.ay, readings.az) <= 0.9) {
+            Serial.println("Touchdown!");
+            Serial.println("Current State has changed from 4 (Powered Descent) to 5 (Landing Idle).");
+            Serial.println("Press RESET to restart.");
+            currentState = 5;
 
-    // STAGE 2 IGNITION: State 3 -> 4
-    if (currentState == 3 && mag3(readings.ax, readings.ay, readings.az) >= 1.5) {
-        Serial.println("Stage 2 Ignition!");
-        Serial.println("Current State has changed from 3 (Coasting) to 4 (Powered Descent).");
-        currentState = 4;
-    }
+        }
 
-    // STAGE 1 BURNOUT: State 1 -> 3
-    if (currentState == 1 && mag3(readings.ax, readings.ay, readings.az) <= 1.1) {
-        currentState = 3;
-        Serial.println("Stage 1 Burnout!");
-        Serial.println("Current State has changed from 1 (Powered Ascent) to 3 (Coasting).");
-    }
+        // STAGE 2 IGNITION: State 3 -> 4
+        if (currentState == 3 && mag3(readings.ax, readings.ay, readings.az) >= 1.5) {
+            Serial.println("Stage 2 Ignition!");
+            Serial.println("Current State has changed from 3 (Coasting) to 4 (Powered Descent).");
+            currentState = 4;
+        }
 
-    // LIFTOFF: State 0 -> 1
-    if (currentState == 0 && mag3(readings.ax, readings.ay, readings.az) >= 1.5) {
-        currentState = 1;
-        Serial.println("Liftoff!");
-        Serial.println("Current State has changed from 0 (Pad-Idle) to 1 (Powered Ascent).");
+        // STAGE 1 BURNOUT: State 1 -> 3
+        if (currentState == 1 && mag3(readings.ax, readings.ay, readings.az) <= 0) {
+            currentState = 3;
+            Serial.println("Stage 1 Burnout!");
+            Serial.println("Current State has changed from 1 (Powered Ascent) to 3 (Coasting).");
+        }
+
+        // LIFTOFF: State 0 -> 1
+        if (currentState == 0 && mag3(readings.ax, readings.ay, readings.az) >= 1.5) {
+            currentState = 1;
+            Serial.println("Liftoff!");
+            Serial.println("Current State has changed from 0 (Pad-Idle) to 1 (Powered Ascent).");
+        }
+        delay(20);
+
     }
     lastMicros = micros();
+
+    
 }

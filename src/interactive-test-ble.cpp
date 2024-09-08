@@ -383,14 +383,17 @@ void loop() {
             
             case 'E':
                 experimentMode = !experimentMode;
-                break;
                 if (experimentMode) {
                     currentState = 127;
                     msgPrintln(bleOn, bleSerial, "Experiment Mode ON");
+                    tvc.unlock();
+                    logData = true;
                 }
                 else {
                     currentState = 42;
                     msgPrintln(bleOn, bleSerial, "Experiment Mode OFF");
+                    tvc.lock();
+                    logData = false;
                 }
                 break;
 
@@ -417,11 +420,6 @@ void loop() {
     }
     else {
         showColor(COLOR_OFF);
-    }
-
-    if (experimentMode) {
-        tvc.unlock();
-        logData = true;
     }
 
     if (!sensorOutLock) {

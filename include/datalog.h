@@ -55,6 +55,8 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
     dataFile.print(",");
     dataFile.print(p.DELTA_T, 6);
     dataFile.print(",");
+    dataFile.print(p.r.ax, 6);
+    dataFile.print(",");
     dataFile.print(p.r.ay, 6);
     dataFile.print(",");
     dataFile.print(p.r.az, 6);
