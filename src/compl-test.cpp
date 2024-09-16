@@ -21,7 +21,7 @@ void setup() {
     pinMode(LEDR, OUTPUT);
     pinMode(LEDG, OUTPUT);
     pinMode(LEDB, OUTPUT);
-    biases = calibrateGyro();
+    biases = calibrateSensors();
     Serial.print(biases.bx);
     Serial.print(" ");
     Serial.print(biases.by);
@@ -30,10 +30,8 @@ void setup() {
 
     float ax, ay, az;
     IMU.readAcceleration(ay, ax, az);
-    Serial.println(atan2(az, -ay) * 180 / PI);
     yaw = atan2(ax, -sign(ay) * sqrt(az * az + ay * ay)) * 180 / PI;
     pitch = atan2(az, -ay) * 180 / PI;
-    pinMode(3, INPUT_PULLUP);
 
 }
 
@@ -48,6 +46,18 @@ void loop() {
     // Serial.print(readings.gy);
     // Serial.print(" ");
     // Serial.println(readings.gz - biases.bz);
+
+    float mag3 = sqrtf(pow(readings.ax, 2) + pow(readings.ay, 2) + pow(readings.az, 2));
+
+    if (mag3 < 0.95 || mag3 > 1.05) {
+        digitalWrite(LED_BUILTIN, HIGH);
+        ALPHA = 0;
+    }
+
+    else {
+        digitalWrite(LED_BUILTIN, LOW);
+        ALPHA = 0.1;
+    }
 
     Vec2D dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, yaw, pitch, biases);
     yaw = dir.x;
@@ -88,7 +98,7 @@ void loop() {
     }
 
 
-    delay(35);
+    delay(10);
     DELTA_TIME = (micros() - lastMicros) / 1000000.;
     lastMicros = micros();
 }
