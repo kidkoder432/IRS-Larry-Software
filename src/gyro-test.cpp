@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <Serial.h>
 #include <orientation.h>
-#include <Arduino_BMI270_BMM150.h>
 #include <leds.h>
 
 
@@ -13,22 +12,18 @@ Biases biases;
 void setup() {
     Serial.begin(9600);
     delay(200);
-    IMU.begin();
 
-
-
+    initIMU();
 
     pinMode(LED_BUILTIN, OUTPUT);
-    biases = calibrateGyro();
+    showColor(COLOR_OFF);
+    biases = calibrateSensors();
     Serial.print(biases.bx);
     Serial.print(" ");
     Serial.print(biases.by);
     Serial.print(" ");
     Serial.println(biases.bz);
 
-    float ax, ay, az;
-    IMU.readAcceleration(ay, ax, az);
-    Serial.println(atan2(az, -ay) * 180 / PI);
     yaw = 0;
     pitch = 0;
 
@@ -39,29 +34,17 @@ void setup() {
 long long lastMicros = micros();
 void loop() {
     // --- Read Sensors --- //
-    IMU.readAcceleration(readings.ay, readings.ax, readings.az);
-    IMU.readGyroscope(readings.gy, readings.gx, readings.gz);
+    // IMU.readAcceleration(readings.ay, readings.ax, readings.az);
+    readSensors(readings, biases);
 
-    yaw -= (readings.gz - biases.bz) * DELTA_TIME;
-    pitch += (readings.gx - biases.bx) * DELTA_TIME;
+    // IMU.readGyroscope(readings.gy, readings.gx, readings.gz);
 
-    // Serial.print(readings.gx - biases.bx);
-    // Serial.print(" ");
-    // Serial.print(readings.gy);
-    // Serial.print(" ");
-    // Serial.println(readings.gz - biases.bz);
+    yaw -= (readings.gz) * DELTA_TIME;
+    pitch += (readings.gy) * DELTA_TIME;
 
     Serial.print(yaw);
     Serial.print(" ");
     Serial.println(pitch);
-
-    if (digitalRead(3) == LOW) {
-        delay(20);
-        if (digitalRead(3) == LOW) {
-            showColor(COLOR_YELLOW);
-            yaw = pitch = 0;
-        }
-    }
 
     if (abs(yaw) >= 15) {
         showColor(COLOR_RED);
@@ -78,7 +61,7 @@ void loop() {
     }
 
 
-    delay(10);
+    while (micros() - lastMicros < 9990) {}
     DELTA_TIME = (micros() - lastMicros) / 1000000.;
     lastMicros = micros();
 }

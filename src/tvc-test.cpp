@@ -23,7 +23,7 @@ void setup() {
 
     digitalWrite(LED_BUILTIN, LOW);
 
-    biases = calibrateGyro();
+    biases = calibrateSensors();
 
     float ax, ay, az;
     IMU.readAcceleration(ay, ax, az);

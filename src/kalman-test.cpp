@@ -20,14 +20,14 @@ void setup() {
     float ax, ay, az;
     IMU.readAcceleration(ay, ax, az);
     Serial.println(atan2(az, -ay) * 180 / PI);
-    yaw = atan2(ax, -ay) * 180 / PI;
+    yaw = atan2(ax, -sign(ay) * sqrt(az * az + ay * ay)) * 180 / PI;
     pitch = atan2(az, -ay) * 180 / PI;
 
     kx.setAngle(yaw);
     ky.setAngle(pitch);
 
     pinMode(LED_BUILTIN, OUTPUT);
-    biases = calibrateGyro();
+    biases = calibrateSensors();
     Serial.print(biases.bx);
     Serial.print(" ");
     Serial.print(biases.by);
@@ -41,19 +41,12 @@ long long lastMicros = micros();
 void loop() {
     // --- Read Sensors --- //
     IMU.readAcceleration(readings.ay, readings.ax, readings.az);
-    IMU.readGyroscope(readings.gx, readings.gy, readings.gz);
+    IMU.readGyroscope(readings.gy, readings.gx, readings.gz);
 
+    dir = get_angles_kalman(DELTA_TIME, readings, kx, ky, biases);
 
-    // --- Angle Calc --- //
-    // dir = get_angles_kalman(DELTA_TIME, readings, kx, ky, biases);
-    // dir = get_angles_complementary(DELTA_TIME, readings, x_angle, y_angle, biases);
-
-    // x_angle = dir.angle_x;
-    // y_angle = dir.angle_y;
-
-    yaw += (readings.gz - biases.bz) * DELTA_TIME;
-    pitch += (readings.gx - biases.bx) * DELTA_TIME;
-
+    yaw = dir.x;
+    pitch = dir.y;
 
     Serial.print(yaw);
     Serial.print(" ");

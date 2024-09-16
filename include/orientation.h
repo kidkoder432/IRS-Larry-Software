@@ -1,12 +1,14 @@
 // ORIENTATION CALCULATION
 
 #include <math.h>
-#include <Arduino_BMI270_BMM150.h>
+// #include <Arduino_BMI270_BMM150.h>
+#include <SparkFun_BMI270_Arduino_Library.h>
 #include <Kalman.h>
 
 // ========= Angles & Orientation ========= //
 
 double DELTA_TIME = 0.01; // Time step
+BMI270 imu;
 
 // ========= Sensor Variables ========= //
 struct SensorReadings {
@@ -35,11 +37,71 @@ struct Biases {
 
 };
 
-Biases calibrateGyro() {
+void initIMU() {
+    Wire1.begin();
+    imu.beginI2C(0x68, Wire1);
 
-    Serial.println("Starting Gyro Calibration...");
+    // Remap axes
+    // bmi2_remap remap;
+    // remap.x = BMI2_AXIS_NEG_Y;
+    // remap.y = BMI2_AXIS_NEG_X;
+    // remap.z = BMI2_AXIS_POS_Z;
+    // imu.remapAxes(remap);
+
+    // Configure accelerometer
+    bmi2_sens_config accConfig;
+    accConfig.type = BMI2_ACCEL;
+    accConfig.cfg.acc.odr = BMI2_ACC_ODR_100HZ;
+    accConfig.cfg.acc.range = BMI2_ACC_RANGE_16G;
+    accConfig.cfg.acc.bwp = BMI2_ACC_OSR4_AVG1;
+    accConfig.cfg.acc.filter_perf = BMI2_PERF_OPT_MODE;
+    imu.setConfig(accConfig);
+
+    // Configure gyroscope
+    bmi2_sens_config gyroConfig;
+    gyroConfig.type = BMI2_GYRO;
+    gyroConfig.cfg.gyr.odr = BMI2_GYR_ODR_100HZ;
+    gyroConfig.cfg.gyr.range = BMI2_GYR_RANGE_2000;
+    gyroConfig.cfg.gyr.noise_perf = BMI2_PERF_OPT_MODE;
+    gyroConfig.cfg.gyr.bwp = BMI2_GYR_OSR4_MODE;
+    gyroConfig.cfg.gyr.filter_perf = BMI2_PERF_OPT_MODE;
+    gyroConfig.cfg.gyr.noise_perf = BMI2_PERF_OPT_MODE;
+    imu.setConfig(gyroConfig);
+
+}
+
+void readSensors(SensorReadings& r, Biases biases) {
+    imu.getSensorData();
+
+    r.ax = imu.data.accelX;
+    r.ay = imu.data.accelY;
+    r.az = imu.data.accelZ;
+
+    r.gx = imu.data.gyroX - biases.bx;
+    r.gy = imu.data.gyroY - biases.by;
+    r.gz = imu.data.gyroZ - biases.bz;
+}
+
+Biases calibrateSensors() {
+
+    Serial.println("Starting Sensor Calibration...");
 
     digitalWrite(LED_BUILTIN, HIGH);
+
+    // Accelerometer + gyroscope CRT calibration
+    Serial.println("Performing component retrimming...");
+    imu.performComponentRetrim();
+
+    // Accelerometer + gyroscope FOC calibration
+    Serial.println("Performing acclerometer offset calibration...");
+    // imu.performAccelOffsetCalibration(BMI2_GRAVITY_POS_Z);
+    Serial.println("Performing gyroscope offset calibration...");
+    // imu.performGyroOffsetCalibration();
+
+    Serial.println();
+    Serial.println("Internal calibration complete!");
+    Serial.println("Starting static gyroscope offset calibration...");
+
     long long now = micros();
     double x_angle_c, y_angle_c, z_angle_c;
     x_angle_c = y_angle_c = z_angle_c = 0;
@@ -47,8 +109,11 @@ Biases calibrateGyro() {
     SensorReadings r;
     long long lastM = micros();
     while (micros() - now < 3000000LL) {
+        imu.getSensorData();
 
-        IMU.readGyroscope(r.gy, r.gx, r.gz);
+        r.gx = imu.data.gyroX;
+        r.gy = imu.data.gyroY;
+        r.gz = imu.data.gyroZ;
         x_angle_c += dt * r.gx;
         y_angle_c += dt * r.gy;
         z_angle_c += dt * r.gz;
@@ -67,16 +132,11 @@ Biases calibrateGyro() {
     return Biases(bx, by, bz);
 }
 
-Vec2D local_to_global(SensorReadings r, Biases b, double yaw, double pitch) {
-    double p = r.gx - b.bx * PI / 180;
-    double q = r.gy - b.by * PI / 180;
-    double r_ = r.gz - b.bz * PI / 180;
+Vec2D get_angles(SensorReadings r, Vec2D dir, double DELTA_TIME) {
+    double x = dir.x - r.gz * DELTA_TIME;
+    double y = dir.y + r.gx * DELTA_TIME;
 
-    double phidot = p + q * sin(yaw) * tan(pitch) + r_ * cos(yaw) * tan(pitch);
-    double thetadot = q * cos(yaw) - r_ * sin(yaw);
-
-    return Vec2D(phidot * 180 / PI, thetadot * 180 / PI);
-
+    return Vec2D(x, y);
 }
 
 // COMPLEMENTARY FILTERING (Written by hand)
@@ -100,7 +160,7 @@ Vec2D get_angles_complementary(double A, double dt, SensorReadings r, double yaw
 
 // KALMAN FILTERING
 Vec2D get_angles_kalman(double dt, SensorReadings r, Kalman& kx, Kalman& ky, Biases b) {
-    double accel_angle_x = atan2(r.ax, -r.ay) * 180 / PI;
+    double accel_angle_x = atan2(r.ax, -sign(r.ay) * sqrt(r.az * r.az + r.ay * r.ay)) * 180 / PI;
     double accel_angle_y = atan2(r.az, -r.ay) * 180 / PI;
 
     double kal_x = kx.getAngle(accel_angle_x, r.gz - b.bz, dt);
