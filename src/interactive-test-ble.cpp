@@ -3,7 +3,6 @@
 #include <Arduino.h>
 #include <Serial.h>
 #include <orientation.h>
-#include <Arduino_BMI270_BMM150.h>
 #include <leds.h>
 #include <datalog.h>
 #include <pyro.h>
@@ -91,15 +90,18 @@ void recvOneChar() {
 void setup() {
 
     // Init serial and sensors
-    Serial.begin(9600);
-    IMU.begin();
+    Serial.begin(115200);
+
+    initIMU();
     BARO.begin();
 
     // Init angles
-    float ax, ay, az;
-    IMU.readAcceleration(ay, ax, az);
-    yaw = atan2(ax, -sign(ay) * sqrt(az * az + ay * ay)) * 180 / PI;
-    pitch = atan2(az, ay) * 180 / PI;
+    readSensors(readings, biases);
+    yaw = atan2(readings.ax, -sign(readings.ay) * sqrt(readings.az * readings.az + readings.ay * readings.ay)) * 180 / PI;
+    pitch = atan2(readings.az, readings.ay) * 180 / PI;
+
+    dir.x = yaw;
+    dir.y = pitch;
 
     // Init pyros
     pinMode(PYRO_LANDING_LEGS_DEPLOY, OUTPUT);
@@ -163,8 +165,6 @@ void setup() {
         logStatus("Using complementary filter", logFile);
     }
 
-
-
     delay(1000);
 
     // Init BLE
@@ -221,15 +221,15 @@ void setup() {
     }
 
     // Calibrate Gyro
-    msgPrintln(bleOn, bleSerial, "Calibrating Gyro...");
-    logStatus("Calibrating Gyro", logFile);
-    biases = calibrateGyro();
+    msgPrintln(bleOn, bleSerial, "Calibrating Sensors...");
+    logStatus("Calibrating Sensors", logFile);
+    biases = calibrateSensors();
 
     char buf[64];
     snprintf(buf, sizeof(buf), "bx = %f, by = %f, bz = %f", biases.bx, biases.by, biases.bz);
 
     logStatus("Calibration complete", logFile);
-    logStatus(strcat(buf, "Calibration values: "), logFile);
+    logStatus(strcat("Calibration values: ", buf), logFile);
 
     msgPrintln(bleOn, bleSerial, "Initialized");
     msgPrintln(bleOn, bleSerial, R"(Welcome to Larry v1 Interactive Test Suite.
@@ -246,24 +246,16 @@ void loop() {
 
     recvOneChar();
 
-    IMU.readAcceleration(readings.ay, readings.ax, readings.az);
-    IMU.readGyroscope(readings.gy, readings.gx, readings.gz);
+    readSensors(readings, biases);
 
-    vertVel -= readings.ax * 9.80665 * DELTA_TIME;
+    vertVel -= readings.ay * 9.80665 * DELTA_TIME;
 
     Vec2D tvc_out = tvc.update(dir, DELTA_TIME);
     x_out = tvc_out.x;
     y_out = tvc_out.y;
 
-    if (config.FILTER_KALMAN) {
-        dir = get_angles_kalman(DELTA_TIME, readings, kx, ky, biases);
+    dir = get_angles(readings, dir, DELTA_TIME);
 
-    }
-
-    else {
-        dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, yaw, pitch, biases);
-
-    }
     yaw = dir.x;
     pitch = dir.y;
 
@@ -302,9 +294,9 @@ void loop() {
                 led = !led;
                 break;
             case 'C':
-                msgPrintln(bleOn, bleSerial, "Calibrating Gyro");
-                logStatus("Calibrating Gyro", logFile);
-                calibrateGyro();
+                msgPrintln(bleOn, bleSerial, "Calibrating Sensors");
+                logStatus("Calibrating Sensors", logFile);
+                calibrateSensors();
                 break;
             case 'O':
                 msgPrint(bleOn, bleSerial, "Orientation: ");
@@ -342,8 +334,7 @@ void loop() {
             case 'Q':
                 msgPrintln(bleOn, bleSerial, "Resetting Angles");
                 logStatus("Resetting Angles", logFile);
-                yaw = 0;
-                pitch = 0;
+                dir = Vec2D(0, 0);
                 break;
             case 'H':
                 msgPrintln(bleOn, bleSerial, HELP_STR);
@@ -380,7 +371,7 @@ void loop() {
                 msgPrint(bleOn, bleSerial, "Dy: ");
                 msgPrintln(bleOn, bleSerial, tvc.pid_y.d);
                 break;
-            
+
             case 'E':
                 experimentMode = !experimentMode;
                 if (experimentMode) {
@@ -441,7 +432,13 @@ void loop() {
     if (!dirOutLock) {
         msgPrint(bleOn, bleSerial, yaw);
         msgPrint(bleOn, bleSerial, " ");
-        msgPrintln(bleOn, bleSerial, pitch);
+        msgPrint(bleOn, bleSerial, pitch);
+        msgPrint(bleOn, bleSerial, " ");
+        msgPrint(bleOn, bleSerial, readings.gx);
+        msgPrint(bleOn, bleSerial, " ");
+        msgPrint(bleOn, bleSerial, readings.gy);
+        msgPrint(bleOn, bleSerial, " ");
+        msgPrintln(bleOn, bleSerial, readings.gz);
     }
 
     if (logData) {
