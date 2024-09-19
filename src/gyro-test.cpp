@@ -5,12 +5,15 @@
 
 
 double yaw, pitch;
-SensorReadings readings;
+SensorReadings readings, prevReadings;
 Vec2D dir;
 Biases biases;
 
+bool newCommand = false;
+char receivedChar;
+
 void setup() {
-    Serial.begin(9600);
+    Serial.begin(115200);
     delay(200);
 
     initIMU();
@@ -31,16 +34,43 @@ void setup() {
 
 }
 
+void recvOneChar() {
+    if (Serial.available() > 0) {
+        receivedChar = Serial.read();
+        receivedChar = toupper(receivedChar);
+        newCommand = true;
+    }
+    if (receivedChar == '\n' || receivedChar == '\r') {
+        newCommand = false;
+    }
+}
+
 long long lastMicros = micros();
 void loop() {
     // --- Read Sensors --- //
     // IMU.readAcceleration(readings.ay, readings.ax, readings.az);
     readSensors(readings, biases);
 
+    recvOneChar();
+
+    if (newCommand) {
+        switch (receivedChar) {
+            case 'Q':
+                yaw = 0;
+                pitch = 0;
+                dir = Vec2D(0, 0);
+                break;
+        }
+
+        newCommand = false;
+    }
+
     // IMU.readGyroscope(readings.gy, readings.gx, readings.gz);
 
-    yaw -= (readings.gz) * DELTA_TIME;
-    pitch += (readings.gy) * DELTA_TIME;
+    dir = get_angles(readings, prevReadings, dir, DELTA_TIME);
+
+    yaw = dir.x;
+    pitch = dir.y;
 
     Serial.print(yaw);
     Serial.print(" ");
@@ -61,7 +91,8 @@ void loop() {
     }
 
 
-    while (micros() - lastMicros < 9990) {}
+    while ((micros() - lastMicros) < 990) {}
     DELTA_TIME = (micros() - lastMicros) / 1000000.;
     lastMicros = micros();
+    prevReadings = readings;
 }
