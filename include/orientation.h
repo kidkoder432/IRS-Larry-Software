@@ -15,6 +15,8 @@ struct SensorReadings {
     float ax, ay, az;
     float gx, gy, gz;
 
+    SensorReadings() { ax = ay = az = 0; gx = gy = gz = 0; }
+
 };
 
 struct Vec2D {
@@ -41,12 +43,14 @@ void initIMU() {
     Wire1.begin();
     imu.beginI2C(0x68, Wire1);
 
+    int err;
+
     // Remap axes
-    // bmi2_remap remap;
-    // remap.x = BMI2_AXIS_NEG_Y;
-    // remap.y = BMI2_AXIS_NEG_X;
-    // remap.z = BMI2_AXIS_POS_Z;
-    // imu.remapAxes(remap);
+    bmi2_remap remap;
+    remap.x = BMI2_AXIS_NEG_Y;
+    remap.y = BMI2_AXIS_NEG_X;
+    remap.z = BMI2_AXIS_POS_Z;
+    imu.remapAxes(remap);
 
     // Configure accelerometer
     bmi2_sens_config accConfig;
@@ -55,18 +59,19 @@ void initIMU() {
     accConfig.cfg.acc.range = BMI2_ACC_RANGE_16G;
     accConfig.cfg.acc.bwp = BMI2_ACC_OSR4_AVG1;
     accConfig.cfg.acc.filter_perf = BMI2_PERF_OPT_MODE;
-    imu.setConfig(accConfig);
+    err = imu.setConfig(accConfig);
+    Serial.println(err);
 
     // Configure gyroscope
     bmi2_sens_config gyroConfig;
     gyroConfig.type = BMI2_GYRO;
-    gyroConfig.cfg.gyr.odr = BMI2_GYR_ODR_100HZ;
+    gyroConfig.cfg.gyr.odr = BMI2_GYR_ODR_400HZ;
     gyroConfig.cfg.gyr.range = BMI2_GYR_RANGE_2000;
-    gyroConfig.cfg.gyr.noise_perf = BMI2_PERF_OPT_MODE;
     gyroConfig.cfg.gyr.bwp = BMI2_GYR_OSR4_MODE;
     gyroConfig.cfg.gyr.filter_perf = BMI2_PERF_OPT_MODE;
     gyroConfig.cfg.gyr.noise_perf = BMI2_PERF_OPT_MODE;
-    imu.setConfig(gyroConfig);
+    err += imu.setConfig(gyroConfig);
+    Serial.println(err);
 
 }
 
@@ -132,26 +137,29 @@ Biases calibrateSensors() {
     return Biases(bx, by, bz);
 }
 
-Vec2D get_angles(SensorReadings r, Vec2D dir, double DELTA_TIME) {
-    double x = dir.x - r.gz * DELTA_TIME;
-    double y = dir.y + r.gx * DELTA_TIME;
+// GYRO-BASED ANGLE CALCULATION
+Vec2D get_angles(SensorReadings r, SensorReadings pr = SensorReadings(), Vec2D dir = Vec2D(0, 0), double dt = 0.02) {
+    double x = dir.x - ((r.gz + pr.gz) * dt / 2);
+    double y = dir.y + ((r.gy + pr.gy) * dt / 2);
+
+    x = x * 0.85 + dir.x * 0.15;
+    y = y * 0.85 + dir.y * 0.15;
 
     return Vec2D(x, y);
 }
 
-// COMPLEMENTARY FILTERING (Written by hand)
+// COMPLEMENTARY FILTERING
 Vec2D get_angles_complementary(double A, double dt, SensorReadings r, double yaw, double pitch, Biases b) {
 
     // Orientation w = local_to_global(r, b, yaw, pitch);
     Vec2D w = Vec2D(r.gz - b.bz, r.gx - b.bx);
+
     double accel_angle_x = atan2(r.ax, -sign(r.ay) * sqrt(r.az * r.az + r.ay * r.ay)) * 180 / PI;
     double gyro_angle_x = yaw - (w.x) * dt;
-
     double angle_x = accel_angle_x * (1.0 - A) + gyro_angle_x * A;
 
     double accel_angle_y = atan2(r.az, -r.ay) * 180 / PI;
     double gyro_angle_y = pitch + (w.y) * dt;
-
     double angle_y = accel_angle_y * (1.0 - A) + gyro_angle_y * A;
 
     return Vec2D(angle_x, angle_y);
