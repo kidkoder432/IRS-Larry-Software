@@ -45,13 +45,6 @@ void initIMU() {
 
     int err;
 
-    // Remap axes
-    bmi2_remap remap;
-    remap.x = BMI2_AXIS_NEG_Y;
-    remap.y = BMI2_AXIS_NEG_X;
-    remap.z = BMI2_AXIS_POS_Z;
-    imu.remapAxes(remap);
-
     // Configure accelerometer
     bmi2_sens_config accConfig;
     accConfig.type = BMI2_ACCEL;

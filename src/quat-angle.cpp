@@ -4,13 +4,12 @@
 #include <leds.h>
 #include <Quaternion.h>
 
-SensorReadings readings, prevReadings;
+SensorReadings readings;
 Vec2D dir;
 Biases biases;
 Quaternion attitude;
 
 double yaw, pitch, roll;
-double yaw_gyr, pitch_gyr;
 
 bool newCommand = false;
 char receivedChar;
@@ -60,8 +59,7 @@ void loop() {
                 dir = Vec2D(0, 0);
                 yaw = 0;
                 pitch = 0;
-                yaw_gyr = 0;
-                pitch_gyr = 0;
+                roll = 0;
                 // biases = calibrateSensors();
                 break;
         }
@@ -71,59 +69,68 @@ void loop() {
     }
 
     // Init Gyro Rate Quaternion
-    // X = roll, Y = pitch, Z = yaw
+    // X = pitch, Y = roll, Z = yaw
     double wx = readings.gx * (PI / 180);
     double wy = readings.gy * (PI / 180);
     double wz = readings.gz * (PI / 180);
 
-    norm = sqrt(wx * wx + wy * wy + wz * wz);
 
+    // Update attitude quaternion
+    norm = sqrt(wx * wx + wy * wy + wz * wz);
     norm = copysignf(max(abs(norm), 1e-9), norm); // NO DIVIDE BY 0
 
-    wx /= norm; 
+    wx /= norm;
     wy /= norm;
     wz /= norm;
 
     Quaternion QM = Quaternion::from_axis_angle(DELTA_TIME * norm, wx, wy, wz);
+    attitude = attitude * QM;
 
-    // Quaternion QM = Quaternion::from_euler_rotation(wz, wy, wx);
+    // --- Convert to Euler Angles --- //    
+    // Switch axes (X pitch, Y roll, Z yaw --> Z pitch, X roll, Y yaw)
+    float qw = attitude.a;
+    float qz = attitude.b;
+    float qx = attitude.c;
+    float qy = attitude.d;
 
-    // Quaternion multiplication
-    attitude *= QM;
-
-    // Convert to Euler angles
-
-    float sinr_cosp = 2 * (attitude.a * attitude.b + attitude.c * attitude.d);
-    float cosr_cosp = 1 - 2 * (attitude.b * attitude.b + attitude.c * attitude.c);
-    roll = atan2(sinr_cosp, cosr_cosp);
-
-
-    float sinp = 2.0f * (attitude.a * attitude.c - attitude.b * attitude.d);
-    if (abs(sinp) >= 1)
-        pitch = copysign(PI / 2, sinp); // return 90 if out of range
-    else
-        pitch = asin(sinp);
-
-    float siny_cosp = 2 * (attitude.a * attitude.d + attitude.b * attitude.c);
-    float cosy_cosp = 1 - 2 * (attitude.c * attitude.c + attitude.d * attitude.d);
-    yaw = atan2(siny_cosp, cosy_cosp);
+    // from https://www.euclideanspace.com/maths/standards/index.htm
+    if (qx * qy + qz * qw >= 0.5) {  // North pole
+        yaw = 2 * atan2(qx, qw);
+        pitch = PI / 2;
+        roll = 0;
+        digitalWrite(LED_BUILTIN, HIGH);
+    } else if (qx * qy + qz * qw <= -0.5) {  // South pole
+        yaw = -2 * atan2(qx, qw);
+        pitch = -PI / 2;
+        roll = 0;
+        digitalWrite(LED_BUILTIN, HIGH);
+    } else {
+        yaw = atan2(2 * qy * qw - 2 * qx * qz, 1 - 2 * qy * qy - 2 * qz * qz);
+        pitch = asin(2 * qx * qy + 2 * qz * qw);
+        roll = atan2(2 * qx * qw - 2 * qy * qz, 1 - 2 * qx * qx - 2 * qz * qz);
+        digitalWrite(LED_BUILTIN, LOW);
+    }
 
     attitude = attitude.normalize();
 
-    dir = get_angles(readings, prevReadings, dir, DELTA_TIME);
-
-    yaw_gyr = dir.x;
-    pitch_gyr = dir.y;
 
     pitch *= 180 / PI;
     yaw *= 180 / PI;
     roll *= 180 / PI;
 
-    Serial.print(yaw);
+    Serial.print(qw);
+    Serial.print(" ");
+    Serial.print(qx);
+    Serial.print(" ");
+    Serial.print(qy);
+    Serial.print(" ");
+    Serial.print(qz);
+    Serial.print(" ");
+    Serial.print(roll);
     Serial.print(" ");
     Serial.print(pitch);
     Serial.print(" ");
-    Serial.println(roll);
+    Serial.println(yaw);
 
     if (abs(yaw) >= 15) {
         showColor(COLOR_RED);
@@ -141,6 +148,5 @@ void loop() {
 
     delay(2);
     DELTA_TIME = (micros() - lastMicros) / 1000000.;
-    prevReadings = readings;
     lastMicros = micros();
 }
