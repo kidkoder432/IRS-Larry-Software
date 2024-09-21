@@ -13,7 +13,7 @@ scene = canvas(
     background=vec(0.2, 0.2, 0.2),
 )
 
-scene.forward = vector(0, 1, 1)
+scene.forward = vector(-1, -1, -1)
 
 scene.width = 600
 scene.height = 600
@@ -105,9 +105,9 @@ while True:
 
         # Uncomment to use Arduino-reported angles
         roll, pitch, yaw = map(float, line.split()[4:])
-        yaw *= pi / 180
-        pitch *= pi / 180
-        roll *= pi / 180
+        yaw *= -pi / 180
+        pitch *= -pi / 180
+        roll *= -pi / 180
         
         print(round(roll * 180 / pi, 2), round(pitch * 180 / pi, 2), round(yaw * 180 / pi, 2))
     else:
