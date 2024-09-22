@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <Servo.h> 
+#include <orientation.h>
 
 Servo myservo;  // create servo object to control a servo 
 String readString;
@@ -27,6 +28,7 @@ void loop() {
         int n = readString.toInt();  // convert readString into a number
         Serial.println(myservo.read());
         myservo.write(n);
+        Serial.println(myservo.read());
         readString = "";
     }
 }

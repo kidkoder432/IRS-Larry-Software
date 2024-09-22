@@ -18,7 +18,7 @@ public:
     }
 
     void begin() {
-        dir = Vec2D(0, 0);
+        dir = Vec3D(0, 0, 0);
         tvcx.attach(5);
         tvcy.attach(6);
 
@@ -29,7 +29,7 @@ public:
         tvcy.write(YDEF);
     }
 
-    Vec2D update(Vec2D o, double dt) {
+    Vec2D update(Vec3D o, double dt) {
         if (!locked) {
             dir = o;
             // Serial.println(dir.pitch);
@@ -64,15 +64,22 @@ public:
 
     }
 
-    /* Writes angles to TVC
-    *  - angle range: -10 to +10 */
+    // Writes angles to TVC
     void write(double x, double y) {
-        tvcx.write(x + 90);
-        tvcy.write(y + 90);
+        // if (x > XMAX) x = XMAX;
+        // if (x < XMIN) x = XMIN;
+        // if (y > YMAX) y = YMAX;
+        // if (y < YMIN) y = YMIN;
+        tvcx.write(x);
+        tvcy.write(y);
     }
 
     Vec2D getAngle() {
         return Vec2D(x_out, y_out);
+    }
+
+    Vec2D read() {
+        return Vec2D(tvcx.read(), tvcy.read());
     }
 
     void lock() {
@@ -118,7 +125,7 @@ private:
     double x_out;
     double y_out;
 
-    Vec2D dir;
+    Vec3D dir;
     boolean locked = false;
 
 };
