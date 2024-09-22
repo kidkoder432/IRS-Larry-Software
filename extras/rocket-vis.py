@@ -97,16 +97,17 @@ while True:
         ser = serial.Serial("COM6", 115200)  # Replace '/dev/ttyUSB0' with your serial port
         continue
 
-    if line and len(line.split(" ")) == 7:
+    if line and len(line.split(" ")) == 3:
         
         # Uncomment to convert quaternions on Python side
         # q0, q1, q2, q3 = map(float, line.split()[:4])
         # yaw, pitch, roll = quaternion_to_euler(q0, q1, q2, q3)
 
         # Uncomment to use Arduino-reported angles
-        roll, pitch, yaw = map(float, line.split()[4:])
+        yaw, pitch, roll = map(float, line.split())
         yaw *= -pi / 180
         pitch *= -pi / 180
+        # pitch += pi / 2
         roll *= -pi / 180
         
         print(round(roll * 180 / pi, 2), round(pitch * 180 / pi, 2), round(yaw * 180 / pi, 2))

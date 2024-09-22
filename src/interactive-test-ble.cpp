@@ -2,29 +2,33 @@
 
 #include <Arduino.h>
 #include <Serial.h>
-#include <orientation.h>
-#include <leds.h>
-#include <datalog.h>
-#include <pyro.h>
-#include <alt.h>
 #include <Servo.h>
-#include <Arduino_LPS22HB.h>
-#include <tvc.h>
-#include <config.h>
-#include <prints.h>
 
+#include <orientation.h>
+
+#include <tvc.h>
+#include <leds.h>
+#include <pyro.h>
+
+#include <alt.h>
+#include <Arduino_LPS22HB.h>
+
+#include <config.h>
+#include <datalog.h>
+#include <prints.h>
 #include <HardwareBLESerial.h>
 
 HardwareBLESerial& bleSerial = HardwareBLESerial::getInstance();
 bool bleOn = false;
 
-double yaw, pitch;
+double yaw, pitch, roll;
 TVC tvc;
 double x_out, y_out;
 SensorReadings readings;
-Vec2D dir;
+Vec3D dir;
 Biases biases;
 Kalman kx, ky;
+Quaternion attitude;
 Config config;
 long long lastMicros;
 
@@ -102,14 +106,15 @@ void setup() {
 
     dir.x = yaw;
     dir.y = pitch;
+    dir.z = 0;
+
+    attitude = Quaternion();
 
     // Init pyros
     pinMode(PYRO_LANDING_LEGS_DEPLOY, OUTPUT);
     pinMode(PYRO_LANDING_MOTOR_IGNITION, OUTPUT);
 
     // Init LEDs
-    pinMode(LED_BUILTIN, OUTPUT);
-
     pinMode(LEDR, OUTPUT);
     pinMode(LEDG, OUTPUT);
     pinMode(LEDB, OUTPUT);
@@ -228,8 +233,12 @@ void setup() {
     char buf[64];
     snprintf(buf, sizeof(buf), "bx = %f, by = %f, bz = %f", biases.bx, biases.by, biases.bz);
 
+
+    char calStr[128];
+    strcat(calStr, "Calibration values: ");
+    strcat(calStr, buf);
     logStatus("Calibration complete", logFile);
-    logStatus(strcat("Calibration values: ", buf), logFile);
+    logStatus(calStr, logFile);
 
     msgPrintln(bleOn, bleSerial, "Initialized");
     msgPrintln(bleOn, bleSerial, R"(Welcome to Larry v1 Interactive Test Suite.
@@ -254,7 +263,7 @@ void loop() {
     x_out = tvc_out.x;
     y_out = tvc_out.y;
 
-    dir = get_angles(readings, dir, DELTA_TIME);
+    dir = get_angles_quat(readings, attitude, DELTA_TIME);
 
     yaw = dir.x;
     pitch = dir.y;
@@ -294,9 +303,19 @@ void loop() {
                 led = !led;
                 break;
             case 'C':
-                msgPrintln(bleOn, bleSerial, "Calibrating Sensors");
+                msgPrintln(bleOn, bleSerial, "Calibrating Sensors...");
                 logStatus("Calibrating Sensors", logFile);
-                calibrateSensors();
+                biases = calibrateSensors();
+
+                char buf[64];
+                snprintf(buf, sizeof(buf), "bx = %f, by = %f, bz = %f", biases.bx, biases.by, biases.bz);
+
+
+                char calStr[128];
+                strcat(calStr, "Calibration values: ");
+                strcat(calStr, buf);
+                logStatus("Calibration complete", logFile);
+                logStatus(calStr, logFile);
                 break;
             case 'O':
                 msgPrint(bleOn, bleSerial, "Orientation: ");
@@ -334,7 +353,8 @@ void loop() {
             case 'Q':
                 msgPrintln(bleOn, bleSerial, "Resetting Angles");
                 logStatus("Resetting Angles", logFile);
-                dir = Vec2D(0, 0);
+                dir = Vec3D(0, 0, 0);
+                attitude = Quaternion();
                 break;
             case 'H':
                 msgPrintln(bleOn, bleSerial, HELP_STR);
@@ -430,15 +450,19 @@ void loop() {
     }
 
     if (!dirOutLock) {
+        // msgPrint(bleOn, bleSerial, attitude.a);
+        // msgPrint(bleOn, bleSerial, " ");
+        // msgPrint(bleOn, bleSerial, attitude.b);
+        // msgPrint(bleOn, bleSerial, " ");
+        // msgPrint(bleOn, bleSerial, attitude.c);
+        // msgPrint(bleOn, bleSerial, " ");
+        // msgPrint(bleOn, bleSerial, attitude.d);
+        // msgPrint(bleOn, bleSerial, " ");
         msgPrint(bleOn, bleSerial, yaw);
         msgPrint(bleOn, bleSerial, " ");
         msgPrint(bleOn, bleSerial, pitch);
         msgPrint(bleOn, bleSerial, " ");
-        msgPrint(bleOn, bleSerial, readings.gx);
-        msgPrint(bleOn, bleSerial, " ");
-        msgPrint(bleOn, bleSerial, readings.gy);
-        msgPrint(bleOn, bleSerial, " ");
-        msgPrintln(bleOn, bleSerial, readings.gz);
+        msgPrintln(bleOn, bleSerial, roll);
     }
 
     if (logData) {
