@@ -1,9 +1,11 @@
 // ORIENTATION CALCULATION
 
 #include <math.h>
-// #include <Arduino_BMI270_BMM150.h>
 #include <SparkFun_BMI270_Arduino_Library.h>
+#include <LSM6DSOX.h>
+
 #include <Kalman.h>
+#include <Quaternion.h>
 
 // ========= Angles & Orientation ========= //
 
@@ -27,6 +29,13 @@ struct Vec2D {
 
 };
 
+struct Vec3D {
+    double x, y, z;
+
+    Vec3D() { x = 0; y = 0; z = 0; }
+    Vec3D(double x, double y, double z) : x(x), y(y), z(z) {}
+};
+
 int sign(double x) {
     if (x == 0) return 0;
     return x > 0 ? 1 : -1;
@@ -38,6 +47,10 @@ struct Biases {
     Biases(float x, float y, float z) : bx(x), by(y), bz(z) {}
 
 };
+
+void initIMU_2040() {
+    IMU.begin();
+}
 
 void initIMU() {
     Wire1.begin();
@@ -68,6 +81,15 @@ void initIMU() {
 
 }
 
+void readSensors_2040(SensorReadings& r, Biases biases) {
+    IMU.readAcceleration(r.ax, r.ay, r.az);
+    IMU.readGyroscope(r.gx, r.gy, r.gz);
+
+    r.gx -= biases.bx;
+    r.gy -= biases.by;
+    r.gz -= biases.bz;
+} 
+
 void readSensors(SensorReadings& r, Biases biases) {
     imu.getSensorData();
 
@@ -80,11 +102,39 @@ void readSensors(SensorReadings& r, Biases biases) {
     r.gz = imu.data.gyroZ - biases.bz;
 }
 
+Biases calibrateSensors_2040() {
+    Serial.println("Starting Sensor Calibration...");
+
+    Serial.println("Starting static gyroscope offset calibration...");
+
+    long long now = micros();
+    double x_angle_c, y_angle_c, z_angle_c;
+    x_angle_c = y_angle_c = z_angle_c = 0;
+    double dt = 0.005;
+    SensorReadings r;
+    long long lastM = micros();
+    while (micros() - now < 3000000LL) {
+        IMU.readGyroscope(r.gx, r.gy, r.gz);
+        x_angle_c += dt * r.gx;
+        y_angle_c += dt * r.gy;
+        z_angle_c += dt * r.gz;
+        dt = (micros() - lastM) / 1000000.0;
+        lastM = micros();
+    }
+
+    Serial.println(y_angle_c);
+    Serial.println(micros() - now);
+
+    float bx = ((x_angle_c) / (double)(micros() - now)) * 1000000;
+    float by = ((y_angle_c) / (double)(micros() - now)) * 1000000;
+    float bz = ((z_angle_c) / (double)(micros() - now)) * 1000000;
+
+    return Biases(bx, by, bz);
+}
+
 Biases calibrateSensors() {
 
     Serial.println("Starting Sensor Calibration...");
-
-    digitalWrite(LED_BUILTIN, HIGH);
 
     // Accelerometer + gyroscope CRT calibration
     Serial.println("Performing component retrimming...");
@@ -125,7 +175,6 @@ Biases calibrateSensors() {
     float bx = ((x_angle_c) / (double)(micros() - now)) * 1000000;
     float by = ((y_angle_c) / (double)(micros() - now)) * 1000000;
     float bz = ((z_angle_c) / (double)(micros() - now)) * 1000000;
-    digitalWrite(LED_BUILTIN, LOW);
 
     return Biases(bx, by, bz);
 }
@@ -171,3 +220,55 @@ Vec2D get_angles_kalman(double dt, SensorReadings r, Kalman& kx, Kalman& ky, Bia
 
 }
 
+
+// QUATERNION BASED ANGLE CALCULATION
+// Returns yaw, pitch, roll
+Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude,double DELTA_TIME) {
+    double wx = readings.gx * (PI / 180);
+    double wy = readings.gy * (PI / 180);
+    double wz = readings.gz * (PI / 180);
+
+    double roll, pitch, yaw;
+
+    // Update attitude quaternion
+    float norm = sqrt(wx * wx + wy * wy + wz * wz);
+    norm = copysignf(max(abs(norm), 1e-9), norm); // NO DIVIDE BY 0
+
+    wx /= norm;
+    wy /= norm;
+    wz /= norm;
+
+    Quaternion QM = Quaternion::from_axis_angle(DELTA_TIME * norm, wx, wy, wz);
+    attitude = attitude * QM;
+
+    // --- Convert to Euler Angles --- //    
+    // Switch axes (X pitch, Y roll, Z yaw --> Z pitch, X roll, Y yaw)
+    float qw = attitude.a;
+    float qz = attitude.b;
+    float qx = attitude.c;
+    float qy = attitude.d;
+
+    // from https://www.euclideanspace.com/maths/standards/index.htm
+    if (qx * qy + qz * qw >= 0.5) {  // North pole
+        yaw = 2 * atan2(qx, qw);
+        pitch = PI / 2;
+        roll = 0;
+    } else if (qx * qy + qz * qw <= -0.5) {  // South pole
+        yaw = -2 * atan2(qx, qw);
+        pitch = -PI / 2;
+        roll = 0;
+    } else {
+        yaw = atan2(2 * qy * qw - 2 * qx * qz, 1 - 2 * qy * qy - 2 * qz * qz);
+        pitch = asin(2 * qx * qy + 2 * qz * qw);
+        roll = atan2(2 * qx * qw - 2 * qy * qz, 1 - 2 * qx * qx - 2 * qz * qz);
+    }
+
+    attitude = attitude.normalize();
+
+
+    pitch *= 180 / PI;
+    yaw *= 180 / PI;
+    roll *= 180 / PI;
+
+    return Vec3D(yaw, pitch, roll);
+}
