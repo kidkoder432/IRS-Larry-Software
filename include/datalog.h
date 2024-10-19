@@ -8,7 +8,7 @@ struct DataPoint {
     long timestamp;         // Microseconds
     float DELTA_T;           // Delta Time
     SensorReadings r;       // Sensor Readings
-    Vec2D o;                // Current Orientation
+    Vec3D o;                // Current Orientation
     float x_out, y_out;     // TVC Outputs
     float alt;              // Altitude
     int currentState;       // Current State
@@ -19,13 +19,34 @@ struct DataPoint {
 
 };
 
+
+
+
 bool logStatus(const char* msg, SDFile logFile) {
     if (!logFile) {
         Serial.println("Couldn't open file");
         return false;
     }
     long long t = micros();
-    logFile.print(t);
+    unsigned long totalSeconds = t / 1000000;
+
+    // Calculate hours, minutes, seconds, and the remaining microseconds
+    unsigned long hours = totalSeconds / 3600;
+    unsigned long minutes = (totalSeconds % 3600) / 60;
+    unsigned long seconds = totalSeconds % 60;
+    unsigned long microsPart = t % 1000000;
+
+    // Print in hh:mm:ss.micros format
+    logFile.print(hours);
+    logFile.print(":");
+    if (minutes < 10) logFile.print("0");  // Zero padding for minutes
+    logFile.print(minutes);
+    logFile.print(":");
+    if (seconds < 10) logFile.print("0");  // Zero padding for seconds
+    logFile.print(seconds);
+    logFile.print(".");
+    logFile.println(microsPart);
+
     logFile.print(" - ");
     logFile.println(msg);
 
@@ -45,10 +66,6 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
     if (!dataFile) {
         Serial.println("Couldn't open file");
         return false;
-    }
-
-    if (millis() % 300 == 0) {
-        dataFile.flush();
     }
 
     dataFile.print(p.timestamp);
@@ -94,6 +111,15 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
     dataFile.print(p.dy, 6);
 
     dataFile.println();
+
+    bool doFlush = true;
+    if (millis() % 1000 < 100 && doFlush) {
+        dataFile.flush();
+        doFlush = false;
+    }
+    else {
+        doFlush = true;
+    }
     Serial.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
     Serial.print(p.timestamp, 6);
     Serial.print(",");
