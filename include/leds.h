@@ -60,5 +60,8 @@ void LED(int currentState) {
         case 5:
             showColor(COLOR_BLUE);
             break;
+        case 127:
+            showColor(COLOR_RED);
+            break;
     }
 }
