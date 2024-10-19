@@ -21,6 +21,10 @@ struct SensorReadings {
 
 };
 
+// 2D Vector
+
+// For TVC:
+// x = yaw servo, y = pitch servo
 struct Vec2D {
     double x, y;
 
@@ -29,6 +33,13 @@ struct Vec2D {
 
 };
 
+// 3D Vector
+
+// For Orientation:
+// x = roll (cw = -), y = pitch (cw = +), z = yaw (cw = +)
+
+// For Accelerometer:
+// x = +up -down, y = +left -right, z = +forward -backward
 struct Vec3D {
     double x, y, z;
 
@@ -270,5 +281,5 @@ Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude,double DELTA
     yaw *= 180 / PI;
     roll *= 180 / PI;
 
-    return Vec3D(yaw, pitch, roll);
+    return Vec3D(roll, pitch, yaw);
 }

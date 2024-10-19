@@ -29,12 +29,13 @@ public:
         tvcy.write(YDEF);
     }
 
+    // X axis = yaw correction, Y axis = pitch correctin
     Vec2D update(Vec3D o, double dt) {
         if (!locked) {
             dir = o;
             // Serial.println(dir.pitch);
             // Serial.println(dir.yaw);
-            x_out = pid_x.update(0, dir.x, dt);
+            x_out = pid_x.update(0, dir.z, dt);
             y_out = pid_y.update(0, dir.y, dt);
             // Serial.print("X: ");
             // Serial.println(x_out);
