@@ -10,7 +10,7 @@
 #include <leds.h>
 #include <orientation.h>
 #include <pyro.h>
-#include <datalog.h>  // TODO: Implement
+#include <datalog.h>  
 #include <alt.h>
 #include "tvc.h"
 #include "config.h"
