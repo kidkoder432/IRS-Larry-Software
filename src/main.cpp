@@ -34,7 +34,7 @@ double altitude, maxAltitude = -10000000;
 
 // --------- Filter Init --------- //
 Biases biases;
-float ALPHA = 0.05;
+double ALPHA = 0.05;
 Kalman kx, ky;
 
 // --------- Landing --------- //
@@ -54,7 +54,7 @@ const int FLIGHT_LOG_FREQ = 40;     // Inflight logs @ 40 Hz
 FireTimer logTimer;
 File dataFile;
 char filename[64] = "data.csv";
-float vertVel;
+double vertVel;
 // --------- States --------- //
 int currentState = 0;
 
@@ -69,7 +69,7 @@ void setup() {
     BARO.begin();
 
     // Init angles
-    float ax, ay, az;
+    double ax, ay, az;
     IMU.readAcceleration(ay, ax, az);
     yaw = atan2(ax, -sign(ay) * sqrt(az * az + ay * ay)) * 180 / PI;
     pitch = atan2(az, -ay) * 180 / PI;

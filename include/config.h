@@ -8,8 +8,8 @@ const int chipSelect = 10; // Adjust pin according to your SD card module
 
 struct Config {
 
-    float PRESSURE_0 = 101.325;
-    float Kp = 0.0, Ki = 0.0, Kd = 0.0, N = 0.0;
+    double PRESSURE_0 = 101.325;
+    double Kp = 0.0, Ki = 0.0, Kd = 0.0, N = 0.0;
     int FILTER_KALMAN = false;
 
 };

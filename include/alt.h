@@ -1,7 +1,7 @@
 #include "Arduino_LPS22HB.h"
 #include <math.h>
 
-double calculateOffset(float pressureRef) {
+double calculateOffset(double pressureRef) {
     double avgPressure = 0;
 
     for (int i = 0; i < 100; i++) {
@@ -11,13 +11,13 @@ double calculateOffset(float pressureRef) {
     return avgPressure / 100 - pressureRef;
 }
 
-double getAltitude(float pressureRef, float offset) {
+double getAltitude(double pressureRef, double offset) {
 
-    float TEMP = BARO.readTemperature() + 273.15f;
+    double TEMP = BARO.readTemperature() + 273.15f;
     return TEMP / 0.0065f * (1 - pow((BARO.readPressure() - offset) / pressureRef, 1 / 5.255f));
 }
 
-double getAltitude_compl(float pressureRef, float offset, SensorReadings readings, double alt, double vertvel, double dt) {
+double getAltitude_compl(double pressureRef, double offset, SensorReadings readings, double alt, double vertvel, double dt) {
 
     double alt_baro = getAltitude(pressureRef, offset);
 

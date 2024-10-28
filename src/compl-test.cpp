@@ -28,7 +28,7 @@ void setup() {
     Serial.print(" ");
     Serial.println(biases.bz);
 
-    float ax, ay, az;
+    double ax, ay, az;
     IMU.readAcceleration(ay, ax, az);
     yaw = atan2(ax, -sign(ay) * sqrt(az * az + ay * ay)) * 180 / PI;
     pitch = atan2(az, -ay) * 180 / PI;
@@ -47,7 +47,7 @@ void loop() {
     // Serial.print(" ");
     // Serial.println(readings.gz - biases.bz);
 
-    float mag3 = sqrtf(pow(readings.ax, 2) + pow(readings.ay, 2) + pow(readings.az, 2));
+    double mag3 = sqrtf(pow(readings.ax, 2) + pow(readings.ay, 2) + pow(readings.az, 2));
 
     if (mag3 < 0.95 || mag3 > 1.05) {
         digitalWrite(LED_BUILTIN, HIGH);

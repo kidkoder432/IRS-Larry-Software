@@ -32,7 +32,7 @@ Quaternion attitude;
 Config config;
 long long lastMicros;
 
-float vertVel = 0;
+double vertVel = 0;
 
 double ALPHA = 0.05;
 
@@ -48,6 +48,9 @@ bool logData = true;
 bool led = true;
 File dataFile;
 File logFile;
+
+PyroChannel pyro1(PYRO_LANDING_MOTOR_IGNITION, 1000);
+PyroChannel pyro2(PYRO_LANDING_LEGS_DEPLOY, 1000);
 
 double pressureOffset = 0;
 
@@ -111,8 +114,8 @@ void setup() {
     attitude = Quaternion();
 
     // Init pyros
-    pinMode(PYRO_LANDING_LEGS_DEPLOY, OUTPUT);
-    pinMode(PYRO_LANDING_MOTOR_IGNITION, OUTPUT);
+    pyro1.begin();
+    pyro2.begin();
 
     // Init LEDs
     pinMode(LEDR, OUTPUT);
@@ -265,8 +268,12 @@ void loop() {
 
     dir = get_angles_quat(readings, attitude, DELTA_TIME);
 
-    yaw = dir.x;
+    roll = dir.x;
     pitch = dir.y;
+    yaw = dir.z;
+
+    pyro1.update();
+    pyro2.update();
 
     if (yaw > 180) {
         yaw = yaw - 360;
@@ -338,12 +345,12 @@ void loop() {
             case 'G':
                 msgPrintln(bleOn, bleSerial, "Pyro 1: Motor Ignition");
                 logStatus("Pyro 1: Motor Ignition", logFile);
-                fire_pyro_test(PYRO_LANDING_MOTOR_IGNITION);
+                pyro1.fire();
                 break;
             case 'T':
                 msgPrintln(bleOn, bleSerial, "Pyro 2: Landing Legs Deploy");
                 logStatus("Pyro 2: Landing Legs Deploy", logFile);
-                fire_pyro_test(PYRO_LANDING_LEGS_DEPLOY);
+                pyro2.fire();
                 break;
             case 'S':
                 msgPrintln(bleOn, bleSerial, "Reading SD Card Info");
@@ -471,7 +478,7 @@ void loop() {
         p.timestamp = lastMicros;
         p.DELTA_T = DELTA_TIME;
         p.r = readings;
-        p.o = Vec2D(yaw, pitch);
+        p.o = Vec3D(roll, pitch, yaw);
         p.x_out = x_out;
         p.y_out = y_out;
         p.alt = getAltitude(config.PRESSURE_0, pressureOffset);

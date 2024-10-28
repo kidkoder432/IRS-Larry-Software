@@ -34,7 +34,7 @@ Config config;
 
 long long lastMicros;
 
-float vertVel = 0;
+double vertVel = 0;
 
 bool logData = true;
 File dataFile;
@@ -232,7 +232,7 @@ void loop() {
             break;
         case 5:  // Touchdown
             break;
-        
+
         case 127:  // Abort
             logData = false;
             bleOn = false;
@@ -255,7 +255,7 @@ void loop() {
     // TOUCHDOWN: State 4 -> 5
     if (currentState == 4 && mag3(readings.ax, readings.ay, readings.az) <= 1.5) {
         currentState = 5;
-    }   
+    }
 
     // STAGE 2 IGNITION: State 3 -> 4
     if (currentState == 3 && mag3(readings.ax, readings.ay, readings.az) >= 1.5) {

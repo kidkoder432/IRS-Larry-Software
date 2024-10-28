@@ -1,5 +1,8 @@
 // ORIENTATION CALCULATION
 
+#ifndef ORIENTATION_H
+#define ORIENTATION_H
+
 #include <math.h>
 #include <SparkFun_BMI270_Arduino_Library.h>
 #include <LSM6DSOX.h>
@@ -14,8 +17,8 @@ BMI270 imu;
 
 // ========= Sensor Variables ========= //
 struct SensorReadings {
-    float ax, ay, az;
-    float gx, gy, gz;
+    double ax, ay, az;
+    double gx, gy, gz;
 
     SensorReadings() { ax = ay = az = 0; gx = gy = gz = 0; }
 
@@ -55,7 +58,7 @@ int sign(double x) {
 struct Biases {
     double bx, by, bz;
     Biases() { bx = by = bz = 0; };
-    Biases(float x, float y, float z) : bx(x), by(y), bz(z) {}
+    Biases(double x, double y, double z) : bx(x), by(y), bz(z) {}
 
 };
 
@@ -99,7 +102,7 @@ void readSensors_2040(SensorReadings& r, Biases biases) {
     r.gx -= biases.bx;
     r.gy -= biases.by;
     r.gz -= biases.bz;
-} 
+}
 
 void readSensors(SensorReadings& r, Biases biases) {
     imu.getSensorData();
@@ -136,9 +139,9 @@ Biases calibrateSensors_2040() {
     Serial.println(y_angle_c);
     Serial.println(micros() - now);
 
-    float bx = ((x_angle_c) / (double)(micros() - now)) * 1000000;
-    float by = ((y_angle_c) / (double)(micros() - now)) * 1000000;
-    float bz = ((z_angle_c) / (double)(micros() - now)) * 1000000;
+    double bx = ((x_angle_c) / (double)(micros() - now)) * 1000000;
+    double by = ((y_angle_c) / (double)(micros() - now)) * 1000000;
+    double bz = ((z_angle_c) / (double)(micros() - now)) * 1000000;
 
     return Biases(bx, by, bz);
 }
@@ -183,9 +186,9 @@ Biases calibrateSensors() {
     Serial.println(y_angle_c);
     Serial.println(micros() - now);
 
-    float bx = ((x_angle_c) / (double)(micros() - now)) * 1000000;
-    float by = ((y_angle_c) / (double)(micros() - now)) * 1000000;
-    float bz = ((z_angle_c) / (double)(micros() - now)) * 1000000;
+    double bx = ((x_angle_c) / (double)(micros() - now)) * 1000000;
+    double by = ((y_angle_c) / (double)(micros() - now)) * 1000000;
+    double bz = ((z_angle_c) / (double)(micros() - now)) * 1000000;
 
     return Biases(bx, by, bz);
 }
@@ -234,7 +237,7 @@ Vec2D get_angles_kalman(double dt, SensorReadings r, Kalman& kx, Kalman& ky, Bia
 
 // QUATERNION BASED ANGLE CALCULATION
 // Returns yaw, pitch, roll
-Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude,double DELTA_TIME) {
+Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, double DELTA_TIME) {
     double wx = readings.gx * (PI / 180);
     double wy = readings.gy * (PI / 180);
     double wz = readings.gz * (PI / 180);
@@ -242,7 +245,7 @@ Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude,double DELTA
     double roll, pitch, yaw;
 
     // Update attitude quaternion
-    float norm = sqrt(wx * wx + wy * wy + wz * wz);
+    double norm = sqrt(wx * wx + wy * wy + wz * wz);
     norm = copysignf(max(abs(norm), 1e-9), norm); // NO DIVIDE BY 0
 
     wx /= norm;
@@ -254,21 +257,23 @@ Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude,double DELTA
 
     // --- Convert to Euler Angles --- //    
     // Switch axes (X pitch, Y roll, Z yaw --> Z pitch, X roll, Y yaw)
-    float qw = attitude.a;
-    float qz = attitude.b;
-    float qx = attitude.c;
-    float qy = attitude.d;
+    double qw = attitude.a;
+    double qz = attitude.b;
+    double qx = attitude.c;
+    double qy = attitude.d;
 
     // from https://www.euclideanspace.com/maths/standards/index.htm
     if (qx * qy + qz * qw >= 0.5) {  // North pole
         yaw = 2 * atan2(qx, qw);
         pitch = PI / 2;
         roll = 0;
-    } else if (qx * qy + qz * qw <= -0.5) {  // South pole
+    }
+    else if (qx * qy + qz * qw <= -0.5) {  // South pole
         yaw = -2 * atan2(qx, qw);
         pitch = -PI / 2;
         roll = 0;
-    } else {
+    }
+    else {
         yaw = atan2(2 * qy * qw - 2 * qx * qz, 1 - 2 * qy * qy - 2 * qz * qz);
         pitch = asin(2 * qx * qy + 2 * qz * qw);
         roll = atan2(2 * qx * qw - 2 * qy * qz, 1 - 2 * qx * qx - 2 * qz * qz);
@@ -283,3 +288,5 @@ Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude,double DELTA
 
     return Vec3D(roll, pitch, yaw);
 }
+
+#endif

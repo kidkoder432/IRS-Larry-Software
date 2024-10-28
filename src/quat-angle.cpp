@@ -14,7 +14,7 @@ double yaw, pitch, roll;
 bool newCommand = false;
 char receivedChar;
 
-float norm;
+double norm;
 
 void setup() {
     Serial.begin(115200);
@@ -88,10 +88,10 @@ void loop() {
 
     // --- Convert to Euler Angles --- //    
     // Switch axes (X pitch, Y roll, Z yaw --> Z pitch, X roll, Y yaw)
-    float qw = attitude.a;
-    float qz = attitude.b;
-    float qx = attitude.c;
-    float qy = attitude.d;
+    double qw = attitude.a;
+    double qz = attitude.b;
+    double qx = attitude.c;
+    double qy = attitude.d;
 
     // from https://www.euclideanspace.com/maths/standards/index.htm
     if (qx * qy + qz * qw >= 0.5) {  // North pole
@@ -99,12 +99,14 @@ void loop() {
         pitch = PI / 2;
         roll = 0;
         digitalWrite(LED_BUILTIN, HIGH);
-    } else if (qx * qy + qz * qw <= -0.5) {  // South pole
+    }
+    else if (qx * qy + qz * qw <= -0.5) {  // South pole
         yaw = -2 * atan2(qx, qw);
         pitch = -PI / 2;
         roll = 0;
         digitalWrite(LED_BUILTIN, HIGH);
-    } else {
+    }
+    else {
         yaw = atan2(2 * qy * qw - 2 * qx * qz, 1 - 2 * qy * qy - 2 * qz * qz);
         pitch = asin(2 * qx * qy + 2 * qz * qw);
         roll = atan2(2 * qx * qw - 2 * qy * qz, 1 - 2 * qx * qx - 2 * qz * qz);

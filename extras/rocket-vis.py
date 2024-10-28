@@ -100,11 +100,11 @@ while True:
     if line and len(line.split(" ")) == 3:
         
         # Uncomment to convert quaternions on Python side
-        # q0, q1, q2, q3 = map(float, line.split()[:4])
+        # q0, q1, q2, q3 = map(double, line.split()[:4])
         # yaw, pitch, roll = quaternion_to_euler(q0, q1, q2, q3)
 
         # Uncomment to use Arduino-reported angles
-        yaw, pitch, roll = map(float, line.split())
+        yaw, pitch, roll = map(double, line.split())
         yaw *= -pi / 180
         pitch *= -pi / 180
         # pitch += pi / 2

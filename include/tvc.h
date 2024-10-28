@@ -107,11 +107,11 @@ private:
 
     // placeholder values; replace with actual limits
     const double XMIN = 83;  // TVC X Min
-    const double XMAX = 107; // TVC X Max
+    const double XMAX = 105; // TVC X Max
     const double YMIN = 73;  // TVC Y Min
-    const double YMAX = 97; // TVC Y Max
-    const double XDEF = 95;  // TVC X Default (zero position)
-    const double YDEF = 85;  // TVC Y Default (zero position)
+    const double YMAX = 95; // TVC Y Max
+    const double XDEF = 94;  // TVC X Default (zero position)
+    const double YDEF = 84;  // TVC Y Default (zero position)
 
     // --------- TVC Control --------- //
 

@@ -25,7 +25,7 @@ void setup() {
 
     biases = calibrateSensors();
 
-    float ax, ay, az;
+    double ax, ay, az;
     IMU.readAcceleration(ay, ax, az);
     Serial.println(atan2(az, -ay) * 180 / PI);
     yaw = atan2(ax, -sign(ay) * sqrt(az * az + ay * ay)) * 180 / PI;

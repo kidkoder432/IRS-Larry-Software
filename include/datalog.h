@@ -6,15 +6,15 @@
 
 struct DataPoint {
     long timestamp;         // Microseconds
-    float DELTA_T;           // Delta Time
+    double DELTA_T;           // Delta Time
     SensorReadings r;       // Sensor Readings
     Vec3D o;                // Current Orientation
-    float x_out, y_out;     // TVC Outputs
-    float alt;              // Altitude
+    double x_out, y_out;     // TVC Outputs
+    double alt;              // Altitude
     int currentState;       // Current State
-    float vert_vel;         // Vertical Velocity
-    float px, ix, dx;       // PID Values (X)
-    float py, iy, dy;       // PID Values (Y)
+    double vert_vel;         // Vertical Velocity
+    double px, ix, dx;       // PID Values (X)
+    double py, iy, dy;       // PID Values (Y)
 
 
 };
@@ -224,7 +224,7 @@ void sdCardInfo() {
     volumesize /= 1024;
     Serial.println(volumesize);
     Serial.print("Volume size (Gb):  ");
-    Serial.println((float)volumesize / 1024.0);
+    Serial.println((double)volumesize / 1024.0);
     Serial.println("\nFiles found on the card (name, date and size in bytes): ");
     root.openRoot(volume);
     // list all files in the card with date and size

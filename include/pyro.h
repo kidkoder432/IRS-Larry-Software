@@ -25,3 +25,116 @@ void fire_pyro_test(int pin) {
     delay(1000);
     digitalWrite(pin, 0);
 }
+
+class PyroChannel {
+public:
+    int pin;
+    long fireTime = 0;
+    bool activeLow = false;
+    bool oneShot = false;
+
+    PyroChannel(int pin, long fireTime) {
+        this->pin = pin;
+        this->fireTime = fireTime;
+        this->activeLow = false;
+        this->oneShot = false;
+
+    }
+    PyroChannel(int pin, long fireTime, bool activeLow) {
+        this->pin = pin;
+        this->fireTime = fireTime;
+        this->activeLow = activeLow;
+        this->oneShot = false;
+
+    }
+
+    PyroChannel(int pin, long fireTime, bool activeLow, bool oneShot) {
+        this->pin = pin;
+        this->fireTime = fireTime;
+        this->activeLow = activeLow;
+        this->oneShot = oneShot;
+
+    }
+
+    void begin() {
+        pinMode(this->pin, OUTPUT);
+        if (this->activeLow) {
+            digitalWrite(this->pin, 1);
+        }
+        else {
+            digitalWrite(this->pin, 0);
+        }
+    }
+
+    void arm() {
+        if (activeLow) {
+            digitalWrite(this->pin, 1);
+        }
+        else {
+            digitalWrite(this->pin, 0);
+        }
+        this->armed = true;
+    }
+
+    void disarm() {
+        this->stop();
+        this->armed = false;
+    }
+
+    void fire() {
+        if (!this->isFiring && this->armed) {
+            this->isFiring = true;
+            this->startTime = millis();
+        }
+    }
+
+    void stop() {
+        this->isFiring = false;
+        if (this->activeLow) {
+            digitalWrite(pin, 1);
+        }
+        else {
+            digitalWrite(pin, 0);
+        }
+    }
+
+    void update() {
+        if (this->isFiring && this->armed) {
+            if (millis() - this->startTime > this->fireTime) {
+                if (activeLow) {
+                    digitalWrite(this->pin, 1);
+                }
+                else {
+                    digitalWrite(this->pin, 0);
+                }
+                this->isFiring = false;
+            }
+            else {
+                if (this->oneShot) {
+                    this->armed = false;
+                }
+                if (this->activeLow) {
+                    digitalWrite(this->pin, 0);
+                }
+                else {
+                    digitalWrite(this->pin, 1);
+                }
+            }
+        }
+        else {
+            if (activeLow) {
+                digitalWrite(this->pin, 1);
+            }
+            else {
+                digitalWrite(this->pin, 0);
+            }
+        }
+
+    }
+
+private:
+    long long startTime = 0;
+    bool isFiring = false;
+    bool armed = false;
+
+};

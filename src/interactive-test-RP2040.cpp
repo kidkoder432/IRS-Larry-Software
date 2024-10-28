@@ -32,7 +32,7 @@ Quaternion attitude;
 Config config;
 long long lastMicros;
 
-float vertVel = 0;
+double vertVel = 0;
 
 double ALPHA = 0.05;
 
