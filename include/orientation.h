@@ -17,8 +17,8 @@ BMI270 imu;
 
 // ========= Sensor Variables ========= //
 struct SensorReadings {
-    double ax, ay, az;
-    double gx, gy, gz;
+    float ax, ay, az;
+    float gx, gy, gz;
 
     SensorReadings() { ax = ay = az = 0; gx = gy = gz = 0; }
 
