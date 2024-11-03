@@ -73,18 +73,21 @@ public:
         else {
             digitalWrite(this->pin, 0);
         }
-        this->armed = true;
+        this->isArmed = true;
     }
 
     void disarm() {
         this->stop();
-        this->armed = false;
+        this->isArmed = false;
     }
 
     void fire() {
-        if (!this->isFiring && this->armed) {
+        if (!this->isFiring && this->isArmed) {
             this->isFiring = true;
             this->startTime = millis();
+        }
+        if (!this->isArmed) {
+            Serial.println("ERROR: Pyro channel not armed!");
         }
     }
 
@@ -99,7 +102,7 @@ public:
     }
 
     void update() {
-        if (this->isFiring && this->armed) {
+        if (this->isFiring && this->isArmed) {
             if (millis() - this->startTime > this->fireTime) {
                 if (activeLow) {
                     digitalWrite(this->pin, 1);
@@ -111,7 +114,7 @@ public:
             }
             else {
                 if (this->oneShot) {
-                    this->armed = false;
+                    this->isArmed = false;
                 }
                 if (this->activeLow) {
                     digitalWrite(this->pin, 0);
@@ -135,6 +138,6 @@ public:
 private:
     long long startTime = 0;
     bool isFiring = false;
-    bool armed = false;
+    bool isArmed = false;
 
 };

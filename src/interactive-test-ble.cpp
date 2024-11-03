@@ -250,6 +250,8 @@ This test suite will test all components and features of the flight computer.)")
     delay(200);
     lastMicros = micros();
 
+    pyro1_motor.arm();
+    pyro2_land.arm();
 }
 
 void loop() {
@@ -345,14 +347,14 @@ void loop() {
             case 'G':
                 msgPrintln(bleOn, bleSerial, "Pyro 1: Motor Ignition");
                 logStatus("Pyro 1: Motor Ignition", logFile);
-                // pyro1_motor.fire();
-                fire_pyro_test(PYRO_LANDING_MOTOR_IGNITION);
+                pyro1_motor.fire();
+                // fire_pyro_test(PYRO_LANDING_MOTOR_IGNITION);
                 break;
             case 'T':
                 msgPrintln(bleOn, bleSerial, "Pyro 2: Landing Legs Deploy");
                 logStatus("Pyro 2: Landing Legs Deploy", logFile);
-                // pyro2_land.fire();
-                fire_pyro_test(PYRO_LANDING_LEGS_DEPLOY);
+                pyro2_land.fire();
+                // fire_pyro_test(PYRO_LANDING_LEGS_DEPLOY);
                 break;
             case 'S':
                 msgPrintln(bleOn, bleSerial, "Reading SD Card Info");
