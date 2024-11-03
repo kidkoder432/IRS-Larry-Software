@@ -49,8 +49,8 @@ bool led = true;
 File dataFile;
 File logFile;
 
-PyroChannel pyro1(PYRO_LANDING_MOTOR_IGNITION, 1000);
-PyroChannel pyro2(PYRO_LANDING_LEGS_DEPLOY, 1000);
+PyroChannel pyro1_motor(PYRO_LANDING_MOTOR_IGNITION, 1000);
+PyroChannel pyro2_land(PYRO_LANDING_LEGS_DEPLOY, 1000);
 
 double pressureOffset = 0;
 
@@ -114,8 +114,8 @@ void setup() {
     attitude = Quaternion();
 
     // Init pyros
-    pyro1.begin();
-    pyro2.begin();
+    pyro1_motor.begin();
+    pyro2_land.begin();
 
     // Init LEDs
     pinMode(LEDR, OUTPUT);
@@ -272,8 +272,8 @@ void loop() {
     pitch = dir.y;
     yaw = dir.z;
 
-    pyro1.update();
-    pyro2.update();
+    pyro1_motor.update();
+    pyro2_land.update();
 
     if (yaw > 180) {
         yaw = yaw - 360;
@@ -345,12 +345,14 @@ void loop() {
             case 'G':
                 msgPrintln(bleOn, bleSerial, "Pyro 1: Motor Ignition");
                 logStatus("Pyro 1: Motor Ignition", logFile);
-                pyro1.fire();
+                // pyro1_motor.fire();
+                fire_pyro_test(PYRO_LANDING_MOTOR_IGNITION);
                 break;
             case 'T':
                 msgPrintln(bleOn, bleSerial, "Pyro 2: Landing Legs Deploy");
                 logStatus("Pyro 2: Landing Legs Deploy", logFile);
-                pyro2.fire();
+                // pyro2_land.fire();
+                fire_pyro_test(PYRO_LANDING_LEGS_DEPLOY);
                 break;
             case 'S':
                 msgPrintln(bleOn, bleSerial, "Reading SD Card Info");

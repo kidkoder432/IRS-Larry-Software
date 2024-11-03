@@ -64,7 +64,7 @@ bool logStatus(const char* msg, SDFile logFile) {
 bool logDataPoint(DataPoint p, SDFile dataFile) {
 
     if (!dataFile) {
-        Serial.println("Couldn't open file");
+        Serial.println("Couldn't open data file");
         return false;
     }
 
@@ -87,6 +87,8 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
     dataFile.print(p.o.x, 6);
     dataFile.print(",");
     dataFile.print(p.o.y, 6);
+    dataFile.print(",");
+    dataFile.print(p.o.z, 6);
     dataFile.print(",");
     dataFile.print(p.x_out, 6);
     dataFile.print(",");
@@ -138,6 +140,8 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
     Serial.print(p.o.x, 6);
     Serial.print(",");
     Serial.print(p.o.y, 6);
+    Serial.print(",");
+    Serial.print(p.o.z, 6);
     Serial.print(",");
     Serial.print(p.x_out, 6);
     Serial.print(",");
