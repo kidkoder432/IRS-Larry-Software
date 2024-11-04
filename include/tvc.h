@@ -35,8 +35,8 @@ public:
             dir = o;
             // Serial.println(dir.pitch);
             // Serial.println(dir.yaw);
-            x_out = -dir.z; // pid_x.update(0, dir.z, dt);
-            y_out = -dir.y; // pid_y.update(0, dir.y, dt);
+            x_out = pid_x.update(0, dir.z, dt);
+            y_out = pid_y.update(0, dir.y, dt);
 
             Serial.print("X/Y Raw: ");
             Serial.print(x_out);
