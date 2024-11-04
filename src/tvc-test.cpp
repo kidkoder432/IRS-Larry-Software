@@ -4,19 +4,21 @@
 #include <leds.h>
 #include <tvc.h>
 
-double yaw, pitch;
+double roll, pitch, yaw;
 SensorReadings readings;
-Vec2D dir;
+Vec3D dir;
 Biases biases;
 TVC tvc;
+
+Quaternion attitude;
 
 
 double ALPHA = 0.05;
 
 void setup() {
-    Serial.begin(9600);
+    Serial.begin(115200);
     delay(200);
-    IMU.begin();
+    initIMU();
     tvc.begin();
 
     pinMode(LED_BUILTIN, OUTPUT);
@@ -25,24 +27,18 @@ void setup() {
 
     biases = calibrateSensors();
 
-    double ax, ay, az;
-    IMU.readAcceleration(ay, ax, az);
-    Serial.println(atan2(az, -ay) * 180 / PI);
-    yaw = atan2(ax, -sign(ay) * sqrt(az * az + ay * ay)) * 180 / PI;
-    pitch = atan2(az, -ay) * 180 / PI;
-
+    // double ax, ay, az;
+    // IMU.readAcceleration(ay, ax, az);
+    // Serial.println(atan2(az, -ay) * 180 / PI);
+    // yaw = atan2(ax, -sign(ay) * sqrt(az * az + ay * ay)) * 180 / PI;
+    // pitch = atan2(az, -ay) * 180 / PI;
+    attitude = Quaternion(1, 0, 0, 0);
 }
 
 
 long long lastMicros = micros();
 void loop() {
-    // --- Read Sensors --- //
-    IMU.readAcceleration(readings.ay, readings.ax, readings.az);
-    IMU.readGyroscope(readings.gy, readings.gx, readings.gz);
-
-    // --- Read Sensors --- //
-    IMU.readAcceleration(readings.ay, readings.ax, readings.az);
-    IMU.readGyroscope(readings.gy, readings.gx, readings.gz);
+    readSensors(readings, biases);
 
     // Serial.print(readings.gx - biases.bx);
     // Serial.print(" ");
@@ -50,12 +46,14 @@ void loop() {
     // Serial.print(" ");
     // Serial.println(readings.gz - biases.bz);
 
-    Vec2D dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, yaw, pitch, biases);
+    Vec3D dir = get_angles_quat(readings, attitude, DELTA_TIME);
 
     tvc.update(dir, DELTA_TIME);
 
-    yaw = dir.x;
+    roll = dir.x;
     pitch = dir.y;
+    yaw = dir.z;
+
 
     if (yaw > 180) {
         yaw = yaw - 360;
@@ -72,15 +70,6 @@ void loop() {
         pitch = pitch + 360;
     }
 
-    Serial.print("Yaw: ");
-    Serial.print(yaw);
-    Serial.print(" Pitch: ");
-    Serial.print(pitch);
-    Serial.print(" TVC Yaw: ");
-    Serial.print(tvc.getAngle().x);
-    Serial.print(" TVC Pitch: ");
-    Serial.println(tvc.getAngle().y);
-
 
     if (abs(yaw) >= 15) {
         showColor(COLOR_RED);
@@ -95,10 +84,6 @@ void loop() {
             showColor(COLOR_LIGHTBLUE);
         }
     }
-
-
-    delay(10);
-
 
     DELTA_TIME = (micros() - lastMicros) / 1000000.;
     lastMicros = micros();

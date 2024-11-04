@@ -104,12 +104,12 @@ void setup() {
 
     // Init angles
     readSensors(readings, biases);
-    yaw = atan2(readings.ax, -sign(readings.ay) * sqrt(readings.az * readings.az + readings.ay * readings.ay)) * 180 / PI;
-    pitch = atan2(readings.az, readings.ay) * 180 / PI;
+    yaw = atan2(readings.ax, sqrt(readings.az * readings.az + readings.ay * readings.ay));
+    pitch = atan2(readings.az, readings.ay);
 
-    dir.x = yaw;
-    dir.y = pitch;
-    dir.z = 0;
+    dir.x = 0;
+    dir.y = -pitch;
+    dir.z = -yaw;
 
     attitude = Quaternion();
 

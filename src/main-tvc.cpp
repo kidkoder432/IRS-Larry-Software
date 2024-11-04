@@ -62,8 +62,8 @@ void setup() {
     yaw = atan2(readings.ax, -sign(readings.ay) * sqrt(readings.az * readings.az + readings.ay * readings.ay)) * 180 / PI;
     pitch = atan2(readings.az, readings.ay) * 180 / PI;
 
-    dir.x = pitch;
-    dir.y = 0;
+    dir.x = 0;
+    dir.y = pitch;
     dir.z = yaw;
 
     attitude = Quaternion();
@@ -252,14 +252,9 @@ void loop() {
         currentState = 127;
     }
 
-    // TOUCHDOWN: State 4 -> 5
-    if (currentState == 4 && mag3(readings.ax, readings.ay, readings.az) <= 1.5) {
+    // TOUCHDOWN: State 3 -> 5
+    if (currentState == 3 && mag3(readings.ax, readings.ay, readings.az) <= 1.5) {
         currentState = 5;
-    }
-
-    // STAGE 2 IGNITION: State 3 -> 4
-    if (currentState == 3 && mag3(readings.ax, readings.ay, readings.az) >= 1.5) {
-        currentState = 4;
     }
 
     // STAGE 1 BURNOUT: State 1 -> 3

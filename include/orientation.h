@@ -37,10 +37,8 @@ struct Vec2D {
 };
 
 // 3D Vector
-
 // For Orientation:
 // x = roll (cw = -), y = pitch (cw = +), z = yaw (cw = +)
-
 // For Accelerometer:
 // x = +up -down, y = +left -right, z = +forward -backward
 struct Vec3D {
@@ -194,14 +192,16 @@ Biases calibrateSensors() {
 }
 
 // GYRO-BASED ANGLE CALCULATION
-Vec2D get_angles(SensorReadings r, SensorReadings pr = SensorReadings(), Vec2D dir = Vec2D(0, 0), double dt = 0.02) {
-    double x = dir.x - ((r.gz + pr.gz) * dt / 2);
-    double y = dir.y + ((r.gy + pr.gy) * dt / 2);
+Vec3D get_angles(SensorReadings r, SensorReadings pr = SensorReadings(), Vec3D dir = Vec3D(0, 0, 0), double dt = 0.02) {
+    double x = dir.x - ((r.gy + pr.gy) * dt / 2);
+    double y = dir.y + ((r.gx + pr.gx) * dt / 2);
+    double z = dir.z - ((r.gz + pr.gz) * dt / 2);
 
     x = x * 0.85 + dir.x * 0.15;
     y = y * 0.85 + dir.y * 0.15;
+    z = z * 0.85 + dir.z * 0.15;
 
-    return Vec2D(x, y);
+    return Vec3D(x, y, z);
 }
 
 // COMPLEMENTARY FILTERING
@@ -236,7 +236,7 @@ Vec2D get_angles_kalman(double dt, SensorReadings r, Kalman& kx, Kalman& ky, Bia
 
 
 // QUATERNION BASED ANGLE CALCULATION
-// Returns yaw, pitch, roll
+// Returns roll, pitch, yaw
 Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, double DELTA_TIME) {
     double wx = readings.gx * (PI / 180);
     double wy = readings.gy * (PI / 180);
@@ -281,10 +281,9 @@ Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, double DELT
 
     attitude = attitude.normalize();
 
-
+    roll *= 180 / PI;
     pitch *= 180 / PI;
     yaw *= 180 / PI;
-    roll *= 180 / PI;
 
     return Vec3D(roll, pitch, yaw);
 }

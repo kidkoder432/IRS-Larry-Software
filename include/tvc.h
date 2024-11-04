@@ -35,12 +35,23 @@ public:
             dir = o;
             // Serial.println(dir.pitch);
             // Serial.println(dir.yaw);
-            x_out = pid_x.update(0, dir.z, dt);
-            y_out = pid_y.update(0, dir.y, dt);
-            // Serial.print("X: ");
-            // Serial.println(x_out);
-            // Serial.print("Y: ");
-            // Serial.println(y_out);
+            x_out = -dir.z; // pid_x.update(0, dir.z, dt);
+            y_out = -dir.y; // pid_y.update(0, dir.y, dt);
+
+            Serial.print("X/Y Raw: ");
+            Serial.print(x_out);
+            Serial.print(" ");
+            Serial.println(y_out);
+            Quaternion tvcQuat(0, 0, x_out * PI / 180, y_out * PI / 180);
+            Quaternion rollQuat = Quaternion::from_axis_angle(dir.x * PI / 180, 1, 0, 0);
+
+            Quaternion correctedQuat = (rollQuat * tvcQuat) * rollQuat.conj();
+            x_out = correctedQuat.c * 180 / PI;
+            y_out = correctedQuat.d * 180 / PI;
+            Serial.print("X/Y Adjust: ");
+            Serial.print(x_out);
+            Serial.print(" ");
+            Serial.println(y_out);
             tvcx.write(x_out);
             tvcy.write(y_out);
 

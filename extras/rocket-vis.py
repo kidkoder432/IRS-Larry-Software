@@ -13,7 +13,7 @@ scene = canvas(
     background=vec(0.2, 0.2, 0.2),
 )
 
-scene.forward = vector(-1, -1, -1)
+scene.forward = vector(-1, 0, 0)
 
 scene.width = 600
 scene.height = 600
@@ -46,9 +46,10 @@ nano = box(
 rocket = compound([bBoard, bn, nano])
 
 # Initialize serial port
-ser = serial.Serial("COM6", 115200)  # Replace '/dev/ttyUSB0' with your serial port
+ser = serial.Serial("COM9", 115200)  # Replace '/dev/ttyUSB0' with your serial port
 
 roll, pitch, yaw = 0, 0, 0
+
 
 def quaternion_to_euler(qw, qx, qy, qz):
     """
@@ -83,6 +84,7 @@ def quaternion_to_euler(qw, qx, qy, qz):
 
     return yaw, pitch, roll
 
+
 t = 0
 
 # Main lop to continuously read serial data and update rocket's orientation
@@ -94,23 +96,30 @@ while True:
         line = None
         print("Serial communication error")
         input("Press Enter to retry...")
-        ser = serial.Serial("COM6", 115200)  # Replace '/dev/ttyUSB0' with your serial port
+        ser = serial.Serial(
+            "COM9", 115200
+        )  # Replace '/dev/ttyUSB0' with your serial port
         continue
 
     if line and len(line.split(" ")) == 3:
-        
+
         # Uncomment to convert quaternions on Python side
         # q0, q1, q2, q3 = map(double, line.split()[:4])
         # yaw, pitch, roll = quaternion_to_euler(q0, q1, q2, q3)
 
         # Uncomment to use Arduino-reported angles
-        yaw, pitch, roll = map(double, line.split())
+        roll, pitch, yaw = map(float, line.split())
+        # pitch += 90
         yaw *= -pi / 180
         pitch *= -pi / 180
         # pitch += pi / 2
         roll *= -pi / 180
-        
-        print(round(roll * 180 / pi, 2), round(pitch * 180 / pi, 2), round(yaw * 180 / pi, 2))
+
+        print(
+            round(roll * 180 / pi, 2),
+            round(pitch * 180 / pi, 2),
+            round(yaw * 180 / pi, 2),
+        )
     else:
         print("Invalid line, skipping...")
 
