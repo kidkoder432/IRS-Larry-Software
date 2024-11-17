@@ -53,6 +53,7 @@ void setup() {
 
     // Init serial and sensors
     Serial.begin(115200);
+    delay(2000);
 
     // Init pyros
     pinMode(PYRO_LANDING_LEGS_DEPLOY, OUTPUT);
