@@ -174,8 +174,6 @@ void setup() {
     logStatus(calStr, logFile);
 
     msgPrintln(bleOn, bleSerial, "Initialized");
-    msgPrintln(bleOn, bleSerial, R"(Welcome to Larry v1 Interactive Test Suite.
-This test suite will test all components and features of the flight computer.)");
 
     delay(200);
     lastMicros = micros();

@@ -1,8 +1,8 @@
 #include <Arduino.h>
-#include <Serial.h>
 #include <HardwareBLESerial.h>
 
-
+#ifndef PRINTS_H
+#define PRINTS_H
 
 void msgPrint(bool bleOn, HardwareBLESerial& bleSerial, const char* msg) {
     Serial.print(msg);
@@ -44,5 +44,4 @@ void msgPrintln(bool bleOn, HardwareBLESerial& bleSerial, double msg) {
     if (bleOn) bleSerial.println(msg);
 }
 
-
-
+#endif

@@ -1,8 +1,10 @@
 #include <Arduino.h>
-#include <Serial.h>
-#include <Servo.h>
 #include <pid.h>
 
+#define ROLL_TEST 1
+#define PRINT_OUTPUT 1
+
+double clamp(double x, double min, double max) { return (x < min) ? min : (x > max) ? max : x; }
 
 class TVC {
 public:
@@ -35,38 +37,49 @@ public:
             dir = o;
             // Serial.println(dir.pitch);
             // Serial.println(dir.yaw);
+            #if ROLL_TEST
             x_out = pid_x.update(0, dir.z, dt);
             y_out = pid_y.update(0, dir.y, dt);
+            
+            #else
+            x_out = -dir.z;
+            y_out = -dir.y;
 
+            #endif
+
+            #if PRINT_OUTPUT 
             Serial.print("X/Y Raw: ");
             Serial.print(x_out);
             Serial.print(" ");
-            Serial.println(y_out);
-            Quaternion tvcQuat(0, 0, x_out * PI / 180, y_out * PI / 180);
-            Quaternion rollQuat = Quaternion::from_axis_angle(dir.x * PI / 180, 1, 0, 0);
+            Serial.print(y_out);
+            Serial.print("\t");
+            #endif
+            Quaternion tvcQuat(0, 0, (y_out - YDEF) * PI / 180, (x_out - XDEF) * PI / 180);
+            Quaternion rollQuat = Quaternion::from_axis_angle(-dir.x * PI / 180, 1, 0, 0);
 
             Quaternion correctedQuat = (rollQuat * tvcQuat) * rollQuat.conj();
-            x_out = correctedQuat.c * 180 / PI;
-            y_out = correctedQuat.d * 180 / PI;
+            x_out = correctedQuat.d * 180 / PI + XDEF;
+            y_out = correctedQuat.c * 180 / PI + YDEF;
+
+            #if PRINT_OUTPUT
             Serial.print("X/Y Adjust: ");
             Serial.print(x_out);
             Serial.print(" ");
             Serial.println(y_out);
-            tvcx.write(x_out);
-            tvcy.write(y_out);
+            #endif
+
+            x_out = clamp(x_out, XMIN, XMAX);
+            y_out = clamp(y_out, YMIN, YMAX);
+
+            write(x_out, y_out);
 
             return Vec2D(x_out, y_out);
 
         }
         else {
-            // Serial.print("X: ");
-            // Serial.println(x_out);
-            // Serial.print("Y: ");
-            // Serial.println(y_out);
             x_out = XDEF;
             y_out = YDEF;
-            tvcx.write(x_out);
-            tvcy.write(y_out);
+            write(x_out, y_out);
             pid_x.reset();
             pid_y.reset();
 
@@ -78,10 +91,10 @@ public:
 
     // Writes angles to TVC
     void write(double x, double y) {
-        // if (x > XMAX) x = XMAX;
-        // if (x < XMIN) x = XMIN;
-        // if (y > YMAX) y = YMAX;
-        // if (y < YMIN) y = YMIN;
+        if (x > XMAX) x = XMAX;
+        if (x < XMIN) x = XMIN;
+        if (y > YMAX) y = YMAX;
+        if (y < YMIN) y = YMIN;
         tvcx.write(x);
         tvcy.write(y);
     }

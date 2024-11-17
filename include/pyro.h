@@ -1,6 +1,5 @@
 // PYROTECHNIC CHANNELS
 
-#include <Serial.h>
 #include "Arduino.h" 
 #include <FireTimer.h>
 

@@ -54,6 +54,14 @@ void loop() {
     pitch = dir.y;
     yaw = dir.z;
 
+    Serial.print("Roll: ");
+    Serial.print(roll);
+    Serial.print(" ");
+    Serial.print("Pitch: ");
+    Serial.print(pitch);
+    Serial.print(" ");
+    Serial.print("Yaw: ");
+    Serial.println(yaw);
 
     if (yaw > 180) {
         yaw = yaw - 360;
