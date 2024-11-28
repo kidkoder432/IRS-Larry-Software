@@ -5,9 +5,6 @@
 #define ACTUAL_PID 1
 #define PRINT_OUTPUT 1
 
-#define FLIP_X 0
-#define FLIP_Y 0
-
 double clamp(double x, double min, double max) { return (x < min) ? min : (x > max) ? max : x; }
 
 class TVC {
@@ -16,23 +13,25 @@ public:
     PID pid_x;
     PID pid_y;
 
-    void updatePID(PID& pid, double _Kp, double _Ki, double _Kd, double filterN) {
-        pid.Kp = _Kp;
-        pid.Ki = _Ki;
-        pid.Kd = _Kd;
-        pid.N = filterN;
-    }
+    void configure(Config2& config) {
+        P = config["Kp"];
+        I = config["Ki"];
+        D = config["Kd"];
+        N = config["N"];
 
-    void updateBounds(Config2& config) {
         XMIN = config["XMIN"];
         XMAX = config["XMAX"];
-
         YMIN = config["YMIN"];
         YMAX = config["YMAX"];
 
         XDEF = config["XDEF"];
         YDEF = config["YDEF"];
 
+        pid_x.update_gains(P, I, D, N);
+        pid_y.update_gains(P, I, D, N);
+
+        FLIP_X = config["FLIP_X"] > 0;
+        FLIP_Y = config["FLIP_Y"] > 0;
     }
 
     void begin() {
@@ -82,12 +81,10 @@ public:
 
             x_out = (x_out * 180 / PI) + XDEF;
             y_out = (y_out * 180 / PI) + YDEF;
-            #if FLIP_X
-                x_out = -x_out; 
-            #endif 
-            #if FLIP_Y
-                y_out = -y_out; 
-            #endif
+            
+            if (FLIP_X) x_out = -x_out;
+            if (FLIP_Y) y_out = -y_out;
+
 #if PRINT_OUTPUT
 
             x_out = clamp(x_out, XMIN, XMAX);
@@ -166,16 +163,16 @@ private:
 
     // --------- TVC Control --------- //
 
-    // old PID values
-    // P = 8.58679935818825;
-    // I = 12.4428493210038;
-    // D = 0.482664861486399;
-    const double P = 1.2;
-    const double I = 0.1;
-    const double D = 0.1;
+    double P = 1.2;
+    double I = 0.1;
+    double D = 0.1;
+    double N = 50;
 
     double x_out;
     double y_out;
+
+    bool FLIP_X = false;
+    bool FLIP_Y = false;
 
     Vec3D dir;
     boolean locked = false;

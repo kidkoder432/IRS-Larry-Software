@@ -11,7 +11,7 @@
 
 const int chipSelect = 10; // Adjust pin according to your SD card module
 
-typedef std::unordered_map<const char*, double> Config2;
+typedef std::unordered_map<std::string, double> Config2;
 
 void toLowercase(char* str) {
     for (int i = 0; str[i] != '\0'; i++) {
@@ -52,14 +52,6 @@ Config2 defaultConfig = {
     {"FILTER_KALMAN", true}
 };
 
-struct Config {
-
-    double PRESSURE_0 = 101.325;
-    double Kp = 0.0, Ki = 0.0, Kd = 0.0, N = 0.0;
-    int FILTER_KALMAN = false;
-
-};
-
 Config2 readConfig() {
     Config2 config;
 
@@ -73,7 +65,7 @@ Config2 readConfig() {
     // Read each setting from the file.
     while (cfg.readNextSetting()) {
 
-        const char* name = cfg.getName();
+        std::string name = std::string(cfg.getName());
         const char* value = cfg.getValue();
 
         if (strcmp(value, "true") == 0) {
@@ -84,17 +76,32 @@ Config2 readConfig() {
             config[name] = 0.0;
         }
         else {
+            Serial.println(name.c_str());
             config[name] = atof(value);
         }
 
 
-        
+
     }
     // clean up
     cfg.end();
 
+    for (auto& entry : config) {
+        Serial.print(entry.first.c_str());
+        Serial.print(": ");
+        Serial.println(entry.second);
+    }
+
     return config;
 
+}
+
+void printConfig(Config2& config) {
+    for (auto& entry : config) {
+        Serial.print(entry.first.c_str());
+        Serial.print(": ");
+        Serial.println(entry.second);
+    }
 }
 
 struct Config {
@@ -159,7 +166,7 @@ Config2 readConfig_TEST() {
         if (configFile.peek() == '#') {
             Serial.print("Comment. Next char is: ");
             configFile.readStringUntil('\n');
-            Serial.println((char) configFile.peek());
+            Serial.println((char)configFile.peek());
             continue;
         }
         else {
@@ -188,7 +195,7 @@ Config2 readConfig_TEST() {
 
     Serial.println("Printing config:");
     for (auto& elem : defaultConfig) {
-        Serial.print(elem.first);
+        Serial.print(elem.first.c_str());
         Serial.print("=");
         Serial.println(elem.second);
     }

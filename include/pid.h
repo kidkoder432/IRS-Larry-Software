@@ -3,15 +3,17 @@
 class PID {
 public:
 
-    double Kp;
-    double Ki;
-    double Kd;
-
     double p;
     double i;
     double d;
 
-    double N;
+    void update_gains(double _Kp, double _Ki, double _Kd, double _FilterN) {
+        Kp = _Kp;
+        Ki = _Ki;
+        Kd = _Kd;
+        N = _FilterN;
+    }
+
     void begin(double _Kp, double _Ki, double _Kd, double _b, double _dt, double _min, double _max) {
         Kp = _Kp;
         Ki = _Ki;
@@ -62,6 +64,11 @@ public:
         error = 0;
     }
 private:
+
+    double Kp;
+    double Ki;
+    double Kd;
+    double N;
 
     double bias;
     double dt;

@@ -31,7 +31,7 @@ Vec3D dir;
 Biases biases;
 Kalman kx, ky;
 Quaternion attitude;
-Config config;
+Config2 config;
 long long lastMicros;
 
 double vertVel = 0;
@@ -164,18 +164,13 @@ void setup() {
     // Init TVC
     tvc.begin();
     tvc.lock();
-    tvc.updatePID(tvc.pid_x, config["Kp"], config["Ki"], config["Kd"], config["N"]);
-    tvc.updatePID(tvc.pid_y, config["Kp"], config["Ki"], config["Kd"], config["N"]);
+
+    tvc.configure(config);
+
     Serial.println("TVC initialized");
     logStatus("TVC initialized", logFile);
-    Serial.print("Kp: ");
-    Serial.println(config["Kp"]);
-    Serial.print("Ki: ");
-    Serial.println(config["Ki"]);
-    Serial.print("Kd: ");
-    Serial.println(config["Kd"]);
-    Serial.print("N: ");
-    Serial.println(config["N"]);
+    
+    printConfig(config);
 
     delay(1000);
 

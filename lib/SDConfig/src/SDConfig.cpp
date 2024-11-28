@@ -5,10 +5,15 @@
  * a version of which should have been supplied with this file.
  */
 
-/*
- * Removes leading and trailing whitespace from the given string.
- * Returns the modified string.
- */
+#include <SDConfig.h>
+
+#include <string.h>
+#include <ctype.h>
+
+ /*
+  * Removes leading and trailing whitespace from the given string.
+  * Returns the modified string.
+  */
 char* trim(char* str) {
     char* end;
 
@@ -28,21 +33,19 @@ char* trim(char* str) {
     }
 
     // Write new null terminator
-    *(end+1) = '\0';
+    *(end + 1) = '\0';
 
     return str;
 }
 
-#include <SDConfig.h>
-
- /*
-  * Opens the given file on the SD card.
-  * Returns true if successful, false if not.
-  *
-  * configFileName = the name of the configuration file on the SD card.
-  *
-  * NOTE: SD.begin() must be called before calling our begin().
-  */
+/*
+ * Opens the given file on the SD card.
+ * Returns true if successful, false if not.
+ *
+ * configFileName = the name of the configuration file on the SD card.
+ *
+ * NOTE: SD.begin() must be called before calling our begin().
+ */
 boolean SDConfig::begin(const char* configFileName, uint8_t maxLineLength) {
     _lineLength = 0;
     _lineSize = 0;
