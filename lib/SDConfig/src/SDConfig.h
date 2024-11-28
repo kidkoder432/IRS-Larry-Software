@@ -11,12 +11,14 @@
 #ifndef SDConfig_h
 #define SDConfig_h
 
+#define SDCONFIG_DEBUG 1
+
 #include <Arduino.h>
-#include <SD.h>
+#include <SdFat.h>
 
 class SDConfig {
   private:
-    File _file;            // the open configuration file
+    ExFile _file;            // the open configuration file
     boolean _atEnd;        // If true, there is no more of the file to read.
     char *_line;           // the current line of the file (see _lineLength)
                            // Allocated by begin().

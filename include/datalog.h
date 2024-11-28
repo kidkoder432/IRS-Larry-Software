@@ -1,9 +1,9 @@
 // DATA LOGGING 
 #include <Arduino.h>
 #include <SPI.h>
-#include <SD.h>
+#include <SdFat.h>
 
-
+#define DEBUG 0
 struct DataPoint {
     long timestamp;         // Microseconds
     double DELTA_T;           // Delta Time
@@ -22,8 +22,8 @@ struct DataPoint {
 
 
 
-bool logStatus(const char* msg, SDFile logFile) {
-    if (!logFile) {
+bool logStatus(const char* msg, ExFile& logFile) {
+    if (!logFile.isOpen()) {
         Serial.println("Couldn't open file");
         return false;
     }
@@ -45,14 +45,14 @@ bool logStatus(const char* msg, SDFile logFile) {
     if (seconds < 10) logFile.print("0");  // Zero padding for seconds
     logFile.print(seconds);
     logFile.print(".");
-    logFile.println(microsPart);
+    logFile.print(microsPart);
 
     logFile.print(" - ");
     logFile.println(msg);
 
     bool doFlush = true;
     if (millis() % 1000 < 100 && doFlush) {
-        logFile.flush();
+        logFile.sync();
         doFlush = false;
     }
     else {
@@ -61,9 +61,9 @@ bool logStatus(const char* msg, SDFile logFile) {
     return true;
 };
 
-bool logDataPoint(DataPoint p, SDFile dataFile) {
+bool logDataPoint(DataPoint p, ExFile& dataFile) {
 
-    if (!dataFile) {
+    if (!dataFile.isOpen()) {
         Serial.println("Couldn't open data file");
         return false;
     }
@@ -116,12 +116,13 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
 
     bool doFlush = true;
     if (millis() % 1000 < 100 && doFlush) {
-        dataFile.flush();
+        dataFile.sync();
         doFlush = false;
     }
     else {
         doFlush = true;
     }
+#if DEBUG
     Serial.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
     Serial.print(p.timestamp, 6);
     Serial.print(",");
@@ -165,156 +166,143 @@ bool logDataPoint(DataPoint p, SDFile dataFile) {
     Serial.print(",");
     Serial.println(p.dy, 6);
     Serial.println();
+#endif
     return true;
 
 }
 
 // Helper function to list files recursively
-void listFiles(fs::FS& fs, const char* dirname, uint8_t levels) {
-    File root = fs.open(dirname);
-    if (!root) {
-        Serial.println("Failed to open directory");
-        return;
-    }
-    if (!root.isDirectory()) {
-        Serial.println("Not a directory");
-        return;
-    }
+// void listFiles(fs::FS& fs, const char* dirname, uint8_t levels) {
+//     File root = fs.open(dirname);
+//     if (!root) {
+//         Serial.println("Failed to open directory");
+//         return;
+//     }
+//     if (!root.isDirectory()) {
+//         Serial.println("Not a directory");
+//         return;
+//     }
 
-    File file = root.openNextFile();
-    while (file) {
-        if (file.isDirectory()) {
-            Serial.print("DIR : ");
-            Serial.println(file.name());
-            if (levels) {
-                listFiles(fs, file.name(), levels - 1);
-            }
-        }
-        else {
-            Serial.print("FILE: ");
-            Serial.print(file.name());
-            Serial.print("\tSIZE: ");
-            Serial.println(file.size());
-        }
-        file = root.openNextFile();
-    }
-}
+//     File file = root.openNextFile();
+//     while (file) {
+//         if (file.isDirectory()) {
+//             Serial.print("DIR : ");
+//             Serial.println(file.name());
+//             if (levels) {
+//                 listFiles(fs, file.name(), levels - 1);
+//             }
+//         }
+//         else {
+//             Serial.print("FILE: ");
+//             Serial.print(file.name());
+//             Serial.print("\tSIZE: ");
+//             Serial.println(file.size());
+//         }
+//         file = root.openNextFile();
+//     }
+// }
 
-void checkSDCard() {
-    // Initialize SD card
-    if (!SD.begin(10)) {
-        Serial.println("Initialization failed. Things to check:");
-        Serial.println("* Is a card inserted?");
-        Serial.println("* Is your wiring correct?");
-        Serial.println("* Did you set the correct CS pin?");
-        return;
-    }
-    else {
-        Serial.println("Wiring is correct and a card is present.");
-    }
-
-    // Print card type
-    Serial.println();
-    Serial.print("Card type:         ");
-    switch (SD.cardType()) {
-        case CARD_NONE:
-            Serial.println("No SD card attached");
-            return;
-        case CARD_MMC:
-            Serial.println("MMC");
-            break;
-        case CARD_SD:
-            Serial.println("SDSC");
-            break;
-        case CARD_SDHC:
-            Serial.println("SDHC");
-            break;
-        default:
-            Serial.println("Unknown");
-    }
-
-    // Print volume information
-    uint64_t cardSize = SD.cardSize() / (1024 * 1024);
-    Serial.print("Card size (MB):    ");
-    Serial.println(cardSize);
-
-    uint64_t usedBytes = SD.usedBytes() / (1024 * 1024);
-    uint64_t totalBytes = SD.totalBytes() / (1024 * 1024);
-    Serial.print("Used space (MB):   ");
-    Serial.println(usedBytes);
-    Serial.print("Total space (MB):  ");
-    Serial.println(totalBytes);
-
-    // List files on the card
-    Serial.println("\nFiles found on the card (name and size): ");
-    listFiles(SD, "/", 0);
-}
-
-
-
-// void sdCardInfo() {
-//     Sd2Card card;
-//     SdVolume volume;
-//     SdFile root;
-
-//     Serial.print("\nInitializing SD card...");
-//     // we'll use the initialization code from the utility libraries
-//     // since we're just testing if the card is working!
-//     if (!card.init(SPI_HALF_SPEED, 10)) {
-//         Serial.println("initialization failed. Things to check:");
-//         Serial.println("* is a card inserted?");
-//         Serial.println("* is your wiring correct?");
-//         Serial.println("* did you change the chipSelect pin to match your shield or module?");
-//         while (1);
+// void checkSDCard() {
+//     // Initialize SD card
+//     if (!SD.begin(10)) {
+//         Serial.println("Initialization failed. Things to check:");
+//         Serial.println("* Is a card inserted?");
+//         Serial.println("* Is your wiring correct?");
+//         Serial.println("* Did you set the correct CS pin?");
+//         return;
 //     }
 //     else {
 //         Serial.println("Wiring is correct and a card is present.");
 //     }
-//     // print the type of card
+
+//     // Print card type
 //     Serial.println();
 //     Serial.print("Card type:         ");
-//     switch (card.type()) {
-//         case SD_CARD_TYPE_SD1:
-//             Serial.println("SD1");
+//     switch (SD.cardType()) {
+//         case CARD_NONE:
+//             Serial.println("No SD card attached");
+//             return;
+//         case CARD_MMC:
+//             Serial.println("MMC");
 //             break;
-//         case SD_CARD_TYPE_SD2:
-//             Serial.println("SD2");
+//         case CARD_SD:
+//             Serial.println("SDSC");
 //             break;
-//         case SD_CARD_TYPE_SDHC:
+//         case CARD_SDHC:
 //             Serial.println("SDHC");
 //             break;
 //         default:
 //             Serial.println("Unknown");
 //     }
-//     // Now we will try to open the 'volume'/'partition' - it should be FAT16 or FAT32
-//     if (!volume.init(card)) {
-//         Serial.println("Could not find FAT16/FAT32 partition.\nMake sure you've formatted the card");
-//         while (1);
-//     }
-//     Serial.print("Clusters:          ");
-//     Serial.println(volume.clusterCount());
-//     Serial.print("Blocks x Cluster:  ");
-//     Serial.println(volume.blocksPerCluster());
-//     Serial.print("Total Blocks:      ");
-//     Serial.println(volume.blocksPerCluster() * volume.clusterCount());
-//     Serial.println();
-//     // print the type and size of the first FAT-type volume
-//     uint32_t volumesize;
-//     Serial.print("Volume type is:    FAT");
-//     Serial.println(volume.fatType(), DEC);
-//     volumesize = volume.blocksPerCluster();    // clusters are collections of blocks
-//     volumesize *= volume.clusterCount();       // we'll have a lot of clusters
-//     volumesize /= 2;                           // SD card blocks are always 512 bytes (2 blocks are 1KB)
-//     Serial.print("Volume size (Kb):  ");
-//     Serial.println(volumesize);
-//     Serial.print("Volume size (Mb):  ");
-//     volumesize /= 1024;
-//     Serial.println(volumesize);
-//     Serial.print("Volume size (Gb):  ");
-//     Serial.println((double)volumesize / 1024.0);
-//     Serial.println("\nFiles found on the card (name, date and size in bytes): ");
-//     root.openRoot(volume);
-//     // list all files in the card with date and size
-//     root.ls(LS_R | LS_DATE | LS_SIZE);
-//     root.close();
+
+//     // Print volume information
+//     uint64_t cardSize = SD.cardSize() / (1024 * 1024);
+//     Serial.print("Card size (MB):    ");
+//     Serial.println(cardSize);
+
+//     uint64_t usedBytes = SD.usedBytes() / (1024 * 1024);
+//     uint64_t totalBytes = SD.totalBytes() / (1024 * 1024);
+//     Serial.print("Used space (MB):   ");
+//     Serial.println(usedBytes);
+//     Serial.print("Total space (MB):  ");
+//     Serial.println(totalBytes);
+
+//     // List files on the card
+//     Serial.println("\nFiles found on the card (name and size): ");
+//     listFiles(SD, "/", 0);
 // }
+
+
+
+void sdCardInfo() {
+    SdExFat sd;
+    // Initialize the SD card
+  if (!sd.begin(10, SPI_FULL_SPEED)) {
+    Serial.println("SD card initialization failed!");
+    return;
+  }
+
+  // Print card type
+  uint8_t cardType = sd.card()->type();
+  Serial.print("Card Type: ");
+  switch (cardType) {
+    case SD_CARD_TYPE_SD1: Serial.println("SD1"); break;
+    case SD_CARD_TYPE_SD2: Serial.println("SD2"); break;
+    case SD_CARD_TYPE_SDHC: Serial.println("SDHC/SDXC"); break;
+    default: Serial.println("Unknown"); break;
+  }
+
+  // Retrieve sector-based information
+  uint64_t sectorCount = sd.card()->sectorCount();
+  uint64_t sectorsPerCluster = sd.vol()->sectorsPerCluster();  // 1 block = 1 sector in SdFat
+  uint64_t freeSectorCount = (uint64_t)sd.vol()->freeClusterCount() * sectorsPerCluster;
+
+  // Print sector information
+  Serial.print("Total Sectors: ");
+  Serial.println(sectorCount);
+
+  Serial.print("Sectors Per Cluster: ");
+  Serial.println(sectorsPerCluster);
+
+  Serial.print("Free Sectors: ");
+  Serial.println(freeSectorCount);
+
+  Serial.print("Used Sectors: ");
+  Serial.println(sectorCount - freeSectorCount);
+
+  // Calculate card size (512 bytes per sector)
+  uint64_t cardSize = sectorCount * 512;  // Convert sectors to bytes
+  Serial.print("Card Size: ");
+  Serial.print(cardSize / (1024 * 1024));  // Convert bytes to MB
+  Serial.println(" MB");
+
+  // Calculate free space
+  uint64_t freeSpace = freeSectorCount * 512;  // Convert sectors to bytes
+  Serial.print("Free Space: ");
+  Serial.print(freeSpace / (1024 * 1024));  // Convert bytes to MB
+  Serial.println(" MB");
+
+  // List files and directories
+  Serial.println("Listing files on the card:");
+  sd.ls(LS_R | LS_DATE | LS_SIZE);  // Recursive, show date and size
+}
