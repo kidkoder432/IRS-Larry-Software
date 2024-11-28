@@ -18,6 +18,8 @@
 #include <prints.h>
 #include <HardwareBLESerial.h>
 
+#define SD_ATTACHED 1
+
 HardwareBLESerial& bleSerial = HardwareBLESerial::getInstance();
 bool bleOn = false;
 
@@ -46,8 +48,10 @@ bool experimentMode = false;
 
 bool logData = true;
 bool led = true;
-File dataFile;
-File logFile;
+
+SdExFat sd;
+ExFile dataFile;
+ExFile logFile;
 
 PyroChannel pyro1_motor(PYRO_LANDING_MOTOR_IGNITION, 1000);
 PyroChannel pyro2_land(PYRO_LANDING_LEGS_DEPLOY, 1000);
@@ -111,7 +115,7 @@ void setup() {
     dir.y = -pitch;
     dir.z = -yaw;
 
-    attitude = Quaternion();
+    attitude = Quaternion::from_euler_rotation(-yaw, -pitch, 0);
 
     // Init pyros
     pyro1_motor.begin();
@@ -123,11 +127,11 @@ void setup() {
     pinMode(LEDB, OUTPUT);
     showColor(COLOR_OFF);
 
+#if SD_ATTACHED
     // Init SD Card | Read Config
-    SD.begin(10);
-    logFile = SD.open("log.txt", O_TRUNC | O_WRITE);
+    sd.begin(10, SPI_FULL_SPEED);
 
-    if (!logFile) {
+    if (!logFile.open("log.txt", O_TRUNC | O_WRITE)) {
         msgPrintln(bleOn, bleSerial, "Failed to open log file!");
         while (1) {
             flash(COLOR_RED);
@@ -140,14 +144,14 @@ void setup() {
     logStatus("Config read successfully", logFile);
 
     logStatus("Calibrating Barometer", logFile);
-    pressureOffset = calculateOffset(config.PRESSURE_0);
+    pressureOffset = calculateOffset(config["PRESSURE_0"]);
     logStatus("Barometer calibrated", logFile);
 
 
     // Open data file
-    dataFile = SD.open("data.csv", O_TRUNC | O_WRITE);
 
-    if (!dataFile) {
+
+    if (!dataFile.open("data.csv", O_TRUNC | O_WRITE)) {
         msgPrintln(bleOn, bleSerial, "Failed to open data file!");
         while (1) {
             flash(COLOR_RED);
@@ -155,23 +159,23 @@ void setup() {
         }
     }
     dataFile.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
+#endif
 
     // Init TVC
     tvc.begin();
     tvc.lock();
-    tvc.updatePID(tvc.pid_x, config.Kp, config.Ki, config.Kd, config.N);
-    tvc.updatePID(tvc.pid_y, config.Kp, config.Ki, config.Kd, config.N);
-
-    if (config.FILTER_KALMAN == 1) {
-        msgPrintln(bleOn, bleSerial, "Initializing Kalman filter...");
-        logStatus("Initializing Kalman filter", logFile);
-        kx.setAngle(yaw);
-        ky.setAngle(pitch);
-    }
-    else {
-        msgPrintln(bleOn, bleSerial, "Using complementary filter");
-        logStatus("Using complementary filter", logFile);
-    }
+    tvc.updatePID(tvc.pid_x, config["Kp"], config["Ki"], config["Kd"], config["N"]);
+    tvc.updatePID(tvc.pid_y, config["Kp"], config["Ki"], config["Kd"], config["N"]);
+    Serial.println("TVC initialized");
+    logStatus("TVC initialized", logFile);
+    Serial.print("Kp: ");
+    Serial.println(config["Kp"]);
+    Serial.print("Ki: ");
+    Serial.println(config["Ki"]);
+    Serial.print("Kd: ");
+    Serial.println(config["Kd"]);
+    Serial.print("N: ");
+    Serial.println(config["N"]);
 
     delay(1000);
 
@@ -333,7 +337,7 @@ void loop() {
                 break;
             case 'A':
                 msgPrint(bleOn, bleSerial, "Altitude: ");
-                msgPrintln(bleOn, bleSerial, getAltitude(config.PRESSURE_0, pressureOffset));
+                msgPrintln(bleOn, bleSerial, getAltitude(config["PRESURE_0"], pressureOffset));
                 break;
             case 'R':
                 msgPrintln(bleOn, bleSerial, "Sensor Readings: ");
@@ -374,7 +378,7 @@ void loop() {
             case 'D':
                 logData = !logData;
                 if (logData) {
-                    SD.begin(10);
+                    sd.begin(10);
                     msgPrintln(bleOn, bleSerial, "Logging Data ON");
                     logStatus("Logging Data ON", logFile);
                 }
@@ -384,6 +388,10 @@ void loop() {
                 }
                 break;
             case 'P':
+                msgPrint(bleOn, bleSerial, "Time Step: ");
+                msgPrintln(bleOn, bleSerial, DELTA_TIME);
+                msgPrint(bleOn, bleSerial, "Loop rate: ");
+                msgPrintln(bleOn, bleSerial, 1 / DELTA_TIME);
                 msgPrint(bleOn, bleSerial, "Px: ");
                 msgPrint(bleOn, bleSerial, tvc.pid_x.p);
                 msgPrint(bleOn, bleSerial, "; ");
@@ -393,14 +401,14 @@ void loop() {
                 msgPrint(bleOn, bleSerial, "Dx: ");
                 msgPrintln(bleOn, bleSerial, tvc.pid_x.d);
 
-                msgPrint(bleOn, bleSerial, "Py: ");
-                msgPrint(bleOn, bleSerial, tvc.pid_y.p);
-                msgPrint(bleOn, bleSerial, "; ");
-                msgPrint(bleOn, bleSerial, "Iy: ");
-                msgPrint(bleOn, bleSerial, tvc.pid_y.i);
-                msgPrint(bleOn, bleSerial, "; ");
-                msgPrint(bleOn, bleSerial, "Dy: ");
-                msgPrintln(bleOn, bleSerial, tvc.pid_y.d);
+                // msgPrint(bleOn, bleSerial, "Py: ");
+                // msgPrint(bleOn, bleSerial, tvc.pid_y.p);
+                // msgPrint(bleOn, bleSerial, "; ");
+                // msgPrint(bleOn, bleSerial, "Iy: ");
+                // msgPrint(bleOn, bleSerial, tvc.pid_y.i);
+                // msgPrint(bleOn, bleSerial, "; ");
+                // msgPrint(bleOn, bleSerial, "Dy: ");
+                // msgPrintln(bleOn, bleSerial, tvc.pid_y.d);
                 break;
 
             case 'E':
@@ -485,7 +493,7 @@ void loop() {
         p.o = Vec3D(roll, pitch, yaw);
         p.x_out = x_out;
         p.y_out = y_out;
-        p.alt = getAltitude(config.PRESSURE_0, pressureOffset);
+        p.alt = getAltitude(config["PRESSURE_0"], pressureOffset);
         p.currentState = currentState;
         p.vert_vel = vertVel;
         p.px = tvc.pid_x.p;

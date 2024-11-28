@@ -1,8 +1,12 @@
 #include <Arduino.h>
 #include <pid.h>
+#include <config.h>
 
-#define ROLL_TEST 1
+#define ACTUAL_PID 1
 #define PRINT_OUTPUT 1
+
+#define FLIP_X 0
+#define FLIP_Y 0
 
 double clamp(double x, double min, double max) { return (x < min) ? min : (x > max) ? max : x; }
 
@@ -17,6 +21,18 @@ public:
         pid.Ki = _Ki;
         pid.Kd = _Kd;
         pid.N = filterN;
+    }
+
+    void updateBounds(Config2& config) {
+        XMIN = config["XMIN"];
+        XMAX = config["XMAX"];
+
+        YMIN = config["YMIN"];
+        YMAX = config["YMAX"];
+
+        XDEF = config["XDEF"];
+        YDEF = config["YDEF"];
+
     }
 
     void begin() {
@@ -35,41 +51,52 @@ public:
     Vec2D update(Vec3D o, double dt) {
         if (!locked) {
             dir = o;
-            // Serial.println(dir.pitch);
-            // Serial.println(dir.yaw);
-            #if ROLL_TEST
+            // Serial.println(dir.z);
+            // Serial.println(dir.y);
+#if ACTUAL_PID
             x_out = pid_x.update(0, dir.z, dt);
             y_out = pid_y.update(0, dir.y, dt);
-            
-            #else
+
+#else
             x_out = -dir.z;
             y_out = -dir.y;
 
-            #endif
+#endif
 
-            #if PRINT_OUTPUT 
+#if PRINT_OUTPUT 
             Serial.print("X/Y Raw: ");
             Serial.print(x_out);
             Serial.print(" ");
             Serial.print(y_out);
             Serial.print("\t");
+#endif
+
+            double tvcXRaw = (x_out - XDEF) * PI / 180;
+            double tvcYRaw = (y_out - YDEF) * PI / 180;
+
+            double cr = cos(dir.x * PI / 180);
+            double sr = sin(dir.x * PI / 180);
+
+            x_out = tvcXRaw * cr - tvcYRaw * sr;
+            y_out = tvcXRaw * sr + tvcYRaw * cr;
+
+            x_out = (x_out * 180 / PI) + XDEF;
+            y_out = (y_out * 180 / PI) + YDEF;
+            #if FLIP_X
+                x_out = -x_out; 
+            #endif 
+            #if FLIP_Y
+                y_out = -y_out; 
             #endif
-            Quaternion tvcQuat(0, 0, (y_out - YDEF) * PI / 180, (x_out - XDEF) * PI / 180);
-            Quaternion rollQuat = Quaternion::from_axis_angle(-dir.x * PI / 180, 1, 0, 0);
+#if PRINT_OUTPUT
 
-            Quaternion correctedQuat = (rollQuat * tvcQuat) * rollQuat.conj();
-            x_out = correctedQuat.d * 180 / PI + XDEF;
-            y_out = correctedQuat.c * 180 / PI + YDEF;
-
-            #if PRINT_OUTPUT
+            x_out = clamp(x_out, XMIN, XMAX);
+            y_out = clamp(y_out, YMIN, YMAX);
             Serial.print("X/Y Adjust: ");
             Serial.print(x_out);
             Serial.print(" ");
             Serial.println(y_out);
-            #endif
-
-            x_out = clamp(x_out, XMIN, XMAX);
-            y_out = clamp(y_out, YMIN, YMAX);
+#endif
 
             write(x_out, y_out);
 
@@ -130,12 +157,12 @@ private:
     Servo tvcx, tvcy;
 
     // placeholder values; replace with actual limits
-    const double XMIN = 83;  // TVC X Min
-    const double XMAX = 105; // TVC X Max
-    const double YMIN = 73;  // TVC Y Min
-    const double YMAX = 95; // TVC Y Max
-    const double XDEF = 94;  // TVC X Default (zero position)
-    const double YDEF = 84;  // TVC Y Default (zero position)
+    double XMIN = 83;  // TVC X Min
+    double XMAX = 105; // TVC X Max
+    double YMIN = 73;  // TVC Y Min
+    double YMAX = 95; // TVC Y Max
+    double XDEF = 94;  // TVC X Default (zero position)
+    double YDEF = 84;  // TVC Y Default (zero position)
 
     // --------- TVC Control --------- //
 

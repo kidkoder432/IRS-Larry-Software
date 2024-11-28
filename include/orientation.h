@@ -73,7 +73,7 @@ void initIMU() {
     // Configure accelerometer
     bmi2_sens_config accConfig;
     accConfig.type = BMI2_ACCEL;
-    accConfig.cfg.acc.odr = BMI2_ACC_ODR_100HZ;
+    accConfig.cfg.acc.odr = BMI2_ACC_ODR_400HZ;
     accConfig.cfg.acc.range = BMI2_ACC_RANGE_16G;
     accConfig.cfg.acc.bwp = BMI2_ACC_OSR4_AVG1;
     accConfig.cfg.acc.filter_perf = BMI2_PERF_OPT_MODE;
@@ -154,13 +154,13 @@ Biases calibrateSensors() {
 
     // Accelerometer + gyroscope FOC calibration
     Serial.println("Performing acclerometer offset calibration...");
-    // imu.performAccelOffsetCalibration(BMI2_GRAVITY_POS_Z);
+    imu.performAccelOffsetCalibration(BMI2_GRAVITY_POS_Y);
     Serial.println("Performing gyroscope offset calibration...");
     // imu.performGyroOffsetCalibration();
 
     Serial.println();
     Serial.println("Internal calibration complete!");
-    Serial.println("Starting static gyroscope offset calibration...");
+    Serial.println("Starting external gyroscope offset calibration...");
 
     long long now = micros();
     double x_angle_c, y_angle_c, z_angle_c;
