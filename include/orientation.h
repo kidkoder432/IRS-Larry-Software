@@ -60,10 +60,6 @@ struct Biases {
 
 };
 
-void initIMU_2040() {
-    IMU.begin();
-}
-
 void initIMU() {
     Wire1.begin();
     imu.beginI2C(0x68, Wire1);
@@ -93,15 +89,6 @@ void initIMU() {
 
 }
 
-void readSensors_2040(SensorReadings& r, Biases biases) {
-    IMU.readAcceleration(r.ax, r.ay, r.az);
-    IMU.readGyroscope(r.gx, r.gy, r.gz);
-
-    r.gx -= biases.bx;
-    r.gy -= biases.by;
-    r.gz -= biases.bz;
-}
-
 void readSensors(SensorReadings& r, Biases biases) {
     imu.getSensorData();
 
@@ -112,36 +99,6 @@ void readSensors(SensorReadings& r, Biases biases) {
     r.gx = imu.data.gyroX - biases.bx;
     r.gy = imu.data.gyroY - biases.by;
     r.gz = imu.data.gyroZ - biases.bz;
-}
-
-Biases calibrateSensors_2040() {
-    Serial.println("Starting Sensor Calibration...");
-
-    Serial.println("Starting static gyroscope offset calibration...");
-
-    long long now = micros();
-    double x_angle_c, y_angle_c, z_angle_c;
-    x_angle_c = y_angle_c = z_angle_c = 0;
-    double dt = 0.005;
-    SensorReadings r;
-    long long lastM = micros();
-    while (micros() - now < 3000000LL) {
-        IMU.readGyroscope(r.gx, r.gy, r.gz);
-        x_angle_c += dt * r.gx;
-        y_angle_c += dt * r.gy;
-        z_angle_c += dt * r.gz;
-        dt = (micros() - lastM) / 1000000.0;
-        lastM = micros();
-    }
-
-    Serial.println(y_angle_c);
-    Serial.println(micros() - now);
-
-    double bx = ((x_angle_c) / (double)(micros() - now)) * 1000000;
-    double by = ((y_angle_c) / (double)(micros() - now)) * 1000000;
-    double bz = ((z_angle_c) / (double)(micros() - now)) * 1000000;
-
-    return Biases(bx, by, bz);
 }
 
 Biases calibrateSensors(Config config) {
