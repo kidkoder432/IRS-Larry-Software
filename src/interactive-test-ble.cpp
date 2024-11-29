@@ -32,7 +32,7 @@ Biases biases;
 Kalman kx, ky;
 Quaternion attitude;
 Config config;
-long long lastMicros;
+unsigned long lastLoopTime;
 
 double vertVel = 0;
 
@@ -248,7 +248,7 @@ void setup() {
 This test suite will test all components and features of the flight computer.)");
 
     delay(200);
-    lastMicros = micros();
+    lastLoopTime = micros();
 
     pyro1_motor.arm();
     pyro2_land.arm();
@@ -599,7 +599,7 @@ void loop() {
     if (logData) {
 
         DataPoint p;
-        p.timestamp = lastMicros;
+        p.timestamp = lastLoopTime;
         p.DELTA_T = DELTA_TIME;
         p.r = readings;
         p.o = Vec3D(roll, pitch, yaw);
@@ -620,6 +620,6 @@ void loop() {
     }
 
 
-    DELTA_TIME = (micros() - lastMicros) / 1000000.0;
-    lastMicros = micros();
+    DELTA_TIME = (millis() - lastLoopTime) / 1000.0;
+    lastLoopTime = millis();
 }

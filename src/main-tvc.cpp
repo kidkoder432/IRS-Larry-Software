@@ -32,7 +32,7 @@ Quaternion attitude;
 
 Config config;
 
-long long lastMicros;
+long long lastLoopTime;
 
 double vertVel = 0;
 
@@ -176,7 +176,7 @@ void setup() {
     msgPrintln(bleOn, bleSerial, "Initialized");
 
     delay(200);
-    lastMicros = micros();
+    lastLoopTime = micros();
 
 }
 
@@ -271,7 +271,7 @@ void loop() {
     if (logData) {
 
         DataPoint p;
-        p.timestamp = lastMicros;
+        p.timestamp = lastLoopTime;
         p.DELTA_T = DELTA_TIME;
         p.r = readings;
         p.o = dir;
@@ -292,6 +292,6 @@ void loop() {
     }
 
 
-    DELTA_TIME = (micros() - lastMicros) / 1000000.0;
-    lastMicros = micros();
+    DELTA_TIME = (micros() - lastLoopTime) / 1000000.0;
+    lastLoopTime = micros();
 }

@@ -11,7 +11,7 @@ double mag3(double a, double b, double c) {
 SensorReadings readings;
 int currentState = 0;
 
-long long lastMicros = micros();
+long long lastLoopTime = micros();
 
 void setup() {
     Serial.begin(115200);
@@ -92,7 +92,7 @@ void loop() {
         delay(20);
 
     }
-    lastMicros = micros();
+    lastLoopTime = micros();
 
-    
+
 }

@@ -15,7 +15,7 @@
 double yaw, pitch, roll;
 TVC tvc;
 double x_out, y_out;
-long long lastMicros;
+long long lastLoopTime;
 
 char receivedChar;
 bool newCommand = false;
@@ -105,7 +105,7 @@ void setup() {
 This test suite will test all components and features of the flight computer.)");
 
     delay(200);
-    lastMicros = micros();
+    lastLoopTime = micros();
 
 }
 
@@ -116,13 +116,13 @@ void loop() {
 
     if (newCommand == true) {
         switch (receivedChar) {
-            
+
             case 'K':
                 Serial.println("Toggling LEDs");
                 logStatus("Toggling LEDs", logFile);
                 led = !led;
                 break;
-            
+
             case 'G':
                 Serial.println("Pyro 1: Motor Ignition");
                 logStatus("Pyro 1: Motor Ignition", logFile);
@@ -183,7 +183,7 @@ void loop() {
     if (logData) {
 
         DataPoint p;
-        p.timestamp = lastMicros;
+        p.timestamp = lastLoopTime;
         p.DELTA_T = DELTA_TIME;
         p.r = SensorReadings();
         p.o = Vec3D();
@@ -204,6 +204,6 @@ void loop() {
     }
 
 
-    DELTA_TIME = (micros() - lastMicros) / 1000000.0;
-    lastMicros = micros();
+    DELTA_TIME = (micros() - lastLoopTime) / 1000000.0;
+    lastLoopTime = micros();
 }

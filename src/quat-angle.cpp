@@ -45,7 +45,7 @@ void recvOneChar() {
     }
 }
 
-long long lastMicros = micros();
+long long lastLoopTime = micros();
 void loop() {
     // --- Read Sensors --- //
     readSensors(readings, biases);
@@ -149,6 +149,6 @@ void loop() {
     }
 
     delay(2);
-    DELTA_TIME = (micros() - lastMicros) / 1000000.;
-    lastMicros = micros();
+    DELTA_TIME = (micros() - lastLoopTime) / 1000000.;
+    lastLoopTime = micros();
 }

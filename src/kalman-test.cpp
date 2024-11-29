@@ -37,7 +37,7 @@ void setup() {
 
 }
 
-long long lastMicros = micros();
+long long lastLoopTime = micros();
 void loop() {
     // --- Read Sensors --- //
     IMU.readAcceleration(readings.ay, readings.ax, readings.az);
@@ -68,5 +68,5 @@ void loop() {
 
 
     delay(10);
-    DELTA_TIME = (micros() - lastMicros) / 1000000.;
+    DELTA_TIME = (micros() - lastLoopTime) / 1000000.;
 }

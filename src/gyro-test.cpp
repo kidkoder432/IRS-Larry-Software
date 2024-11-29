@@ -45,7 +45,7 @@ void recvOneChar() {
     }
 }
 
-long long lastMicros = micros();
+long long lastLoopTime = micros();
 void loop() {
     // --- Read Sensors --- //
     // IMU.readAcceleration(readings.ay, readings.ax, readings.az);
@@ -91,8 +91,8 @@ void loop() {
     }
 
 
-    while ((micros() - lastMicros) < 990) {}
-    DELTA_TIME = (micros() - lastMicros) / 1000000.;
-    lastMicros = micros();
+    while ((micros() - lastLoopTime) < 990) {}
+    DELTA_TIME = (micros() - lastLoopTime) / 1000000.;
+    lastLoopTime = micros();
     prevReadings = readings;
 }

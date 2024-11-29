@@ -36,7 +36,7 @@ void setup() {
 }
 
 
-long long lastMicros = micros();
+long long lastLoopTime = micros();
 void loop() {
     readSensors(readings, biases);
 
@@ -93,6 +93,6 @@ void loop() {
         }
     }
 
-    DELTA_TIME = (micros() - lastMicros) / 1000000.;
-    lastMicros = micros();
+    DELTA_TIME = (micros() - lastLoopTime) / 1000000.;
+    lastLoopTime = micros();
 }
