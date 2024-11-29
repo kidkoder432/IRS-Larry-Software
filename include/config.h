@@ -11,7 +11,7 @@
 
 const int chipSelect = 10; // Adjust pin according to your SD card module
 
-typedef std::unordered_map<std::string, double> Config2;
+typedef std::unordered_map<std::string, double> Config;
 
 void toLowercase(char* str) {
     for (int i = 0; str[i] != '\0'; i++) {
@@ -43,8 +43,8 @@ String strip(const String& str) {
     return str.substring(startIndex, endIndex + 1);
 }
 
-Config2 defaultConfig = {
-    {"PRESSURE_0", 100.816},
+Config defaultConfig = {
+    {"PRESSURE_REF", 100.816},
     {"Kp", 1.0},
     {"Ki", 0.4},
     {"Kd", 0.1},
@@ -52,8 +52,8 @@ Config2 defaultConfig = {
     {"FILTER_KALMAN", true}
 };
 
-Config2 readConfig() {
-    Config2 config;
+Config readConfig() {
+    Config config;
 
     int maxLineLength = 127;
     SDConfig cfg;
@@ -96,7 +96,7 @@ Config2 readConfig() {
 
 }
 
-void printConfig(Config2& config) {
+void printConfig(Config& config) {
     for (auto& entry : config) {
         Serial.print(entry.first.c_str());
         Serial.print(": ");
@@ -104,106 +104,43 @@ void printConfig(Config2& config) {
     }
 }
 
-struct Config {
+// bool saveConfig(SdExFat& sd, Config& config) {
+//     ExFile newConfig;
+//     if (!newConfig.open("new_config.cfg", O_CREAT | O_WRITE | O_TRUNC)) {
+//         Serial.println("Failed to open new config file");
+//         return false;
+//     }
 
-    double PRESSURE_0 = 101.325;
-    double Kp = 0.0, Ki = 0.0, Kd = 0.0, N = 0.0;
-    int FILTER_KALMAN = false;
+//     ExFile oldConfig;
+//     oldConfig.open("config.cfg", O_READ);
+//     while (oldConfig.available()) {
+//         if (oldConfig.peek() == '#') {
+//             String line = oldConfig.readStringUntil('\n');
+//             newConfig.println(line);
+//         }
+//         else if (oldConfig.readStringUntil('\n') == "") {
+//             newConfig.println();
+//         }
+//         else {
+//             String key = oldConfig.readStringUntil('=');
+//             key.trim();
+//             newConfig.print(key);
+//             newConfig.print(" = ");
+//             newConfig.println(config[std::string(key.c_str())]);
+//             oldConfig.readStringUntil('\n');
+//         }
+//     }
 
-};
+//     newConfig.close();
+//     oldConfig.close();
 
-Config readConfig_old() {
-    Config config;
-
-    int maxLineLength = 127;
-    SDConfig cfg;
-    // Open the configuration file.
-    if (!cfg.begin("config.cfg", maxLineLength)) {
-        Serial.println("Failed to open configuration file: ");
-        return config;
-    }
-    // Read each setting from the file.
-    while (cfg.readNextSetting()) {
-        // Put a nameIs() block here for each setting you have.
-
-        if (cfg.nameIs("PRESSURE_0")) {
-            config.PRESSURE_0 = atof(cfg.getValue());
-        }
-        else if (cfg.nameIs("Kp")) {
-            config.Kp = atof(cfg.getValue());
-        }
-        else if (cfg.nameIs("Ki")) {
-            config.Ki = atof(cfg.getValue());
-        }
-        else if (cfg.nameIs("Kd")) {
-            config.Kd = atof(cfg.getValue());;
-        }
-        else if (cfg.nameIs("N")) {
-            config.N = atof(cfg.getValue());
-        }
-        else if (cfg.nameIs("FILTER_KALMAN")) {
-            config.FILTER_KALMAN = cfg.getIntValue();
-        }
-    }
-    // clean up
-    cfg.end();
-
-    return config;
-
-}
-
-Config2 readConfig_TEST() {
-    Config2 config;
-
-    ExFile configFile;
-    if (!configFile.open("config.cfg")) {
-        Serial.println("Failed to open config file");
-        return defaultConfig;
-    }
-
-    while (configFile.available()) {
-
-        if (configFile.peek() == '#') {
-            Serial.print("Comment. Next char is: ");
-            configFile.readStringUntil('\n');
-            Serial.println((char)configFile.peek());
-            continue;
-        }
-        else {
-
-            char key[32];
-            strip(configFile.readStringUntil('=')).toCharArray(key, 32);
-            char value[32];
-            strip(configFile.readStringUntil('\n')).toCharArray(value, 32);
-
-            Serial.println(key);
-
-            toLowercase(value);
+//     // sd.rename("config.cfg", "old_config.cfg");
+//     sd.remove("config.cfg");
+//     sd.rename("new_config.cfg", "config.cfg");
 
 
-            if (strcmp(value, "true") == 0) {
-                config[key] = true;
-            }
-            else if (strcmp(value, "false") == 0) {
-                config[key] = false;
-            }
-            else {
-                config[key] = atof(value);
-            }
-        }
-    }
-
-    Serial.println("Printing config:");
-    for (auto& elem : defaultConfig) {
-        Serial.print(elem.first.c_str());
-        Serial.print("=");
-        Serial.println(elem.second);
-    }
-
-    configFile.close();
-    return config;
-
-}
+//     return true;
+// }
 
 #endif
 

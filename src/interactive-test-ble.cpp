@@ -31,7 +31,7 @@ Vec3D dir;
 Biases biases;
 Kalman kx, ky;
 Quaternion attitude;
-Config2 config;
+Config config;
 long long lastMicros;
 
 double vertVel = 0;
@@ -76,6 +76,7 @@ T: Activate Pyro 2 (Landing Legs Deploy)
 S: Read SD Card
 Q: Reset Angles
 P: Print PID Values
+B: Edit Config
 E: Toggle Experiment/Test Mode
 Z: Switch Bluetooth to USB (override)
 H: Help)";
@@ -115,8 +116,8 @@ void setup() {
     dir.y = -pitch;
     dir.z = -yaw;
 
-    attitude = Quaternion::from_euler_rotation(-yaw, -pitch, 0);
-
+    if (config["INIT_ACCEL"] > 0) attitude = Quaternion::from_euler_rotation(-yaw, -pitch, 0);
+    else attitude = Quaternion();
     // Init pyros
     pyro1_motor.begin();
     pyro2_land.begin();
@@ -144,7 +145,7 @@ void setup() {
     logStatus("Config read successfully", logFile);
 
     logStatus("Calibrating Barometer", logFile);
-    pressureOffset = calculateOffset(config["PRESSURE_0"]);
+    pressureOffset = calculateOffset(config["PRESSURE_REF"]);
     logStatus("Barometer calibrated", logFile);
 
 
@@ -169,7 +170,7 @@ void setup() {
 
     Serial.println("TVC initialized");
     logStatus("TVC initialized", logFile);
-    
+
     printConfig(config);
 
     delay(1000);
@@ -230,7 +231,7 @@ void setup() {
     // Calibrate Gyro
     msgPrintln(bleOn, bleSerial, "Calibrating Sensors...");
     logStatus("Calibrating Sensors", logFile);
-    biases = calibrateSensors();
+    biases = calibrateSensors(config);
 
     char buf[64];
     snprintf(buf, sizeof(buf), "bx = %f, by = %f, bz = %f", biases.bx, biases.by, biases.bz);
@@ -268,6 +269,18 @@ void loop() {
     y_out = tvc_out.y;
 
     dir = get_angles_quat(readings, attitude, DELTA_TIME);
+
+    if (config["FLIP_DIR_X"] > 0) {
+        dir.x = -dir.x;
+    }
+
+    if (config["FLIP_DIR_Y"] > 0) {
+        dir.y = -dir.y;
+    }
+
+    if (config["FLIP_DIR_Z"] > 0) {
+        dir.z = -dir.z;
+    }
 
     roll = dir.x;
     pitch = dir.y;
@@ -313,7 +326,7 @@ void loop() {
             case 'C':
                 msgPrintln(bleOn, bleSerial, "Calibrating Sensors...");
                 logStatus("Calibrating Sensors", logFile);
-                biases = calibrateSensors();
+                biases = calibrateSensors(config);
 
                 char buf[64];
                 snprintf(buf, sizeof(buf), "bx = %f, by = %f, bz = %f", biases.bx, biases.by, biases.bz);
@@ -422,6 +435,110 @@ void loop() {
                 }
                 break;
 
+                /*
+                case 'B': {
+                    Serial.println("Editing config file");
+                    Serial.println("Available keys: ");
+
+                    int i = 1;
+                    for (auto& entry : config) {
+                        Serial.print(i);
+                        Serial.print(": ");
+                        Serial.println(entry.first.c_str());
+                        i++;
+                    }
+
+                    bool continueEdit = true;
+                    while (continueEdit) {
+
+                        int selectedKey = 0;
+                        String keyStr;
+                        while (selectedKey < 1 || selectedKey > config.size()) {
+                            Serial.print("Enter key to edit (q to finish): ");
+                            Serial.setTimeout(1000000);
+                            keyStr = Serial.readStringUntil('\n');
+
+                            keyStr.trim();
+                            keyStr.toLowerCase();
+                            Serial.println(keyStr);
+
+                            if (keyStr == "q") {
+                                Serial.println("Finished editing config file");
+                                continueEdit = false;
+                                break;
+                            }
+                            selectedKey = keyStr.toInt();
+                        }
+
+                        if (!continueEdit) {
+                            break;
+                        }
+
+                        i = 1;
+                        std::string key = "";
+                        double selectedEntry = 0.0;
+                        for (auto& entry : config) {
+                            if (selectedKey == i) {
+                                Serial.print("Selected key: ");
+                                key = entry.first;
+                                Serial.println(entry.first.c_str());
+                                selectedEntry = entry.second;
+                                break;
+                            }
+                            i++;
+                        }
+
+                        Serial.print("Current key value is: ");
+                        Serial.println(selectedEntry);
+
+                        Serial.print("Enter new value (q to finish): ");
+                        String valueStr = Serial.readStringUntil('\n');
+                        valueStr.toLowerCase();
+                        valueStr.trim();
+                        Serial.println(valueStr);
+                        if (valueStr == "q") {
+                            Serial.println("Finished editing config file");
+                            continueEdit = false;
+                            break;
+                        }
+                        valueStr.toLowerCase();
+                        double value;
+                        if (valueStr == "true") {
+                            value = 1.0;
+                        }
+                        else if (valueStr == "false") {
+                            value = 0.0;
+                        }
+                        else {
+                            value = valueStr.toDouble();
+                        }
+
+                        config[key] = value;
+                    }
+
+                    Serial.println("Done editing config file");
+                    Serial.println("Would you like to save the changes? (y/n)");
+
+                    String saveStr = Serial.readStringUntil('\n');
+                    saveStr.toLowerCase();
+                    saveStr.trim();
+                    if (saveStr == "y") {
+                        bool success = saveConfig(sd, config);
+                        if (success) {
+                            Serial.println("Changes saved");
+                            Serial.println("Please reset the Arduino to apply changes");
+                        }
+                        else {
+                            Serial.println("Error: Changes not saved!");
+                        }
+
+                    }
+                    else {
+                        Serial.println("Changes not saved");
+                    }
+
+                    break;
+                } */
             default:
                 msgPrintln(bleOn, bleSerial, "Invalid command");
                 break;
@@ -488,7 +605,7 @@ void loop() {
         p.o = Vec3D(roll, pitch, yaw);
         p.x_out = x_out;
         p.y_out = y_out;
-        p.alt = getAltitude(config["PRESSURE_0"], pressureOffset);
+        p.alt = getAltitude(config["PRESSURE_REF"], pressureOffset);
         p.currentState = currentState;
         p.vert_vel = vertVel;
         p.px = tvc.pid_x.p;
