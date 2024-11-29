@@ -144,20 +144,28 @@ Biases calibrateSensors_2040() {
     return Biases(bx, by, bz);
 }
 
-Biases calibrateSensors() {
+Biases calibrateSensors(Config config) {
 
     Serial.println("Starting Sensor Calibration...");
 
     // Accelerometer + gyroscope CRT calibration
-    Serial.println("Performing component retrimming...");
-    imu.performComponentRetrim();
+    if (config["DO_CRT"] > 0) {
+        Serial.println("Performing component retrimming...");
+        imu.performComponentRetrim();
+    }
 
-    // Accelerometer + gyroscope FOC calibration
-    Serial.println("Performing acclerometer offset calibration...");
-    imu.performAccelOffsetCalibration(BMI2_GRAVITY_POS_Y);
-    Serial.println("Performing gyroscope offset calibration...");
-    // imu.performGyroOffsetCalibration();
+    // Accelerometer FOC calibration
+    if (config["DO_ACCEL_FOC"] > 0) {
+        Serial.println("Performing acclerometer offset calibration...");
+        imu.performAccelOffsetCalibration(BMI2_GRAVITY_POS_Y);
+    }
 
+    // Gyroscope FOC calibration
+    if (config["DO_GYRO_FOC"] > 0) {
+        Serial.println("Performing gyroscope offset calibration...");
+        imu.performGyroOffsetCalibration();
+    }
+    
     Serial.println();
     Serial.println("Internal calibration complete!");
     Serial.println("Starting external gyroscope offset calibration...");

@@ -13,7 +13,7 @@ public:
     PID pid_x;
     PID pid_y;
 
-    void configure(Config2& config) {
+    void configure(Config& config) {
         P = config["Kp"];
         I = config["Ki"];
         D = config["Kd"];
@@ -81,7 +81,7 @@ public:
 
             x_out = (x_out * 180 / PI) + XDEF;
             y_out = (y_out * 180 / PI) + YDEF;
-            
+
             if (FLIP_X) x_out = -x_out;
             if (FLIP_Y) y_out = -y_out;
 
