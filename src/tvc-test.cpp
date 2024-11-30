@@ -46,9 +46,9 @@ void loop() {
     // Serial.print(" ");
     // Serial.println(readings.gz - biases.bz);
 
-    Vec3D dir = get_angles_quat(readings, attitude, DELTA_TIME);
+    Vec3D dir = get_angles_quat(readings, attitude, deltaTime);
 
-    tvc.update(dir, DELTA_TIME);
+    tvc.update(dir, deltaTime);
 
     roll = dir.x;
     pitch = dir.y;
@@ -93,6 +93,6 @@ void loop() {
         }
     }
 
-    DELTA_TIME = (micros() - lastLoopTime) / 1000000.;
+    deltaTime = (micros() - lastLoopTime) / 1000000.;
     lastLoopTime = micros();
 }

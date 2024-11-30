@@ -122,16 +122,16 @@ void loop() {
 
     // --- Angle Calc --- //
     if (config.FILTER_KALMAN) {
-        dir = get_angles_kalman(DELTA_TIME, readings, kx, ky, biases);
+        dir = get_angles_kalman(deltaTime, readings, kx, ky, biases);
 
     }
 
     else {
-        dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, yaw, pitch, biases);
+        dir = get_angles_complementary(1 - ALPHA, deltaTime, readings, yaw, pitch, biases);
 
     }
     // TVC Update
-    tvc_out = tvc.update(dir, DELTA_TIME);
+    tvc_out = tvc.update(dir, deltaTime);
     x_out = tvc_out.x;
     y_out = tvc_out.y;
 
@@ -190,7 +190,7 @@ void loop() {
     }
 
     // --- Data Logging --- //
-    vertVel -= readings.ay * 9.81 * DELTA_TIME;
+    vertVel -= readings.ay * 9.81 * deltaTime;
     if (logTimer.fire()) {
         dataFile = SD.open(filename, FILE_WRITE);
         DataPoint p;
@@ -244,5 +244,5 @@ void loop() {
     }
 
     delay(10);
-    DELTA_TIME = (micros() - lastLoopTime) / 1000000.;
+    deltaTime = (micros() - lastLoopTime) / 1000000.;
 }

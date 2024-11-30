@@ -67,7 +67,7 @@ void loop() {
 
     // IMU.readGyroscope(readings.gy, readings.gx, readings.gz);
 
-    dir = get_angles(readings, prevReadings, dir, DELTA_TIME);
+    dir = get_angles(readings, prevReadings, dir, deltaTime);
 
     yaw = dir.x;
     pitch = dir.y;
@@ -92,7 +92,7 @@ void loop() {
 
 
     while ((micros() - lastLoopTime) < 990) {}
-    DELTA_TIME = (micros() - lastLoopTime) / 1000000.;
+    deltaTime = (micros() - lastLoopTime) / 1000000.;
     lastLoopTime = micros();
     prevReadings = readings;
 }

@@ -254,55 +254,50 @@ bool logDataPoint(DataPoint p, ExFile& dataFile) {
 
 
 
-void sdCardInfo() {
-    SdExFat sd;
-    // Initialize the SD card
-  if (!sd.begin(10, SPI_FULL_SPEED)) {
-    Serial.println("SD card initialization failed!");
-    return;
-  }
+void sdCardInfo(SdExFat& sd) {
 
-  // Print card type
-  uint8_t cardType = sd.card()->type();
-  Serial.print("Card Type: ");
-  switch (cardType) {
-    case SD_CARD_TYPE_SD1: Serial.println("SD1"); break;
-    case SD_CARD_TYPE_SD2: Serial.println("SD2"); break;
-    case SD_CARD_TYPE_SDHC: Serial.println("SDHC/SDXC"); break;
-    default: Serial.println("Unknown"); break;
-  }
 
-  // Retrieve sector-based information
-  uint64_t sectorCount = sd.card()->sectorCount();
-  uint64_t sectorsPerCluster = sd.vol()->sectorsPerCluster();  // 1 block = 1 sector in SdFat
-  uint64_t freeSectorCount = (uint64_t)sd.vol()->freeClusterCount() * sectorsPerCluster;
+    // Print card type
+    uint8_t cardType = sd.card()->type();
+    Serial.print("Card Type: ");
+    switch (cardType) {
+        case SD_CARD_TYPE_SD1: Serial.println("SD1"); break;
+        case SD_CARD_TYPE_SD2: Serial.println("SD2"); break;
+        case SD_CARD_TYPE_SDHC: Serial.println("SDHC/SDXC"); break;
+        default: Serial.println("Unknown"); break;
+    }
 
-  // Print sector information
-  Serial.print("Total Sectors: ");
-  Serial.println(sectorCount);
+    // Retrieve sector-based information
+    uint64_t sectorCount = sd.card()->sectorCount();
+    uint64_t sectorsPerCluster = sd.vol()->sectorsPerCluster();  // 1 block = 1 sector in SdFat
+    uint64_t freeSectorCount = (uint64_t)sd.vol()->freeClusterCount() * sectorsPerCluster;
 
-  Serial.print("Sectors Per Cluster: ");
-  Serial.println(sectorsPerCluster);
+    // Print sector information
+    Serial.print("Total Sectors: ");
+    Serial.println(sectorCount);
 
-  Serial.print("Free Sectors: ");
-  Serial.println(freeSectorCount);
+    Serial.print("Sectors Per Cluster: ");
+    Serial.println(sectorsPerCluster);
 
-  Serial.print("Used Sectors: ");
-  Serial.println(sectorCount - freeSectorCount);
+    Serial.print("Free Sectors: ");
+    Serial.println(freeSectorCount);
 
-  // Calculate card size (512 bytes per sector)
-  uint64_t cardSize = sectorCount * 512;  // Convert sectors to bytes
-  Serial.print("Card Size: ");
-  Serial.print(cardSize / (1024 * 1024));  // Convert bytes to MB
-  Serial.println(" MB");
+    Serial.print("Used Sectors: ");
+    Serial.println(sectorCount - freeSectorCount);
 
-  // Calculate free space
-  uint64_t freeSpace = freeSectorCount * 512;  // Convert sectors to bytes
-  Serial.print("Free Space: ");
-  Serial.print(freeSpace / (1024 * 1024));  // Convert bytes to MB
-  Serial.println(" MB");
+    // Calculate card size (512 bytes per sector)
+    uint64_t cardSize = sectorCount * 512;  // Convert sectors to bytes
+    Serial.print("Card Size: ");
+    Serial.print(cardSize / (1024 * 1024));  // Convert bytes to MB
+    Serial.println(" MB");
 
-  // List files and directories
-  Serial.println("Listing files on the card:");
-  sd.ls(LS_R | LS_DATE | LS_SIZE);  // Recursive, show date and size
+    // Calculate free space
+    uint64_t freeSpace = freeSectorCount * 512;  // Convert sectors to bytes
+    Serial.print("Free Space: ");
+    Serial.print(freeSpace / (1024 * 1024));  // Convert bytes to MB
+    Serial.println(" MB");
+
+    // List files and directories
+    Serial.println("Listing files on the card:");
+    sd.ls(LS_R | LS_DATE | LS_SIZE);  // Recursive, show date and size
 }

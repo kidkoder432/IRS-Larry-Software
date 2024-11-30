@@ -5,8 +5,8 @@
 
 
 // Pins
-#define PYRO_LANDING_MOTOR_IGNITION 4
-#define PYRO_LANDING_LEGS_DEPLOY 3
+const int PYRO_LANDING_MOTOR_IGNITION = 4;
+const int PYRO_LANDING_LEGS_DEPLOY = 3;
 
 
 void fire_pyro(FireTimer t, int pin) {

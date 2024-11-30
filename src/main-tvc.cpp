@@ -185,13 +185,13 @@ void loop() {
     bleSerial.poll();
     readSensors(readings, biases);
 
-    vertVel -= readings.ay * 9.80665 * DELTA_TIME;
+    vertVel -= readings.ay * 9.80665 * deltaTime;
 
-    Vec2D tvc_out = tvc.update(dir, DELTA_TIME);
+    Vec2D tvc_out = tvc.update(dir, deltaTime);
     x_out = tvc_out.x;
     y_out = tvc_out.y;
 
-    dir = get_angles_quat(readings, attitude, DELTA_TIME);
+    dir = get_angles_quat(readings, attitude, deltaTime);
 
     roll = dir.x;
     pitch = dir.y;
@@ -266,13 +266,13 @@ void loop() {
     }
 
     // --- Data Logging --- //
-    vertVel -= readings.ay * 9.81 * DELTA_TIME;
+    vertVel -= readings.ay * 9.81 * deltaTime;
 
     if (logData) {
 
         DataPoint p;
         p.timestamp = lastLoopTime;
-        p.DELTA_T = DELTA_TIME;
+        p.DELTA_T = deltaTime;
         p.r = readings;
         p.o = dir;
         p.x_out = x_out;
@@ -292,6 +292,6 @@ void loop() {
     }
 
 
-    DELTA_TIME = (micros() - lastLoopTime) / 1000000.0;
+    deltaTime = (micros() - lastLoopTime) / 1000000.0;
     lastLoopTime = micros();
 }

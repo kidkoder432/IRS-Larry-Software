@@ -14,7 +14,6 @@
 
 // ========= Angles & Orientation ========= //
 
-double DELTA_TIME = 0.01; // Time step
 BMI270 imu;
 
 // ========= Sensor Variables ========= //
@@ -62,7 +61,7 @@ struct Biases {
 
 };
 
-void initSensors() {
+void wwinitSensors() {
     Wire1.begin();
     imu.beginI2C(0x68, Wire1);
 
@@ -205,7 +204,7 @@ Vec2D get_angles_kalman(double dt, SensorReadings r, Kalman& kx, Kalman& ky, Bia
 
 // QUATERNION BASED ANGLE CALCULATION
 // Returns roll, pitch, yaw
-Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, double DELTA_TIME) {
+Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, double deltaTime) {
     double wx = readings.gx * (PI / 180);
     double wy = readings.gy * (PI / 180);
     double wz = readings.gz * (PI / 180);
@@ -220,7 +219,7 @@ Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, double DELT
     wy /= norm;
     wz /= norm;
 
-    Quaternion QM = Quaternion::from_axis_angle(DELTA_TIME * norm, wx, wy, wz);
+    Quaternion QM = Quaternion::from_axis_angle(deltaTime * norm, wx, wy, wz);
     attitude = attitude * QM;
 
     // --- Convert to Euler Angles --- //    

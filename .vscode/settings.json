@@ -77,7 +77,8 @@
         "queue": "cpp",
         "serstream": "cpp",
         "stack": "cpp",
-        "string_iostream": "cpp"
+        "string_iostream": "cpp",
+        "mstd_iterator": "cpp"
     },
     "discord.enabled": true
 }

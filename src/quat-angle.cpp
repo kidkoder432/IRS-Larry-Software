@@ -83,7 +83,7 @@ void loop() {
     wy /= norm;
     wz /= norm;
 
-    Quaternion QM = Quaternion::from_axis_angle(DELTA_TIME * norm, wx, wy, wz);
+    Quaternion QM = Quaternion::from_axis_angle(deltaTime * norm, wx, wy, wz);
     attitude = attitude * QM;
 
     // --- Convert to Euler Angles --- //    
@@ -149,6 +149,6 @@ void loop() {
     }
 
     delay(2);
-    DELTA_TIME = (micros() - lastLoopTime) / 1000000.;
+    deltaTime = (micros() - lastLoopTime) / 1000000.;
     lastLoopTime = micros();
 }

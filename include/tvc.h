@@ -34,15 +34,15 @@ public:
         FLIP_Y = config["FLIP_Y"] > 0;
     }
 
-    void begin() {
+    void begin(double deltaTime) {
         dir = Vec3D(0, 0, 0);
         tvcx.attach(5);
         tvcy.attach(6);
 
-        pid_x.begin(P, I, D, XDEF, DELTA_TIME, XMIN, XMAX);
+        pid_x.begin(P, I, D, XDEF, deltaTime, XMIN, XMAX);
         tvcx.write(XDEF);
 
-        pid_y.begin(P, I, D, YDEF, DELTA_TIME, YMIN, YMAX);
+        pid_y.begin(P, I, D, YDEF, deltaTime, YMIN, YMAX);
         tvcy.write(YDEF);
     }
 

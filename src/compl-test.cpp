@@ -59,7 +59,7 @@ void loop() {
         ALPHA = 0.1;
     }
 
-    Vec2D dir = get_angles_complementary(1 - ALPHA, DELTA_TIME, readings, yaw, pitch, biases);
+    Vec2D dir = get_angles_complementary(1 - ALPHA, deltaTime, readings, yaw, pitch, biases);
     yaw = dir.x;
     pitch = dir.y;
 
@@ -99,6 +99,6 @@ void loop() {
 
 
     delay(10);
-    DELTA_TIME = (micros() - lastLoopTime) / 1000000.;
+    deltaTime = (micros() - lastLoopTime) / 1000000.;
     lastLoopTime = micros();
 }

@@ -43,7 +43,7 @@ void loop() {
     IMU.readAcceleration(readings.ay, readings.ax, readings.az);
     IMU.readGyroscope(readings.gy, readings.gx, readings.gz);
 
-    dir = get_angles_kalman(DELTA_TIME, readings, kx, ky, biases);
+    dir = get_angles_kalman(deltaTime, readings, kx, ky, biases);
 
     yaw = dir.x;
     pitch = dir.y;
@@ -68,5 +68,5 @@ void loop() {
 
 
     delay(10);
-    DELTA_TIME = (micros() - lastLoopTime) / 1000000.;
+    deltaTime = (micros() - lastLoopTime) / 1000000.;
 }

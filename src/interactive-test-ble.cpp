@@ -33,6 +33,7 @@ Kalman kx, ky;
 Quaternion attitude;
 Config config;
 unsigned long lastLoopTime;
+double deltaTime = 0;
 
 double vertVel = 0;
 
@@ -105,7 +106,6 @@ void setup() {
     Serial.begin(115200);
 
     initSensors();
-    BARO.begin();
 
     // Init pyros
     pyro1_motor.begin();
@@ -152,7 +152,7 @@ void setup() {
 #endif
 
     // Init TVC
-    tvc.begin();
+    tvc.begin(deltaTime);
     tvc.lock();
 
     // Init angles
@@ -276,13 +276,13 @@ void loop() {
 
     readSensors(readings, biases);
 
-    vertVel -= readings.ay * 9.80665 * DELTA_TIME;
+    vertVel -= readings.ay * 9.80665 * deltaTime;
 
-    Vec2D tvc_out = tvc.update(dir, DELTA_TIME);
+    Vec2D tvc_out = tvc.update(dir, deltaTime);
     x_out = tvc_out.x;
     y_out = tvc_out.y;
 
-    dir = get_angles_quat(readings, attitude, DELTA_TIME);
+    dir = get_angles_quat(readings, attitude, deltaTime);
 
     if (config["FLIP_DIR_X"] > 0) {
         dir.x = -dir.x;
@@ -455,9 +455,9 @@ void loop() {
                 break;
             case 'P':
                 msgPrint(bleOn, bleSerial, "Time Step: ");
-                msgPrintln(bleOn, bleSerial, DELTA_TIME);
+                msgPrintln(bleOn, bleSerial, deltaTime);
                 msgPrint(bleOn, bleSerial, "Loop rate: ");
-                msgPrintln(bleOn, bleSerial, 1 / DELTA_TIME);
+                msgPrintln(bleOn, bleSerial, 1 / deltaTime);
                 msgPrint(bleOn, bleSerial, "Px: ");
                 msgPrint(bleOn, bleSerial, tvc.pid_x.p);
                 msgPrint(bleOn, bleSerial, "; ");
@@ -658,7 +658,7 @@ void loop() {
 
         DataPoint p;
         p.timestamp = lastLoopTime;
-        p.DELTA_T = DELTA_TIME;
+        p.DELTA_T = deltaTime;
         p.r = readings;
         p.o = Vec3D(roll, pitch, yaw);
         p.x_out = x_out;
@@ -678,7 +678,7 @@ void loop() {
     }
 
 
-    DELTA_TIME = (millis() - lastLoopTime) / 1000.0;
+    deltaTime = (millis() - lastLoopTime) / 1000.0;
     lastLoopTime = millis();
 }
 

@@ -184,7 +184,7 @@ void loop() {
 
         DataPoint p;
         p.timestamp = lastLoopTime;
-        p.DELTA_T = DELTA_TIME;
+        p.DELTA_T = deltaTime;
         p.r = SensorReadings();
         p.o = Vec3D();
         p.x_out = x_out;
@@ -204,6 +204,6 @@ void loop() {
     }
 
 
-    DELTA_TIME = (micros() - lastLoopTime) / 1000000.0;
+    deltaTime = (micros() - lastLoopTime) / 1000000.0;
     lastLoopTime = micros();
 }
