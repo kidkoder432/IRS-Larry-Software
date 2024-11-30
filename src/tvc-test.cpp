@@ -18,7 +18,7 @@ double ALPHA = 0.05;
 void setup() {
     Serial.begin(115200);
     delay(200);
-    initIMU();
+    initSensors();
     tvc.begin();
 
     pinMode(LED_BUILTIN, OUTPUT);

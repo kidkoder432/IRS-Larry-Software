@@ -104,20 +104,9 @@ void setup() {
     // Init serial and sensors
     Serial.begin(115200);
 
-    initIMU();
+    initSensors();
     BARO.begin();
 
-    // Init angles
-    readSensors(readings, biases);
-    yaw = atan2(readings.ax, sqrt(readings.az * readings.az + readings.ay * readings.ay));
-    pitch = atan2(readings.az, readings.ay);
-
-    dir.x = 0;
-    dir.y = -pitch;
-    dir.z = -yaw;
-
-    if (config["INIT_ACCEL"] > 0) attitude = Quaternion::from_euler_rotation(-yaw, -pitch, 0);
-    else attitude = Quaternion();
     // Init pyros
     pyro1_motor.begin();
     pyro2_land.begin();
@@ -165,6 +154,31 @@ void setup() {
     // Init TVC
     tvc.begin();
     tvc.lock();
+
+    // Init angles
+
+
+    if (config["INIT_ACCEL"] > 0) {
+        Serial.println("Initializing angles using accelerometer ");
+
+        readSensors(readings, biases);
+        yaw = atan2(readings.ax, sqrt(readings.az * readings.az + readings.ay * readings.ay));
+        pitch = atan2(readings.az, readings.ay);
+
+        Serial.println("Initial angles:");
+        Serial.println(yaw * 180 / PI);
+        Serial.println(pitch * 180 / PI);
+
+        dir.x = 0;
+        dir.y = -pitch;
+        dir.z = -yaw;
+
+        attitude = Quaternion::from_euler_rotation(yaw, 0, pitch);
+    }
+    else {
+        Serial.println("Using default angles");
+        attitude = Quaternion();
+    }
 
     tvc.configure(config);
 
@@ -228,7 +242,7 @@ void setup() {
 
     }
 
-    // Calibrate Gyro
+    // Calibrate Sensors
     msgPrintln(bleOn, bleSerial, "Calibrating Sensors...");
     logStatus("Calibrating Sensors", logFile);
     biases = calibrateSensors(config);
@@ -248,7 +262,7 @@ void setup() {
 This test suite will test all components and features of the flight computer.)");
 
     delay(200);
-    lastLoopTime = micros();
+    lastLoopTime = millis();
 
     pyro1_motor.arm();
     pyro2_land.arm();
@@ -377,7 +391,29 @@ void loop() {
                 msgPrintln(bleOn, bleSerial, "Resetting Angles");
                 logStatus("Resetting Angles", logFile);
                 dir = Vec3D(0, 0, 0);
-                attitude = Quaternion();
+
+                if (config["INIT_ACCEL"] > 0) {
+
+                    Serial.println("Initializing angles using accelerometer ");
+                    readSensors(readings, biases);
+                    yaw = atan2(readings.ax, sqrt(readings.az * readings.az + readings.ay * readings.ay));
+                    pitch = atan2(readings.az, readings.ay);
+
+                    Serial.println("Initial angles:");
+                    Serial.println(yaw * 180 / PI);
+                    Serial.println(pitch * 180 / PI);
+
+                    dir.x = 0;
+                    dir.y = -pitch;
+                    dir.z = -yaw;
+
+                    attitude = Quaternion::from_euler_rotation(yaw, 0, pitch);
+                }
+                else {
+                    Serial.println("Using default angles");
+                    attitude = Quaternion();
+                }
+
                 break;
             case 'H':
                 msgPrintln(bleOn, bleSerial, HELP_STR);
@@ -388,11 +424,33 @@ void loop() {
                 if (logData) {
                     sd.begin(10);
                     msgPrintln(bleOn, bleSerial, "Logging Data ON");
+
+                    if (!logFile.open("log.txt", O_WRITE)) {
+                        msgPrintln(bleOn, bleSerial, "Failed to open log file!");
+                        while (1) {
+                            flash(COLOR_RED);
+
+                        }
+                    }
+
+                    if (!dataFile.open("data.csv", O_WRITE)) {
+                        msgPrintln(bleOn, bleSerial, "Failed to open data file!");
+                        logStatus("Failed to open data file", logFile);
+                        while (1) {
+                            flash(COLOR_ORANGE);
+
+                        }
+                    }
+
                     logStatus("Logging Data ON", logFile);
+
                 }
                 else {
-                    msgPrintln(bleOn, bleSerial, "Logging Data OFF");
                     logStatus("Logging Data OFF", logFile);
+
+                    dataFile.close();
+                    logFile.close();
+                    msgPrintln(bleOn, bleSerial, "Logging Data OFF");
                 }
                 break;
             case 'P':
@@ -623,3 +681,4 @@ void loop() {
     DELTA_TIME = (millis() - lastLoopTime) / 1000.0;
     lastLoopTime = millis();
 }
+

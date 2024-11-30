@@ -16,7 +16,7 @@ void setup() {
     Serial.begin(115200);
     delay(200);
 
-    initIMU();
+    initSensors();
 
     pinMode(LED_BUILTIN, OUTPUT);
     showColor(COLOR_OFF);

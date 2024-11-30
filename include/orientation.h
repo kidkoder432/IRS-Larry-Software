@@ -5,7 +5,9 @@
 
 #include <math.h>
 #include <SparkFun_BMI270_Arduino_Library.h>
-#include <LSM6DSOX.h>
+#include <Arduino_LPS22HB.h>
+#include <config.h>
+
 
 #include <Kalman.h>
 #include <Quaternion.h>
@@ -60,7 +62,7 @@ struct Biases {
 
 };
 
-void initIMU() {
+void initSensors() {
     Wire1.begin();
     imu.beginI2C(0x68, Wire1);
 
@@ -87,6 +89,7 @@ void initIMU() {
     err += imu.setConfig(gyroConfig);
     Serial.println(err);
 
+    BARO.begin();
 }
 
 void readSensors(SensorReadings& r, Biases biases) {
@@ -101,7 +104,7 @@ void readSensors(SensorReadings& r, Biases biases) {
     r.gz = imu.data.gyroZ - biases.bz;
 }
 
-Biases calibrateSensors(Config config) {
+Biases calibrateSensors(Config& config) {
 
     Serial.println("Starting Sensor Calibration...");
 
@@ -122,7 +125,7 @@ Biases calibrateSensors(Config config) {
         Serial.println("Performing gyroscope offset calibration...");
         imu.performGyroOffsetCalibration();
     }
-    
+
     Serial.println();
     Serial.println("Internal calibration complete!");
     Serial.println("Starting external gyroscope offset calibration...");

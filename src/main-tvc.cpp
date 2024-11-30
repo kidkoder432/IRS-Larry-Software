@@ -54,7 +54,7 @@ void setup() {
     // Init serial and sensors
     Serial.begin(115200);
 
-    initIMU();
+    initSensors();
     BARO.begin();
 
     // Init angles
