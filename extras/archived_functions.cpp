@@ -39,7 +39,7 @@
 
                         i = 1;
                         std::string key = "";
-                        double selectedEntry = 0.0;
+                        float selectedEntry = 0.0;
                         for (auto& entry : config) {
                             if (selectedKey == i) {
                                 Serial.print("Selected key: ");
@@ -65,7 +65,7 @@
                             break;
                         }
                         valueStr.toLowerCase();
-                        double value;
+                        float value;
                         if (valueStr == "true") {
                             value = 1.0;
                         }

@@ -7,7 +7,7 @@
 
 
 Kalman kx, ky;
-double yaw, pitch;
+float yaw, pitch;
 SensorReadings readings;
 Vec2D dir;
 Biases biases;
@@ -17,7 +17,7 @@ void setup() {
     delay(200);
     IMU.begin();
 
-    double ax, ay, az;
+    float ax, ay, az;
     IMU.readAcceleration(ay, ax, az);
     Serial.println(atan2(az, -ay) * 180 / PI);
     yaw = atan2(ax, -sign(ay) * sqrt(az * az + ay * ay)) * 180 / PI;

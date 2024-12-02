@@ -4,7 +4,7 @@
 #include <Arduino_BMI270_BMM150.h>
 #include <leds.h>
 
-double mag3(double a, double b, double c) {
+float mag3(float a, float b, float c) {
     return sqrt(a * a + b * b + c * c);
 }
 

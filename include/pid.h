@@ -3,18 +3,18 @@
 class PID {
 public:
 
-    double p;
-    double i;
-    double d;
+    float p;
+    float i;
+    float d;
 
-    void update_gains(double _Kp, double _Ki, double _Kd, double _FilterN) {
+    void update_gains(float _Kp, float _Ki, float _Kd, float _FilterN) {
         Kp = _Kp;
         Ki = _Ki;
         Kd = _Kd;
         N = _FilterN;
     }
 
-    void begin(double _Kp, double _Ki, double _Kd, double _b, double _dt, double _min, double _max) {
+    void begin(float _Kp, float _Ki, float _Kd, float _b, float _dt, float _min, float _max) {
         Kp = _Kp;
         Ki = _Ki;
         Kd = _Kd;
@@ -24,12 +24,12 @@ public:
         max = _max;
     }
 
-    double update(double target, double current, double _dt) {
+    float update(float target, float current, float _dt) {
         dt = _dt;
         alpha = N * dt;
         b = alpha / (alpha + 2);
         error = target - current;
-        
+
         // Proportional
         p = Kp * error;
 
@@ -65,31 +65,31 @@ public:
     }
 private:
 
-    double Kp;
-    double Ki;
-    double Kd;
-    double N;
+    float Kp;
+    float Ki;
+    float Kd;
+    float N;
 
-    double bias;
-    double dt;
-    double min;
-    double max;
-    double integrated_error = 0;
-    double error;
-    double last_error = 0;
-    double filtered_error = 0;
-    double last_filter = 0;
+    float bias;
+    float dt;
+    float min;
+    float max;
+    float integrated_error = 0;
+    float error;
+    float last_error = 0;
+    float filtered_error = 0;
+    float last_filter = 0;
 
 
-    double alpha = 0;
-    double b = 0;
-    double clip(double value, double min, double max) {
+    float alpha = 0;
+    float b = 0;
+    float clip(float value, float min, float max) {
         return min < value && value < max ? value : min < value ? max : min;
     }
 
-    bool doIntegratorClamp(double out, double b) {
+    bool doIntegratorClamp(float out, float b) {
         bool saturated = out < min || out > max;
-        bool sameSign = sign(out - b) == sign(error);  
+        bool sameSign = sign(out - b) == sign(error);
 
         return saturated && sameSign;
     }

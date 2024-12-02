@@ -16,30 +16,30 @@
 #include "config.h"
 
 // --------- Helper functions --------- //
-double mag3(double a, double b, double c) {
+float mag3(float a, float b, float c) {
     return sqrt(pow(a, 2) + pow(b, 2) + pow(c, 2));
 }
 
 // --------- TVC --------- //
 TVC tvc;
-double x_out, y_out;
+float x_out, y_out;
 Vec2D tvc_out;
 
 // --------- Sensor Variables --------- //
 struct SensorReadings readings;
 struct Vec2D dir;
-double yaw, pitch;
+float yaw, pitch;
 
-double altitude, maxAltitude = -10000000;
+float altitude, maxAltitude = -10000000;
 
 // --------- Filter Init --------- //
 Biases biases;
-double ALPHA = 0.05;
+float ALPHA = 0.05;
 Kalman kx, ky;
 
 // --------- Landing --------- //
-const double ALT_LAND_ENGINE_START = 15; // meters AGL to start land burn
-const double LANDING_LEGS_DEPLOY_DELAY = 1300; // ms after engine ignition to deploy legs
+const float ALT_LAND_ENGINE_START = 15; // meters AGL to start land burn
+const float LANDING_LEGS_DEPLOY_DELAY = 1300; // ms after engine ignition to deploy legs
 
 // --------- Pyro Channels --------- //
 const long ENGINE_START_PYRO_ON = 1000;
@@ -54,7 +54,7 @@ const int FLIGHT_LOG_FREQ = 40;     // Inflight logs @ 40 Hz
 FireTimer logTimer;
 File dataFile;
 char filename[64] = "data.csv";
-double vertVel;
+float vertVel;
 // --------- States --------- //
 int currentState = 0;
 
@@ -69,7 +69,7 @@ void setup() {
     BARO.begin();
 
     // Init angles
-    double ax, ay, az;
+    float ax, ay, az;
     IMU.readAcceleration(ay, ax, az);
     yaw = atan2(ax, -sign(ay) * sqrt(az * az + ay * ay)) * 180 / PI;
     pitch = atan2(az, -ay) * 180 / PI;

@@ -41,6 +41,33 @@ void flash(Color c) {
     }
 }
 
+void flash(Color c, int DELAY_MS) {
+    if (((millis() / DELAY_MS) & 1) == 1) {
+        showColor(c);
+    }
+    else {
+        showColor(COLOR_OFF);
+    }
+}
+
+void flash(Color c1, Color c2) {
+    if (((millis() / DELAY_MS) & 1) == 1) {
+        showColor(c1);
+    }
+    else {
+        showColor(c2);
+    }
+}
+
+void flash(Color c1, Color c2, int DELAY_MS) {
+    if (((millis() / DELAY_MS) & 1) == 1) {
+        showColor(c1);
+    }
+    else {
+        showColor(c2);
+    }
+}
+
 void LED(int currentState) {
     switch (currentState) {
         case 0:

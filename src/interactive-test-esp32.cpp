@@ -12,9 +12,9 @@
 #include <config.h>
 #include <datalog.h>
 
-double yaw, pitch, roll;
+float yaw, pitch, roll;
 TVC tvc;
-double x_out, y_out;
+float x_out, y_out;
 long long lastLoopTime;
 
 char receivedChar;

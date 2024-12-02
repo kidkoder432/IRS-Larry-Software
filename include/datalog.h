@@ -5,16 +5,16 @@
 
 #define DEBUG 0
 struct DataPoint {
-    long timestamp;         // Microseconds
-    double DELTA_T;           // Delta Time
+    long timestamp;         // Milliseconds
+    float DELTA_T;         // Delta Time
     SensorReadings r;       // Sensor Readings
     Vec3D o;                // Current Orientation
-    double x_out, y_out;     // TVC Outputs
-    double alt;              // Altitude
+    float x_out, y_out;    // TVC Outputs
+    float alt;             // Altitude
     int currentState;       // Current State
-    double vert_vel;         // Vertical Velocity
-    double px, ix, dx;       // PID Values (X)
-    double py, iy, dy;       // PID Values (Y)
+    float vert_vel;        // Vertical Velocity
+    float px, ix, dx;      // PID Values (X)
+    float py, iy, dy;      // PID Values (Y)
 
 
 };
@@ -24,7 +24,7 @@ struct DataPoint {
 
 bool logStatus(const char* msg, ExFile& logFile) {
     if (!logFile.isOpen()) {
-        Serial.println("Couldn't open file");
+        Serial.println("Couldn't open log file");
         return false;
     }
     long long t = micros();
@@ -50,17 +50,22 @@ bool logStatus(const char* msg, ExFile& logFile) {
     logFile.print(" - ");
     logFile.println(msg);
 
-    bool doFlush = true;
-    if (millis() % 1000 < 100 && doFlush) {
-        logFile.sync();
-        doFlush = false;
-    }
-    else {
-        doFlush = true;
-    }
+    logFile.sync();
     return true;
 };
 
+bool logDataBin(DataPoint p, ExFile& dataFile) {
+
+    if (!dataFile.isOpen()) {
+        Serial.println("Couldn't open data file");
+        return false;
+    }
+
+    dataFile.write((byte*)&p, sizeof(DataPoint));
+
+    return true;
+
+}
 bool logDataPoint(DataPoint p, ExFile& dataFile) {
 
     if (!dataFile.isOpen()) {
@@ -70,58 +75,49 @@ bool logDataPoint(DataPoint p, ExFile& dataFile) {
 
     dataFile.print(p.timestamp);
     dataFile.print(",");
-    dataFile.print(p.DELTA_T, 6);
+    dataFile.print(p.DELTA_T, 3);
     dataFile.print(",");
-    dataFile.print(p.r.ax, 6);
+    dataFile.print(p.r.ax, 3);
     dataFile.print(",");
-    dataFile.print(p.r.ay, 6);
+    dataFile.print(p.r.ay, 3);
     dataFile.print(",");
-    dataFile.print(p.r.az, 6);
+    dataFile.print(p.r.az, 3);
     dataFile.print(",");
-    dataFile.print(p.r.gx, 6);
+    dataFile.print(p.r.gx, 3);
     dataFile.print(",");
-    dataFile.print(p.r.gy, 6);
+    dataFile.print(p.r.gy, 3);
     dataFile.print(",");
-    dataFile.print(p.r.gz, 6);
+    dataFile.print(p.r.gz, 3);
     dataFile.print(",");
-    dataFile.print(p.o.x, 6);
+    dataFile.print(p.o.x, 3);
     dataFile.print(",");
-    dataFile.print(p.o.y, 6);
+    dataFile.print(p.o.y, 3);
     dataFile.print(",");
-    dataFile.print(p.o.z, 6);
+    dataFile.print(p.o.z, 3);
     dataFile.print(",");
-    dataFile.print(p.x_out, 6);
+    dataFile.print(p.x_out, 3);
     dataFile.print(",");
-    dataFile.print(p.y_out, 6);
+    dataFile.print(p.y_out, 3);
     dataFile.print(",");
-    dataFile.print(p.alt, 6);
+    dataFile.print(p.alt, 3);
     dataFile.print(",");
     dataFile.print(p.currentState);
     dataFile.print(",");
-    dataFile.print(p.vert_vel, 6);
+    dataFile.print(p.vert_vel, 3);
     dataFile.print(",");
-    dataFile.print(p.px, 6);
+    dataFile.print(p.px, 3);
     dataFile.print(",");
-    dataFile.print(p.ix, 6);
+    dataFile.print(p.ix, 3);
     dataFile.print(",");
-    dataFile.print(p.dx, 6);
+    dataFile.print(p.dx, 3);
     dataFile.print(",");
-    dataFile.print(p.py, 6);
+    dataFile.print(p.py, 3);
     dataFile.print(",");
-    dataFile.print(p.iy, 6);
+    dataFile.print(p.iy, 3);
     dataFile.print(",");
-    dataFile.print(p.dy, 6);
-
+    dataFile.print(p.dy, 3);
     dataFile.println();
 
-    bool doFlush = true;
-    if (millis() % 1000 < 100 && doFlush) {
-        dataFile.sync();
-        doFlush = false;
-    }
-    else {
-        doFlush = true;
-    }
 #if DEBUG
     Serial.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
     Serial.print(p.timestamp, 6);

@@ -23,9 +23,9 @@
 HardwareBLESerial& bleSerial = HardwareBLESerial::getInstance();
 bool bleOn = false;
 
-double yaw, pitch, roll;
+float yaw, pitch, roll;
 TVC tvc;
-double x_out, y_out;
+float x_out, y_out;
 SensorReadings readings;
 Vec3D dir;
 Biases biases;
@@ -33,11 +33,11 @@ Kalman kx, ky;
 Quaternion attitude;
 Config config;
 unsigned long lastLoopTime;
-double deltaTime = 0;
+float deltaTime = 0;
 
-double vertVel = 0;
+float vertVel = 0;
 
-double ALPHA = 0.05;
+float ALPHA = 0.05;
 
 char receivedChar;
 bool newCommand = false;
@@ -57,7 +57,7 @@ ExFile logFile;
 PyroChannel pyro1_motor(PYRO_LANDING_MOTOR_IGNITION, 1000);
 PyroChannel pyro2_land(PYRO_LANDING_LEGS_DEPLOY, 1000);
 
-double pressureOffset = 0;
+float pressureOffset = 0;
 
 int currentState = 42;   // Test state = 42
 
@@ -385,7 +385,7 @@ void loop() {
             case 'S':
                 msgPrintln(bleOn, bleSerial, "Reading SD Card Info");
                 logStatus("Reading SD Card Info", logFile);
-                sdCardInfo();
+                sdCardInfo(sd);
                 break;
             case 'Q':
                 msgPrintln(bleOn, bleSerial, "Resetting Angles");
@@ -534,7 +534,7 @@ void loop() {
 
                         i = 1;
                         std::string key = "";
-                        double selectedEntry = 0.0;
+                        float selectedEntry = 0.0;
                         for (auto& entry : config) {
                             if (selectedKey == i) {
                                 Serial.print("Selected key: ");
@@ -560,7 +560,7 @@ void loop() {
                             break;
                         }
                         valueStr.toLowerCase();
-                        double value;
+                        float value;
                         if (valueStr == "true") {
                             value = 1.0;
                         }
@@ -568,7 +568,7 @@ void loop() {
                             value = 0.0;
                         }
                         else {
-                            value = valueStr.toDouble();
+                            value = valueStr.tofloat();
                         }
 
                         config[key] = value;

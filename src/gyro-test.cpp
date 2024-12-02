@@ -4,7 +4,7 @@
 #include <leds.h>
 
 
-double yaw, pitch;
+float yaw, pitch;
 SensorReadings readings, prevReadings;
 Vec2D dir;
 Biases biases;

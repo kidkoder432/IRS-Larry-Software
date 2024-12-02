@@ -5,7 +5,7 @@
 #define ACTUAL_PID 1
 #define PRINT_OUTPUT 1
 
-double clamp(double x, double min, double max) { return (x < min) ? min : (x > max) ? max : x; }
+float clamp(float x, float min, float max) { return (x < min) ? min : (x > max) ? max : x; }
 
 class TVC {
 public:
@@ -34,7 +34,7 @@ public:
         FLIP_Y = config["FLIP_Y"] > 0;
     }
 
-    void begin(double deltaTime) {
+    void begin(float deltaTime) {
         dir = Vec3D(0, 0, 0);
         tvcx.attach(5);
         tvcy.attach(6);
@@ -47,7 +47,7 @@ public:
     }
 
     // X axis = yaw correction, Y axis = pitch correctin
-    Vec2D update(Vec3D o, double dt) {
+    Vec2D update(Vec3D o, float dt) {
         if (!locked) {
             dir = o;
             // Serial.println(dir.z);
@@ -70,11 +70,11 @@ public:
             Serial.print("\t");
 #endif
 
-            double tvcXRaw = (x_out - XDEF) * PI / 180;
-            double tvcYRaw = (y_out - YDEF) * PI / 180;
+            float tvcXRaw = (x_out - XDEF) * PI / 180;
+            float tvcYRaw = (y_out - YDEF) * PI / 180;
 
-            double cr = cos(dir.x * PI / 180);
-            double sr = sin(dir.x * PI / 180);
+            float cr = cos(dir.x * PI / 180);
+            float sr = sin(dir.x * PI / 180);
 
             x_out = tvcXRaw * cr - tvcYRaw * sr;
             y_out = tvcXRaw * sr + tvcYRaw * cr;
@@ -114,7 +114,7 @@ public:
     }
 
     // Writes angles to TVC
-    void write(double x, double y) {
+    void write(float x, float y) {
         if (x > XMAX) x = XMAX;
         if (x < XMIN) x = XMIN;
         if (y > YMAX) y = YMAX;
@@ -142,11 +142,9 @@ public:
     }
 
     void abort() {
-        if (abs(dir.y) > 30 || abs(dir.x) > 30) {
-            tvcx.write(XDEF);
-            tvcy.write(YDEF);
-            locked = true;
-        }
+        tvcx.write(XDEF);
+        tvcy.write(YDEF);
+        locked = true;
     }
 
 
@@ -154,22 +152,22 @@ private:
     Servo tvcx, tvcy;
 
     // placeholder values; replace with actual limits
-    double XMIN = 83;  // TVC X Min
-    double XMAX = 105; // TVC X Max
-    double YMIN = 73;  // TVC Y Min
-    double YMAX = 95; // TVC Y Max
-    double XDEF = 94;  // TVC X Default (zero position)
-    double YDEF = 84;  // TVC Y Default (zero position)
+    float XMIN = 83;  // TVC X Min
+    float XMAX = 105; // TVC X Max
+    float YMIN = 73;  // TVC Y Min
+    float YMAX = 95; // TVC Y Max
+    float XDEF = 94;  // TVC X Default (zero position)
+    float YDEF = 84;  // TVC Y Default (zero position)
 
     // --------- TVC Control --------- //
 
-    double P = 1.2;
-    double I = 0.1;
-    double D = 0.1;
-    double N = 50;
+    float P = 1.2;
+    float I = 0.1;
+    float D = 0.1;
+    float N = 50;
 
-    double x_out;
-    double y_out;
+    float x_out;
+    float y_out;
 
     bool FLIP_X = false;
     bool FLIP_Y = false;

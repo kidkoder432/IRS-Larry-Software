@@ -4,7 +4,7 @@
 #include <leds.h>
 #include <tvc.h>
 
-double roll, pitch, yaw;
+float roll, pitch, yaw;
 SensorReadings readings;
 Vec3D dir;
 Biases biases;
@@ -13,7 +13,7 @@ TVC tvc;
 Quaternion attitude;
 
 
-double ALPHA = 0.05;
+float ALPHA = 0.05;
 
 void setup() {
     Serial.begin(115200);
@@ -27,7 +27,7 @@ void setup() {
 
     biases = calibrateSensors();
 
-    // double ax, ay, az;
+    // float ax, ay, az;
     // IMU.readAcceleration(ay, ax, az);
     // Serial.println(atan2(az, -ay) * 180 / PI);
     // yaw = atan2(ax, -sign(ay) * sqrt(az * az + ay * ay)) * 180 / PI;

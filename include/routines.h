@@ -17,7 +17,7 @@
 #include <prints.h>
 #include <HardwareBLESerial.h>
 
-double mag3(double x, double y, double z) { return sqrt(x * x + y * y + z * z); }
+float mag3(float x, float y, float z) { return sqrt(x * x + y * y + z * z); }
 
 class Rocket {
 public:
@@ -25,7 +25,19 @@ public:
     // Handle catastrophic failures
     void HALT_AND_CATCH_FIRE() {
         while (true) {
-            flash(COLOR_RED);
+            flash(COLOR_RED, 400);
+        }
+    }
+
+    void HALT_AND_CATCH_FIRE(Color color) {
+        while (true) {
+            flash(color);
+        }
+    }
+
+    void HALT_DONE() {
+        while (true) {
+            flash(COLOR_GREEN, COLOR_LIGHTBLUE, 800);
         }
     }
 
@@ -79,19 +91,19 @@ public:
 
     // Initialize log files
     bool initLogs() {
-        if (!logFile.open("log.txt", O_TRUNC | O_WRITE)) {
+        if (!logFile.open("log.txt", O_TRUNC | O_WRITE | O_CREAT)) {
             msgPrintln(bleOn, bleSerial, "Failed to open log file!");
             HALT_AND_CATCH_FIRE();
             return false;
         }
         logStatus("Log file initialized", logFile);
 
-        if (!dataFile.open("data.csv", O_TRUNC | O_WRITE)) {
+        if (!dataFile.open("data.bin", O_TRUNC | O_WRITE | O_CREAT)) {
             msgPrintln(bleOn, bleSerial, "Failed to open data file!");
             HALT_AND_CATCH_FIRE();
             return false;
         }
-        dataFile.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
+        dataFile.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Roll,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
         return true;
     }
 
@@ -174,7 +186,6 @@ public:
     bool finishSetup() {
         lastLoopTime = millis();
         logStatus("Setup complete", logFile);
-        msgPrintln(bleOn, bleSerial, "Setup complete");
         return true;
     }
 
@@ -307,7 +318,7 @@ public:
         p.iy = tvc.pid_y.i;
         p.dy = tvc.pid_y.d;
 
-        logDataPoint(p, dataFile);
+        logDataBin(p, dataFile);
     }
 
     // Update loop timing
@@ -357,7 +368,6 @@ public:
     // Reset angles to initial state
     void resetAngles() {
 
-        msgPrintln(bleOn, bleSerial, "Resetting Angles");
         logStatus("Resetting Angles", logFile);
 
         if (config["INIT_ACCEL"] > 0) {
@@ -391,25 +401,54 @@ public:
         logStatus(message, logFile);
     }
 
+    void printMessage(auto message) {
+        msgPrintln(bleOn, bleSerial, message);
+    }
+
+    void printMessage(auto message, bool ln) {
+        if (ln) msgPrintln(bleOn, bleSerial, message);
+        else msgPrint(bleOn, bleSerial, message);
+    }
+
     HardwareBLESerial& getBle() { return bleSerial; }
     Vec3D getDir() { return dir; }
     SensorReadings getReadings() { return readings; }
-    double getAlt() { return altitude; }
+    float getAlt() { return altitude; }
+
+    void cleanupLogs() {
+        dataFile.close();
+        logMessage("Cleaning up...");
+        logFile.close();
+    }
+
+    void fullCleanup() {
+        printMessage("Shutting down...");
+        pyro1_motor.disarm();
+        pyro2_land.disarm();
+        cleanupLogs();
+        sd.end();
+        bleSerial.end();
+        tvc.abort();
+        Serial.end();
+        HALT_DONE();
+
+
+    }
 
     HardwareBLESerial& bleSerial = HardwareBLESerial::getInstance();
     bool bleOn = false;
 
     SensorReadings readings;
     Biases biases;
-    double pressureOffset = 0;
+    float pressureOffset = 0;
 
     Quaternion attitude;
     Vec3D dir;
-    double yaw, pitch, roll;
-    double vertVel, altitude;
+    float yaw, pitch, roll;
+    float vertVel, altitude;
 
     TVC tvc;
-    double x_out, y_out;
+    float x_out, y_out;
 
     bool doLog = true;
     bool ledsOn = true;
@@ -424,5 +463,5 @@ public:
 
     int currentState = 0;
     unsigned long lastLoopTime;
-    double deltaTime = 0;
+    float deltaTime = 0;
 };

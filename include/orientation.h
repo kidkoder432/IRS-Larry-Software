@@ -30,10 +30,10 @@ struct SensorReadings {
 // For TVC:
 // x = yaw servo, y = pitch servo
 struct Vec2D {
-    double x, y;
+    float x, y;
 
     Vec2D() { x = 0; y = 0; }
-    Vec2D(double x, double y) : x(x), y(y) {}
+    Vec2D(float x, float y) : x(x), y(y) {}
 
 };
 
@@ -43,25 +43,25 @@ struct Vec2D {
 // For Accelerometer:
 // x = +up -down, y = +left -right, z = +forward -backward
 struct Vec3D {
-    double x, y, z;
+    float x, y, z;
 
     Vec3D() { x = 0; y = 0; z = 0; }
-    Vec3D(double x, double y, double z) : x(x), y(y), z(z) {}
+    Vec3D(float x, float y, float z) : x(x), y(y), z(z) {}
 };
 
-int sign(double x) {
+int sign(float x) {
     if (x == 0) return 0;
     return x > 0 ? 1 : -1;
 }
 
 struct Biases {
-    double bx, by, bz;
+    float bx, by, bz;
     Biases() { bx = by = bz = 0; };
-    Biases(double x, double y, double z) : bx(x), by(y), bz(z) {}
+    Biases(float x, float y, float z) : bx(x), by(y), bz(z) {}
 
 };
 
-void wwinitSensors() {
+void initSensors() {
     Wire1.begin();
     imu.beginI2C(0x68, Wire1);
 
@@ -75,7 +75,6 @@ void wwinitSensors() {
     accConfig.cfg.acc.bwp = BMI2_ACC_OSR4_AVG1;
     accConfig.cfg.acc.filter_perf = BMI2_PERF_OPT_MODE;
     err = imu.setConfig(accConfig);
-    Serial.println(err);
 
     // Configure gyroscope
     bmi2_sens_config gyroConfig;
@@ -86,7 +85,6 @@ void wwinitSensors() {
     gyroConfig.cfg.gyr.filter_perf = BMI2_PERF_OPT_MODE;
     gyroConfig.cfg.gyr.noise_perf = BMI2_PERF_OPT_MODE;
     err += imu.setConfig(gyroConfig);
-    Serial.println(err);
 
     BARO.begin();
 }
@@ -130,9 +128,9 @@ Biases calibrateSensors(Config& config) {
     Serial.println("Starting external gyroscope offset calibration...");
 
     long long now = micros();
-    double x_angle_c, y_angle_c, z_angle_c;
+    float x_angle_c, y_angle_c, z_angle_c;
     x_angle_c = y_angle_c = z_angle_c = 0;
-    double dt = 0.005;
+    float dt = 0.005;
     SensorReadings r;
     long long lastM = micros();
     while (micros() - now < 3000000LL) {
@@ -151,18 +149,18 @@ Biases calibrateSensors(Config& config) {
     Serial.println(y_angle_c);
     Serial.println(micros() - now);
 
-    double bx = ((x_angle_c) / (double)(micros() - now)) * 1000000;
-    double by = ((y_angle_c) / (double)(micros() - now)) * 1000000;
-    double bz = ((z_angle_c) / (double)(micros() - now)) * 1000000;
+    float bx = ((x_angle_c) / (float)(micros() - now)) * 1000000;
+    float by = ((y_angle_c) / (float)(micros() - now)) * 1000000;
+    float bz = ((z_angle_c) / (float)(micros() - now)) * 1000000;
 
     return Biases(bx, by, bz);
 }
 
 // GYRO-BASED ANGLE CALCULATION
-Vec3D get_angles(SensorReadings r, SensorReadings pr = SensorReadings(), Vec3D dir = Vec3D(0, 0, 0), double dt = 0.02) {
-    double x = dir.x - ((r.gy + pr.gy) * dt / 2);
-    double y = dir.y + ((r.gx + pr.gx) * dt / 2);
-    double z = dir.z - ((r.gz + pr.gz) * dt / 2);
+Vec3D get_angles(SensorReadings r, SensorReadings pr = SensorReadings(), Vec3D dir = Vec3D(0, 0, 0), float dt = 0.02) {
+    float x = dir.x - ((r.gy + pr.gy) * dt / 2);
+    float y = dir.y + ((r.gx + pr.gx) * dt / 2);
+    float z = dir.z - ((r.gz + pr.gz) * dt / 2);
 
     x = x * 0.85 + dir.x * 0.15;
     y = y * 0.85 + dir.y * 0.15;
@@ -172,30 +170,30 @@ Vec3D get_angles(SensorReadings r, SensorReadings pr = SensorReadings(), Vec3D d
 }
 
 // COMPLEMENTARY FILTERING
-Vec2D get_angles_complementary(double A, double dt, SensorReadings r, double yaw, double pitch, Biases b) {
+Vec2D get_angles_complementary(float A, float dt, SensorReadings r, float yaw, float pitch, Biases b) {
 
     // Orientation w = local_to_global(r, b, yaw, pitch);
     Vec2D w = Vec2D(r.gz - b.bz, r.gx - b.bx);
 
-    double accel_angle_x = atan2(r.ax, -sign(r.ay) * sqrt(r.az * r.az + r.ay * r.ay)) * 180 / PI;
-    double gyro_angle_x = yaw - (w.x) * dt;
-    double angle_x = accel_angle_x * (1.0 - A) + gyro_angle_x * A;
+    float accel_angle_x = atan2(r.ax, -sign(r.ay) * sqrt(r.az * r.az + r.ay * r.ay)) * 180 / PI;
+    float gyro_angle_x = yaw - (w.x) * dt;
+    float angle_x = accel_angle_x * (1.0 - A) + gyro_angle_x * A;
 
-    double accel_angle_y = atan2(r.az, -r.ay) * 180 / PI;
-    double gyro_angle_y = pitch + (w.y) * dt;
-    double angle_y = accel_angle_y * (1.0 - A) + gyro_angle_y * A;
+    float accel_angle_y = atan2(r.az, -r.ay) * 180 / PI;
+    float gyro_angle_y = pitch + (w.y) * dt;
+    float angle_y = accel_angle_y * (1.0 - A) + gyro_angle_y * A;
 
     return Vec2D(angle_x, angle_y);
 }
 
 
 // KALMAN FILTERING
-Vec2D get_angles_kalman(double dt, SensorReadings r, Kalman& kx, Kalman& ky, Biases b) {
-    double accel_angle_x = atan2(r.ax, -sign(r.ay) * sqrt(r.az * r.az + r.ay * r.ay)) * 180 / PI;
-    double accel_angle_y = atan2(r.az, -r.ay) * 180 / PI;
+Vec2D get_angles_kalman(float dt, SensorReadings r, Kalman& kx, Kalman& ky, Biases b) {
+    float accel_angle_x = atan2(r.ax, -sign(r.ay) * sqrt(r.az * r.az + r.ay * r.ay)) * 180 / PI;
+    float accel_angle_y = atan2(r.az, -r.ay) * 180 / PI;
 
-    double kal_x = kx.getAngle(accel_angle_x, r.gz - b.bz, dt);
-    double kal_y = ky.getAngle(accel_angle_y, r.gx - b.bx, dt);
+    float kal_x = kx.getAngle(accel_angle_x, r.gz - b.bz, dt);
+    float kal_y = ky.getAngle(accel_angle_y, r.gx - b.bx, dt);
 
     return Vec2D(kal_x, kal_y);
 
@@ -204,15 +202,15 @@ Vec2D get_angles_kalman(double dt, SensorReadings r, Kalman& kx, Kalman& ky, Bia
 
 // QUATERNION BASED ANGLE CALCULATION
 // Returns roll, pitch, yaw
-Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, double deltaTime) {
-    double wx = readings.gx * (PI / 180);
-    double wy = readings.gy * (PI / 180);
-    double wz = readings.gz * (PI / 180);
+Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, float deltaTime) {
+    float wx = readings.gx * (PI / 180);
+    float wy = readings.gy * (PI / 180);
+    float wz = readings.gz * (PI / 180);
 
-    double roll, pitch, yaw;
+    float roll, pitch, yaw;
 
     // Update attitude quaternion
-    double norm = sqrt(wx * wx + wy * wy + wz * wz);
+    float norm = sqrt(wx * wx + wy * wy + wz * wz);
     norm = copysignf(max(abs(norm), 1e-9), norm); // NO DIVIDE BY 0
 
     wx /= norm;
@@ -224,10 +222,10 @@ Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, double delt
 
     // --- Convert to Euler Angles --- //    
     // Switch axes (X pitch, Y roll, Z yaw --> Z pitch, X roll, Y yaw)
-    double qw = attitude.a;
-    double qz = attitude.b;
-    double qx = attitude.c;
-    double qy = attitude.d;
+    float qw = attitude.a;
+    float qz = attitude.b;
+    float qx = attitude.c;
+    float qy = attitude.d;
 
     // from https://www.euclideanspace.com/maths/standards/index.htm
     if (qx * qy + qz * qw >= 0.5) {  // North pole

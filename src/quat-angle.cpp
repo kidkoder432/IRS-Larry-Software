@@ -9,12 +9,12 @@ Vec2D dir;
 Biases biases;
 Quaternion attitude;
 
-double yaw, pitch, roll;
+float yaw, pitch, roll;
 
 bool newCommand = false;
 char receivedChar;
 
-double norm;
+float norm;
 
 void setup() {
     Serial.begin(115200);
@@ -70,9 +70,9 @@ void loop() {
 
     // Init Gyro Rate Quaternion
     // X = pitch, Y = roll, Z = yaw
-    double wx = readings.gx * (PI / 180);
-    double wy = readings.gy * (PI / 180);
-    double wz = readings.gz * (PI / 180);
+    float wx = readings.gx * (PI / 180);
+    float wy = readings.gy * (PI / 180);
+    float wz = readings.gz * (PI / 180);
 
 
     // Update attitude quaternion
@@ -88,10 +88,10 @@ void loop() {
 
     // --- Convert to Euler Angles --- //    
     // Switch axes (X pitch, Y roll, Z yaw --> Z pitch, X roll, Y yaw)
-    double qw = attitude.a;
-    double qz = attitude.b;
-    double qx = attitude.c;
-    double qy = attitude.d;
+    float qw = attitude.a;
+    float qz = attitude.b;
+    float qx = attitude.c;
+    float qy = attitude.d;
 
     // from https://www.euclideanspace.com/maths/standards/index.htm
     if (qx * qy + qz * qw >= 0.5) {  // North pole

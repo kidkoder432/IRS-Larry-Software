@@ -11,7 +11,7 @@
 
 const int chipSelect = 10; // Adjust pin according to your SD card module
 
-typedef std::unordered_map<std::string, double> Config;
+typedef std::unordered_map<std::string, float> Config;
 
 void toLowercase(char* str) {
     for (int i = 0; str[i] != '\0'; i++) {
@@ -85,12 +85,6 @@ Config readConfig() {
     }
     // clean up
     cfg.end();
-
-    for (auto& entry : config) {
-        Serial.print(entry.first.c_str());
-        Serial.print(": ");
-        Serial.println(entry.second);
-    }
 
     return config;
 

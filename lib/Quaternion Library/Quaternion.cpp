@@ -25,7 +25,7 @@ Quaternion& Quaternion::operator+=(const Quaternion& q) {
     return *this;
 }
 
-Quaternion& Quaternion::operator*=(double scale) {
+Quaternion& Quaternion::operator*=(float scale) {
     a *= scale;
     b *= scale;
     c *= scale;
@@ -33,14 +33,14 @@ Quaternion& Quaternion::operator*=(double scale) {
     return *this;
 }
 
-double Quaternion::norm() const {
-    double norm2 = a * a + b * b + c * c + d * d;
+float Quaternion::norm() const {
+    float norm2 = a * a + b * b + c * c + d * d;
     return sqrt(norm2);
 }
 
 // 400B
 Quaternion& Quaternion::normalize() {
-    double n = norm();
+    float n = norm();
     a /= n;
     b /= n;
     c /= n;
@@ -51,14 +51,14 @@ Quaternion& Quaternion::normalize() {
 // This method takes an euler rotation in rad and converts it to an equivilent 
 // Quaternion rotation.
 // 800B
-const Quaternion Quaternion::from_euler_rotation(double yaw, double pitch, double roll) {
-    double cy = cos(yaw / 2);
-    double cp = cos(pitch / 2);
-    double cr = cos(roll / 2);
+const Quaternion Quaternion::from_euler_rotation(float yaw, float pitch, float roll) {
+    float cy = cos(yaw / 2);
+    float cp = cos(pitch / 2);
+    float cr = cos(roll / 2);
 
-    double sy = sin(yaw / 2);
-    double sp = sin(pitch / 2);
-    double sr = sin(roll / 2);
+    float sy = sin(yaw / 2);
+    float sp = sin(pitch / 2);
+    float sr = sin(roll / 2);
     Quaternion ret;
     ret.a = cr * cp * cy + sr * sp * sy;
     ret.b = sr * cp * cy - cr * sp * sy;
@@ -67,16 +67,16 @@ const Quaternion Quaternion::from_euler_rotation(double yaw, double pitch, doubl
     return ret;
 }
 
-const Quaternion Quaternion::from_euler_rotation_approx(double yaw, double pitch, double roll) {
+const Quaternion Quaternion::from_euler_rotation_approx(float yaw, float pitch, float roll) {
     // approximage cos(theta/2) as 1 - theta^2 / 8 (1 - theta^2 / 2 * 1/2^2)
-    double cy = 1 - ((yaw * yaw) / 8);
-    double cp = 1 - ((pitch * pitch) / 8);
-    double cr = 1 - ((roll * roll) / 8);
+    float cy = 1 - ((yaw * yaw) / 8);
+    float cp = 1 - ((pitch * pitch) / 8);
+    float cr = 1 - ((roll * roll) / 8);
 
     // appromixate sin(theta/2) as theta/2
-    double sy = yaw / 2;
-    double sp = pitch / 2;
-    double sr = roll / 2;
+    float sy = yaw / 2;
+    float sp = pitch / 2;
+    float sr = roll / 2;
     Quaternion ret;
     ret.a = cr * cp * cy + sr * sp * sy;
     ret.b = sr * cp * cy - cr * sp * sy;
@@ -85,8 +85,8 @@ const Quaternion Quaternion::from_euler_rotation_approx(double yaw, double pitch
     return ret;
 }
 
-const Quaternion Quaternion::from_axis_angle(double angle, double x, double y, double z) {
-    double sa = sin(angle / 2);
+const Quaternion Quaternion::from_axis_angle(float angle, float x, float y, float z) {
+    float sa = sin(angle / 2);
 
     Quaternion ret;
     ret.a = cos(angle / 2);

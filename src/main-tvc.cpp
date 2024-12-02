@@ -21,9 +21,9 @@
 HardwareBLESerial& bleSerial = HardwareBLESerial::getInstance();
 bool bleOn = false;
 
-double yaw, pitch, roll;
+float yaw, pitch, roll;
 TVC tvc;
-double x_out, y_out;
+float x_out, y_out;
 
 SensorReadings readings;
 Vec3D dir;
@@ -34,18 +34,18 @@ Config config;
 
 long long lastLoopTime;
 
-double vertVel = 0;
+float vertVel = 0;
 
 bool logData = true;
 File dataFile;
 File logFile;
 
-double pressureOffset = 0;
+float pressureOffset = 0;
 
 int currentState = 0;   // 0: Pad-Idle
 bool aborted = false;
 
-double mag3(double a, double b, double c) {
+float mag3(float a, float b, float c) {
     return sqrt(pow(a, 2) + pow(b, 2) + pow(c, 2));
 }
 
