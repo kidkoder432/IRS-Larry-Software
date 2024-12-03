@@ -103,7 +103,8 @@ public:
             HALT_AND_CATCH_FIRE();
             return false;
         }
-        dataFile.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Roll,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
+        dataFile.println("Timestamp,Delta Time,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Roll,TvcX,TvcY,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
+        dataFile.sync();
         return true;
     }
 

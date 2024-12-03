@@ -62,6 +62,7 @@ bool logDataBin(DataPoint p, ExFile& dataFile) {
     }
 
     dataFile.write((byte*)&p, sizeof(DataPoint));
+    dataFile.write("\t\n", 2);
 
     return true;
 
