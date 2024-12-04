@@ -7,7 +7,6 @@
 Rocket rocket;
 
 HardwareBLESerial& bleSerial = rocket.getBle();
-bool bleOn = true;
 
 char receivedChar;
 bool newCommand = false;
@@ -81,7 +80,7 @@ void setup() {
         if (newCommand) {
             switch (receivedChar) {
                 case 'Z':
-                    bleOn = false;
+                    rocket.bleOn = false;
                     override = true;
                     break;
                 default:
@@ -100,12 +99,12 @@ void setup() {
     }
 
     if (bleSerial) {
-        bleOn = true;
+        rocket.bleOn = true;
         rocket.printMessage("HardwareBLESerial central device connected!");
         rocket.logMessage("HardwareBLESerial central device connected!");
     }
     else {
-        bleOn = false;
+        rocket.bleOn = false;
         rocket.printMessage("BLE not connected! Using USB serial...");
         rocket.logMessage("WARN: BLE not connected! Using USB serial...");
 
@@ -139,7 +138,7 @@ void setup() {
 void loop() {
 
     recvOneChar();
-    if (bleOn) rocket.updateBle();
+    if (rocket.bleOn) rocket.updateBle();
 
     rocket.updateTvc();
     rocket.updateSensors();
@@ -166,7 +165,7 @@ void loop() {
                 rocket.calibrateAndLog();
                 break;
             case 'O':
-                msgPrint(bleOn, bleSerial, "Orientation: ");
+                msgPrint(rocket.bleOn, bleSerial, "Orientation: ");
                 sensorOutLock = true;
                 dirOutLock = false;
                 break;
@@ -199,7 +198,7 @@ void loop() {
                 rocket.getSdInfo();
                 break;
             case 'Q':
-                msgPrintln(bleOn, bleSerial, "Resetting Angles");
+                rocket.printMessage("Resetting Angles");
                 rocket.resetAngles();
                 break;
             case 'H':

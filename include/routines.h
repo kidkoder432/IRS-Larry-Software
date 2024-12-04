@@ -437,7 +437,7 @@ public:
     }
 
     HardwareBLESerial& bleSerial = HardwareBLESerial::getInstance();
-    bool bleOn = false;
+    bool bleOn = true;
 
     SensorReadings readings;
     Biases biases;
