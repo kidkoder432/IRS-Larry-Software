@@ -47,7 +47,7 @@ public:
     bool setup() {
         if (!initSerial()) return false;
         if (!initBle()) return false;
-        if (!initSd()) return false;
+        if (!initSD()) return false;
         if (!initLogs()) return false;
         if (!initConfig()) return false;
         if (!setupSensors()) return false;
@@ -75,7 +75,7 @@ public:
     }
 
     // Initialize SD Card
-    bool initSd() {
+    bool initSD() {
         if (!sd.begin(10, SPI_FULL_SPEED)) {
             msgPrintln(bleOn, bleSerial, "Failed to initialize SD card!");
             HALT_AND_CATCH_FIRE();
@@ -196,12 +196,11 @@ public:
     void update() {
         updateBle();
         updateSensors();
-        updateAngles();
+        updateAngles(true);
         updateAltVel();
         updateState();
         updateTvc();
         updatePyros();
-        logData();
 
         updateTime();
     }
@@ -224,16 +223,27 @@ public:
     }
 
     // Update angles using sensor readings
-    void updateAngles() {
+    void updateAngles(bool useCompl) {
+        if (useCompl) {
+            Vec2D dir_c = get_angles_complementary(config["COMP_FILTER_ALPHA_GYRO"], deltaTime, readings, yaw, pitch);
+            yaw = dir_c.x;
+            pitch = dir_c.y;
+        }
+
         dir = get_angles_quat(readings, attitude, deltaTime);
 
         if (config["FLIP_DIR_X"] > 0) dir.x = -dir.x;
         if (config["FLIP_DIR_Y"] > 0) dir.y = -dir.y;
         if (config["FLIP_DIR_Z"] > 0) dir.z = -dir.z;
 
-        yaw = dir.z;
-        pitch = dir.y;
+        if (!useCompl) {
+            yaw = dir.z;
+            pitch = dir.y;
+        }
+        
         roll = dir.x;
+
+        dir = Vec3D(yaw, pitch, roll);
 
         // Normalize angles to the range [-180, 180]
         if (yaw > 180) yaw -= 360;
@@ -298,10 +308,7 @@ public:
         }
     }
 
-    // Log data to the SD card
-    void logData() {
-        if (!doLog) return;
-
+    DataPoint getDataPoint() {
         DataPoint p;
         p.timestamp = millis();
         p.DELTA_T = deltaTime;
@@ -309,7 +316,7 @@ public:
         p.o = Vec3D(roll, pitch, yaw);
         p.x_out = x_out;
         p.y_out = y_out;
-        p.alt = getAltitude(config["PRESSURE_REF"], pressureOffset);
+        p.alt = altitude; // getAltitude(config["PRESSURE_REF"], pressureOffset);
         p.currentState = currentState;
         p.vert_vel = vertVel;
         p.px = tvc.pid_x.p;
@@ -318,8 +325,25 @@ public:
         p.py = tvc.pid_y.p;
         p.iy = tvc.pid_y.i;
         p.dy = tvc.pid_y.d;
+        p.isEmpty = false;
 
-        logDataBin(p, dataFile);
+        return p;
+    }
+
+    // Log data to the SD card
+    void logData(DataPoint dataArr[], int bufferSize) {
+        if (!doLog) return;
+        for (int i = 0; i < bufferSize; i++) {
+            if (dataArr[i].isEmpty) {
+                continue;
+            }
+            logDataPointBin(dataArr[i], dataFile);
+        }
+    }
+
+    void logPoint(DataPoint p) {
+        if (!doLog) return;
+        logDataPointBin(p, dataFile);
     }
 
     // Update loop timing
@@ -417,19 +441,39 @@ public:
     float getAlt() { return altitude; }
 
     void cleanupLogs() {
+        dataFile.sync();
         dataFile.close();
-        logMessage("Cleaning up...");
+        logMessage("Cleaning up logs...");
+        logFile.sync();
         logFile.close();
+    }
+
+    void cleanupSD() {
+        sd.end();
     }
 
     void fullCleanup() {
         printMessage("Shutting down...");
+        logMessage("Shutting down...");
+        printMessage("Disarming pyros...");
+        logMessage("Disarming pyros...");
         pyro1_motor.disarm();
         pyro2_land.disarm();
+
+        printMessage("Shutting down TVC...");
+        logMessage("Shutting down TVC...");
+        tvc.abort();
+
+        printMessage("Shutting down sensors...");
+        logMessage("Shutting down sensors...");
+        BARO.end();
+
+        printMessage("Cleaning up logs...");
         cleanupLogs();
         sd.end();
+
+
         bleSerial.end();
-        tvc.abort();
         Serial.end();
         HALT_DONE();
 
@@ -459,8 +503,8 @@ public:
     ExFile logFile;
     Config config;
 
-    PyroChannel pyro1_motor = PyroChannel(PYRO_LANDING_MOTOR_IGNITION, 1000L, false, true);
-    PyroChannel pyro2_land = PyroChannel(PYRO_LANDING_LEGS_DEPLOY, 1000L, false, true);
+    PyroChannel pyro1_motor = PyroChannel(PYRO_LANDING_MOTOR_IGNITION, 2000L, false, true);
+    PyroChannel pyro2_land = PyroChannel(PYRO_LANDING_LEGS_DEPLOY, 2000L, false, true);
 
     int currentState = 0;
     unsigned long lastLoopTime;

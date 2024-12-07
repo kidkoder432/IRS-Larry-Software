@@ -15,9 +15,19 @@ struct DataPoint {
     float vert_vel;        // Vertical Velocity
     float px, ix, dx;      // PID Values (X)
     float py, iy, dy;      // PID Values (Y)
+    DataPoint() = default;
+    bool isEmpty = true;
 
 
 };
+
+union DataPointBin {
+    DataPoint p = DataPoint();
+    unsigned char dataBytes[sizeof(DataPoint) - 4];
+
+    DataPointBin() = default;
+};
+
 
 
 
@@ -54,15 +64,17 @@ bool logStatus(const char* msg, ExFile& logFile) {
     return true;
 };
 
-bool logDataBin(DataPoint p, ExFile& dataFile) {
+bool logDataPointBin(DataPoint p, ExFile& dataFile) {
 
     if (!dataFile.isOpen()) {
         Serial.println("Couldn't open data file");
         return false;
     }
 
-    dataFile.write((byte*)&p, sizeof(DataPoint));
-    dataFile.write("\t\n", 2);
+    DataPointBin pBin;
+    pBin.p = p;
+
+    dataFile.write(pBin.dataBytes, sizeof(DataPoint) - 4);
 
     return true;
 

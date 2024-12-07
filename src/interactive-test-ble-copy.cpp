@@ -2,7 +2,9 @@
 
 #include <routines.h>
 
+
 #define SD_ATTACHED 1
+#define LOG_DATA_BATCH 1
 
 Rocket rocket;
 
@@ -13,6 +15,16 @@ bool newCommand = false;
 bool dirOutLock = true;
 bool sensorOutLock = true;
 bool experimentMode = false;
+
+int loopCount = 1;
+long currentMs;
+
+const int BUFFER_SIZE = 100;
+bool doBatchLog = false;
+
+bool useCompl = true;
+
+DataPoint dataArr[BUFFER_SIZE];
 
 const char HELP_STR[] =
 R"(Input commands to test the following:
@@ -62,7 +74,7 @@ void setup() {
 
 #if SD_ATTACHED
     // Setup SD card, config and data logging
-    rocket.initSd();
+    rocket.initSD();
     rocket.printMessage("SD card initialized!");
     rocket.getSdInfo();
     rocket.initLogs();
@@ -70,11 +82,12 @@ void setup() {
     rocket.initConfig();
     rocket.printMessage("Config initialized!");
 
-    rocket.initBle();
+    doBatchLog = rocket.config["DATA_LOG_BATCH"] > 0;
 
+    rocket.initBle();
     int waits = 0;
     bool override = false;
-    while (!bleSerial && waits < 30 and !override) {
+    while (!bleSerial && waits < 30 && !override) {
         flash(COLOR_BLUE);
         recvOneChar();
         if (newCommand) {
@@ -135,6 +148,18 @@ void setup() {
     rocket.printMessage(HELP_STR);
 }
 
+void logBatch(int loops) {
+    dataArr[loops - 1] = rocket.getDataPoint();
+    if (loops >= BUFFER_SIZE) {
+        rocket.logData(dataArr, BUFFER_SIZE);
+        loopCount = 0;
+
+        for (int i = 0; i < BUFFER_SIZE; i++) {
+            dataArr[i] = DataPoint();
+        }
+    }
+}
+
 void loop() {
 
     recvOneChar();
@@ -142,12 +167,19 @@ void loop() {
 
     rocket.updateTvc();
     rocket.updateSensors();
-    rocket.updateAngles();
-    // rocket.updateAltVel();
+    rocket.updateAngles(useCompl);
+    rocket.updateAltVel();
     // rocket.updateState();
     rocket.updatePyros();
     rocket.updateLeds();
-    rocket.logData();
+    if (rocket.doLog) {
+        if (doBatchLog) {
+            logBatch(loopCount);
+        }
+        else {
+            rocket.logPoint(rocket.getDataPoint());
+        }
+    }
 
     if (newCommand == true) {
         switch (receivedChar) {
@@ -208,12 +240,27 @@ void loop() {
             case 'D':
                 rocket.doLog = !rocket.doLog;
                 if (rocket.doLog) {
+
                     rocket.printMessage("Data Logging Enabled, opening logs");
+                    rocket.initSD();
                     rocket.initLogs();
                 }
                 else {
+                    // log the last bits of data and close the file and card
                     rocket.printMessage("Data Logging Disabled, saving logs");
+
+                    // force log
+                    if (doBatchLog) {
+                        logBatch(BUFFER_SIZE);
+                    }
+                    else {
+                        rocket.logPoint(rocket.getDataPoint());
+                    }
+
+                    rocket.doLog = false;
+
                     rocket.cleanupLogs();
+                    rocket.cleanupSD();
 
                 }
                 break;
@@ -229,15 +276,38 @@ void loop() {
             case 'E':
                 experimentMode = !experimentMode;
                 if (experimentMode) {
-                    rocket.currentState = 127;
+                    rocket.currentState = 76;
                     rocket.printMessage("Experiment Mode ON");
+                    rocket.logMessage("Experiment Mode ON - Running Test");
+                    rocket.initAngles();
+                    rocket.calibrateAndLog();
+                    useCompl = false;
+                    rocket.printMessage("Unlocking TVC");
+                    rocket.logMessage("Unlocking TVC");
                     rocket.tvc.unlock();
+
+                    rocket.printMessage("Firing Engine");
+                    rocket.logMessage("Firing Engine");
+                    rocket.firePyro1();
+
+                    rocket.printMessage("Releasing from stand");
+                    rocket.logMessage("Releasing from stand");
+                    rocket.firePyro2();
+                    currentMs = millis();
                     if (!rocket.doLog) rocket.setDataLog(true);
                 }
                 else {
-                    rocket.currentState = 42;
-                    rocket.printMessage("Experiment Mode OFF");
+                    rocket.currentState = 0;
+                    rocket.printMessage("Experiment Mode OFF - Test Complete");
+                    rocket.logMessage("Experiment Mode OFF - Test Complete");
+                    rocket.printMessage("Locking TVC");
+                    rocket.logMessage("Locking TVC");
                     rocket.tvc.lock();
+
+                    rocket.printMessage("Disarming Pyros");
+                    rocket.logMessage("Disarming Pyros");
+                    rocket.pyro1_motor.disarm();
+                    rocket.pyro2_land.disarm();
                 }
                 break;
 
@@ -246,6 +316,24 @@ void loop() {
                 break;
         }
         newCommand = false;
+    }
+
+    if (((millis() - currentMs) > 7000) && (experimentMode == true)) {
+        experimentMode = false;
+        rocket.currentState = 0;
+        rocket.printMessage("Experiment Mode OFF - Test Complete");
+        rocket.logMessage("Experiment Mode OFF - Test Complete");
+        rocket.printMessage("Locking TVC");
+        rocket.logMessage("Locking TVC");
+        rocket.tvc.lock();
+
+        rocket.printMessage("Disarming Pyros");
+        rocket.logMessage("Disarming Pyros");
+        rocket.pyro1_motor.disarm();
+        rocket.pyro2_land.disarm();
+
+        currentMs = millis();
+        useCompl = true;
     }
 
     if (!sensorOutLock) {
@@ -278,5 +366,6 @@ void loop() {
     }
 
     rocket.updateTime();
+    loopCount++;
 }
 
