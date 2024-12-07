@@ -87,6 +87,8 @@ void initSensors() {
     err += imu.setConfig(gyroConfig);
 
     BARO.begin();
+    BARO.setOutputRate(RATE_75_HZ);
+    
 }
 
 void readSensors(SensorReadings& r, Biases biases) {
@@ -170,17 +172,18 @@ Vec3D get_angles(SensorReadings r, SensorReadings pr = SensorReadings(), Vec3D d
 }
 
 // COMPLEMENTARY FILTERING
-Vec2D get_angles_complementary(float A, float dt, SensorReadings r, float yaw, float pitch, Biases b) {
+Vec2D get_angles_complementary(float A, float dt, SensorReadings r, float yaw, float pitch) {
 
     // Orientation w = local_to_global(r, b, yaw, pitch);
-    Vec2D w = Vec2D(r.gz - b.bz, r.gx - b.bx);
+    Vec2D w = Vec2D(r.gz, r.gx);
 
-    float accel_angle_x = atan2(r.ax, -sign(r.ay) * sqrt(r.az * r.az + r.ay * r.ay)) * 180 / PI;
-    float gyro_angle_x = yaw - (w.x) * dt;
+
+    float accel_angle_x = atan2(r.ax, sqrt(r.az * r.az + r.ay * r.ay)) * 180 / PI;
+    float gyro_angle_x = yaw + (w.x) * dt;
     float angle_x = accel_angle_x * (1.0 - A) + gyro_angle_x * A;
 
-    float accel_angle_y = atan2(r.az, -r.ay) * 180 / PI;
-    float gyro_angle_y = pitch + (w.y) * dt;
+    float accel_angle_y = atan2(r.az, r.ay) * 180 / PI;
+    float gyro_angle_y = pitch - (w.y) * dt;
     float angle_y = accel_angle_y * (1.0 - A) + gyro_angle_y * A;
 
     return Vec2D(angle_x, angle_y);
