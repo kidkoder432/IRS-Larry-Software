@@ -148,7 +148,7 @@ void loop() {
     rocket.updateAltVel();
     // rocket.updateState();
     rocket.updatePyros();
-    rocket.updateLeds();
+    rocket.updateAngleLeds();
     rocket.updateDataLog();
 
     if (newCommand == true) {
