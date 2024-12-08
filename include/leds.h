@@ -68,27 +68,3 @@ void flash(Color c1, Color c2, int DELAY_MS) {
     }
 }
 
-void LED(int currentState) {
-    switch (currentState) {
-        case 0:
-            flash(COLOR_BLUE);
-            break;
-        case 1:
-            showColor(COLOR_GREEN);
-            break;
-        case 2:
-            break; // Not used (for now)
-        case 3:
-            flash(COLOR_YELLOW);
-            break;
-        case 4:
-            showColor(COLOR_YELLOW);
-            break;
-        case 5:
-            showColor(COLOR_BLUE);
-            break;
-        case 127:
-            showColor(COLOR_RED);
-            break;
-    }
-}

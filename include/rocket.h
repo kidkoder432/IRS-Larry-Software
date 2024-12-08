@@ -78,7 +78,7 @@ public: // Public functions
 
     void HALT_DONE() {
         while (true) {
-            flash(COLOR_GREEN, COLOR_LIGHTBLUE, 800);
+            flash(COLOR_GREEN, COLOR_LIGHTBLUE, 1600);
         }
     }
 
@@ -304,24 +304,28 @@ public: // Public functions
     // Update current state of the system
     void updateState() {
         // ABORT: State -> 127
-        if (abs(yaw) >= 45 || abs(pitch) >= 45) {
-            logStatus("ERR: ABORT - UNSTABLE", logFile);
+        if (abs(yaw) >= 35 || abs(pitch) >= 35) {
+            logMessage("ERR: ABORT - UNSTABLE");
             currentState = 127;
         }
 
         // TOUCHDOWN: State 3 -> 5
-        if (currentState == 3 && mag3(readings.ax, readings.ay, readings.az) <= 1.5) {
-            currentState = 5;
+        if (currentState == 2 && mag3(readings.ax, readings.ay, readings.az) <= 1.5 && altitude <= 2) {
+            currentState = 4;
+            logMessage("Touchdown");
         }
 
-        // STAGE 1 BURNOUT: State 1 -> 3
+        // STAGE 1 BURNOUT: State 1 -> 2
         if (currentState == 1 && mag3(readings.ax, readings.ay, readings.az) <= 1.1) {
-            currentState = 3;
+            currentState = 2;
+            logMessage("Stage 1 burnout");
+            logMessage("Coasting");
         }
 
         // LAUNCH: State 0 -> 1
         if (currentState == 0 && mag3(readings.ax, readings.ay, readings.az) >= 1.5) {
             currentState = 1;
+            logMessage("Launch");
         }
     }
 
@@ -331,7 +335,7 @@ public: // Public functions
         pyro2_land.update();
     }
 
-    void updateLeds() {
+    void updateAngleLeds() {
         if (ledsOn) {
             if (abs(yaw) >= 15) {
                 showColor(COLOR_RED);
@@ -348,6 +352,29 @@ public: // Public functions
         }
         else {
             showColor(COLOR_OFF);
+        }
+    }
+
+    void updateStateLeds() {
+        switch (currentState) {
+            case 0:
+                flash(COLOR_BLUE, 1000);
+                break;
+            case 1:
+                showColor(COLOR_GREEN);
+                break;
+            case 2:
+                flash(COLOR_GREEN, 600);
+                break;
+            case 3:
+                showColor(COLOR_YELLOW);
+                break;
+            case 4:
+                showColor(COLOR_BLUE);
+                break;
+            case 127:
+                showColor(COLOR_RED);
+                break;
         }
     }
 
@@ -418,6 +445,8 @@ public: // Public functions
 
     // Enable or disable data logging
     void setDataLog(bool _doLog) {
+
+        if (_doLog == doLog) return;
         doLog = _doLog;
         if (doLog) {
 
@@ -514,10 +543,13 @@ public: // Public functions
         else msgPrint(bleOn, bleSerial, message);
     }
 
+    // --- Getters --- //
+
     HardwareBLESerial& getBle() { return bleSerial; }
     Vec3D getDir() { return dir; }
     const SensorReadings& getReadings() { return readings; }
     float getAlt() { return altitude; }
+    int getCurrentState() { return currentState; }
 
     void cleanupLogs() {
         dataFile.sync();
@@ -551,11 +583,22 @@ public: // Public functions
         cleanupLogs();
         sd.end();
 
-
+        printMessage("All systems shut down. Please reset the board. ");
         bleSerial.end();
         Serial.end();
+
+
+    }
+
+    void abort() {
+        fullCleanup();
+        HALT_AND_CATCH_FIRE();
+
+    }
+
+    void finish() {
+        fullCleanup();
+
         HALT_DONE();
-
-
     }
 };
