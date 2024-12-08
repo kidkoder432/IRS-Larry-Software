@@ -1,7 +1,6 @@
 // Test all components and features
 
-#include <routines.h>
-
+#include <rocket.h>
 
 #define SD_ATTACHED 1
 #define LOG_DATA_BATCH 1
@@ -16,15 +15,7 @@ bool dirOutLock = true;
 bool sensorOutLock = true;
 bool experimentMode = false;
 
-int loopCount = 1;
 long currentMs;
-
-const int BUFFER_SIZE = 100;
-bool doBatchLog = false;
-
-bool useCompl = true;
-
-DataPoint dataArr[BUFFER_SIZE];
 
 const char HELP_STR[] =
 R"(Input commands to test the following:
@@ -81,8 +72,6 @@ void setup() {
     rocket.printMessage("Data logging initialized!");
     rocket.initConfig();
     rocket.printMessage("Config initialized!");
-
-    doBatchLog = rocket.config["DATA_LOG_BATCH"] > 0;
 
     rocket.initBle();
     int waits = 0;
@@ -148,18 +137,6 @@ void setup() {
     rocket.printMessage(HELP_STR);
 }
 
-void logBatch(int loops) {
-    dataArr[loops - 1] = rocket.getDataPoint();
-    if (loops >= BUFFER_SIZE) {
-        rocket.logData(dataArr, BUFFER_SIZE);
-        loopCount = 0;
-
-        for (int i = 0; i < BUFFER_SIZE; i++) {
-            dataArr[i] = DataPoint();
-        }
-    }
-}
-
 void loop() {
 
     recvOneChar();
@@ -167,37 +144,30 @@ void loop() {
 
     rocket.updateTvc();
     rocket.updateSensors();
-    rocket.updateAngles(useCompl);
+    rocket.updateAngles();
     rocket.updateAltVel();
     // rocket.updateState();
     rocket.updatePyros();
     rocket.updateLeds();
-    if (rocket.doLog) {
-        if (doBatchLog) {
-            logBatch(loopCount);
-        }
-        else {
-            rocket.logPoint(rocket.getDataPoint());
-        }
-    }
+    rocket.updateDataLog();
 
     if (newCommand == true) {
         switch (receivedChar) {
             case 'U':
-                rocket.setTvc(false);
+                rocket.tvc.unlock();
                 break;
             case 'L':
-                rocket.setTvc(true);
+                rocket.tvc.lock();
                 break;
             case 'K':
                 rocket.printMessage("Toggling LEDs");
-                rocket.ledsOn = !rocket.ledsOn;
+                rocket.toggleLeds();
                 break;
             case 'C':
                 rocket.calibrateAndLog();
                 break;
             case 'O':
-                msgPrint(rocket.bleOn, bleSerial, "Orientation: ");
+                rocket.printMessage("Orientation: ");
                 sensorOutLock = true;
                 dirOutLock = false;
                 break;
@@ -238,31 +208,7 @@ void loop() {
                 break;
 
             case 'D':
-                rocket.doLog = !rocket.doLog;
-                if (rocket.doLog) {
-
-                    rocket.printMessage("Data Logging Enabled, opening logs");
-                    rocket.initSD();
-                    rocket.initLogs();
-                }
-                else {
-                    // log the last bits of data and close the file and card
-                    rocket.printMessage("Data Logging Disabled, saving logs");
-
-                    // force log
-                    if (doBatchLog) {
-                        logBatch(BUFFER_SIZE);
-                    }
-                    else {
-                        rocket.logPoint(rocket.getDataPoint());
-                    }
-
-                    rocket.doLog = false;
-
-                    rocket.cleanupLogs();
-                    rocket.cleanupSD();
-
-                }
+                rocket.toggleDataLog();
                 break;
             case 'P':
                 rocket.printMessage("Time per loop: ", false);
@@ -270,18 +216,17 @@ void loop() {
 
                 rocket.printMessage("Loop rate: ", false);
                 rocket.printMessage(1 / rocket.deltaTime);
-
                 break;
 
             case 'E':
                 experimentMode = !experimentMode;
                 if (experimentMode) {
-                    rocket.currentState = 76;
+                    rocket.setState(76);
                     rocket.printMessage("Experiment Mode ON");
                     rocket.logMessage("Experiment Mode ON - Running Test");
                     rocket.initAngles();
                     rocket.calibrateAndLog();
-                    useCompl = false;
+                    rocket.disableCompl();
                     rocket.printMessage("Unlocking TVC");
                     rocket.logMessage("Unlocking TVC");
                     rocket.tvc.unlock();
@@ -294,10 +239,10 @@ void loop() {
                     rocket.logMessage("Releasing from stand");
                     rocket.firePyro2();
                     currentMs = millis();
-                    if (!rocket.doLog) rocket.setDataLog(true);
+                    rocket.setDataLog(true);
                 }
                 else {
-                    rocket.currentState = 0;
+                    rocket.setState(0);
                     rocket.printMessage("Experiment Mode OFF - Test Complete");
                     rocket.logMessage("Experiment Mode OFF - Test Complete");
                     rocket.printMessage("Locking TVC");
@@ -320,7 +265,7 @@ void loop() {
 
     if (((millis() - currentMs) > 7000) && (experimentMode == true)) {
         experimentMode = false;
-        rocket.currentState = 0;
+        rocket.setState(0);
         rocket.printMessage("Experiment Mode OFF - Test Complete");
         rocket.logMessage("Experiment Mode OFF - Test Complete");
         rocket.printMessage("Locking TVC");
@@ -333,7 +278,7 @@ void loop() {
         rocket.pyro2_land.disarm();
 
         currentMs = millis();
-        useCompl = true;
+        rocket.disableCompl();
     }
 
     if (!sensorOutLock) {
@@ -366,6 +311,5 @@ void loop() {
     }
 
     rocket.updateTime();
-    loopCount++;
 }
 

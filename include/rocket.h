@@ -19,8 +19,49 @@
 
 float mag3(float x, float y, float z) { return sqrt(x * x + y * y + z * z); }
 
+
 class Rocket {
-public:
+
+private:  // Member variables and internal functions
+    HardwareBLESerial& bleSerial = HardwareBLESerial::getInstance();
+
+    SensorReadings readings;
+    Biases biases;
+    float pressureOffset = 0;
+
+    Quaternion attitude;
+    Vec3D dir;
+    bool useCompl = true;
+    float yaw, pitch, roll;
+    float vertVel, altitude;
+
+    float x_out, y_out;
+
+    bool doLog = true;
+    bool doBatchLog = true;
+    static const int BUFFER_SIZE = 100;
+    DataPoint dataArr[BUFFER_SIZE];
+    int loopCount = 1;
+
+    bool ledsOn = true;
+
+    SdExFat sd;
+    ExFile dataFile;
+    ExFile logFile;
+    Config config;
+
+    int currentState = 0;
+    unsigned long lastLoopTime;
+
+public: // Public functions
+
+    bool bleOn = true;
+    float deltaTime = 0;
+
+    PyroChannel pyro1_motor = PyroChannel(PYRO_LANDING_MOTOR_IGNITION, 2000L, false, true);
+    PyroChannel pyro2_land = PyroChannel(PYRO_LANDING_LEGS_DEPLOY, 2000L, false, true);
+
+    TVC tvc;
 
     // Handle catastrophic failures
     void HALT_AND_CATCH_FIRE() {
@@ -61,7 +102,8 @@ public:
     // Initialize Serial
     bool initSerial() {
         Serial.begin(115200);
-        return true;
+
+        return !(!Serial);
     }
 
     // Initialize BLE
@@ -112,6 +154,7 @@ public:
     bool initConfig() {
         config = readConfig();
         logStatus("Config read successfully", logFile);
+        doBatchLog = config["DATA_LOG_BATCH"] > 0;
         return true;
     }
 
@@ -196,7 +239,7 @@ public:
     void update() {
         updateBle();
         updateSensors();
-        updateAngles(true);
+        updateAngles();
         updateAltVel();
         updateState();
         updateTvc();
@@ -223,12 +266,7 @@ public:
     }
 
     // Update angles using sensor readings
-    void updateAngles(bool useCompl) {
-        if (useCompl) {
-            Vec2D dir_c = get_angles_complementary(config["COMP_FILTER_ALPHA_GYRO"], deltaTime, readings, yaw, pitch);
-            yaw = dir_c.x;
-            pitch = dir_c.y;
-        }
+    void updateAngles() {
 
         dir = get_angles_quat(readings, attitude, deltaTime);
 
@@ -236,11 +274,16 @@ public:
         if (config["FLIP_DIR_Y"] > 0) dir.y = -dir.y;
         if (config["FLIP_DIR_Z"] > 0) dir.z = -dir.z;
 
-        if (!useCompl) {
+        if (useCompl) {
+            Vec2D dir_c = get_angles_complementary(config["COMP_FILTER_ALPHA_GYRO"], deltaTime, readings, yaw, pitch);
+            yaw = dir_c.x;
+            pitch = dir_c.y;
+        }
+        else {
             yaw = dir.z;
             pitch = dir.y;
         }
-        
+
         roll = dir.x;
 
         dir = Vec3D(yaw, pitch, roll);
@@ -330,9 +373,26 @@ public:
         return p;
     }
 
-    // Log data to the SD card
-    void logData(DataPoint dataArr[], int bufferSize) {
+    void updateDataLog() {
+
         if (!doLog) return;
+
+        DataPoint d = getDataPoint();
+
+        if (doBatchLog)
+            dataArr[loopCount - 1] = d;
+        if (loopCount >= BUFFER_SIZE) {
+            logDataBatch(dataArr, BUFFER_SIZE);
+            loopCount = 0;
+
+            for (int i = 0; i < BUFFER_SIZE; i++) {
+                dataArr[i] = DataPoint();
+            }
+        }
+    }
+
+    // Log data to the SD card in a batch
+    void logDataBatch(const DataPoint dataArr[], int bufferSize) {
         for (int i = 0; i < bufferSize; i++) {
             if (dataArr[i].isEmpty) {
                 continue;
@@ -341,8 +401,8 @@ public:
         }
     }
 
+    // Log a single data point
     void logPoint(DataPoint p) {
-        if (!doLog) return;
         logDataPointBin(p, dataFile);
     }
 
@@ -350,45 +410,64 @@ public:
     void updateTime() {
         deltaTime = (millis() - lastLoopTime) / 1000.0;
         lastLoopTime = millis();
+        loopCount++;
 
     }
 
     // ---- Control functions ---- //
 
-    // Enable or disable TVC
-    void setTvc(bool locked) {
-        if (locked) {
-            msgPrintln(bleOn, bleSerial, "Locking TVC");
-            logStatus("Locking TVC", logFile);
-            tvc.lock();
+    // Enable or disable data logging
+    void setDataLog(bool _doLog) {
+        doLog = _doLog;
+        if (doLog) {
+
+            printMessage("Data Logging Enabled, opening logs");
+            initSD();
+            initLogs();
         }
         else {
-            msgPrintln(bleOn, bleSerial, "Unlocking TVC");
-            logStatus("Unlocking TVC", logFile);
-            tvc.pid_x.reset();
-            tvc.pid_y.reset();
-            tvc.unlock();
+            // log the last bits of data and close the file and card
+            printMessage("Data Logging Disabled, saving logs");
+
+            // force log
+            if (doBatchLog) {
+                logDataBatch(dataArr, BUFFER_SIZE);
+            }
+            else {
+                logPoint(getDataPoint());
+            }
+
+            cleanupLogs();
+            cleanupSD();
+
         }
     }
 
-    // Enable or disable data logging
-    void setDataLog(bool doLog) {
-        this->doLog = doLog;
-        if (doLog) {
-            initLogs();
-            logStatus("Data logging enabled", logFile);
-        }
-        else {
-            dataFile.close();
-            logStatus("Data logging disabled", logFile);
-            logFile.close();
-        }
+    void toggleDataLog() {
+        setDataLog(!doLog);
     }
 
     // Enable or disable LEDs
     void setLeds(bool ledsOn) {
         this->ledsOn = ledsOn;
     }
+
+    void toggleLeds() {
+        setLeds(!ledsOn);
+    }
+
+    void setState(int state) {
+        currentState = state;
+    }
+
+    void enableCompl() {
+        useCompl = true;
+    }
+
+    void disableCompl() {
+        useCompl = false;
+    }
+
 
     // Reset angles to initial state
     void resetAngles() {
@@ -437,7 +516,7 @@ public:
 
     HardwareBLESerial& getBle() { return bleSerial; }
     Vec3D getDir() { return dir; }
-    SensorReadings getReadings() { return readings; }
+    const SensorReadings& getReadings() { return readings; }
     float getAlt() { return altitude; }
 
     void cleanupLogs() {
@@ -479,34 +558,4 @@ public:
 
 
     }
-
-    HardwareBLESerial& bleSerial = HardwareBLESerial::getInstance();
-    bool bleOn = true;
-
-    SensorReadings readings;
-    Biases biases;
-    float pressureOffset = 0;
-
-    Quaternion attitude;
-    Vec3D dir;
-    float yaw, pitch, roll;
-    float vertVel, altitude;
-
-    TVC tvc;
-    float x_out, y_out;
-
-    bool doLog = true;
-    bool ledsOn = true;
-
-    SdExFat sd;
-    ExFile dataFile;
-    ExFile logFile;
-    Config config;
-
-    PyroChannel pyro1_motor = PyroChannel(PYRO_LANDING_MOTOR_IGNITION, 2000L, false, true);
-    PyroChannel pyro2_land = PyroChannel(PYRO_LANDING_LEGS_DEPLOY, 2000L, false, true);
-
-    int currentState = 0;
-    unsigned long lastLoopTime;
-    float deltaTime = 0;
 };
