@@ -206,6 +206,10 @@ Vec2D get_angles_kalman(float dt, SensorReadings r, Kalman& kx, Kalman& ky, Bias
 // QUATERNION BASED ANGLE CALCULATION
 // Returns roll, pitch, yaw
 Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, float deltaTime) {
+    
+    // wx = pitch  (rotation around x-axis)
+    // wy = roll   (rotation around y-axis) 
+    // wz = yaw    (rotation around z-axis)
     float wx = readings.gx * (PI / 180);
     float wy = readings.gy * (PI / 180);
     float wz = readings.gz * (PI / 180);
@@ -224,6 +228,7 @@ Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, float delta
     attitude = attitude * QM;
 
     // --- Convert to Euler Angles --- //    
+    // https://www.euclideanspace.com/maths/standards/index.htm#:~:text=Euler%20angles
     // Switch axes (X pitch, Y roll, Z yaw --> Z pitch, X roll, Y yaw)
     float qw = attitude.a;
     float qz = attitude.b;

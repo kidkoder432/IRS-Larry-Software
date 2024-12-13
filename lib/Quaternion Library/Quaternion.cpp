@@ -52,6 +52,10 @@ Quaternion& Quaternion::normalize() {
 // Quaternion rotation.
 // 800B
 const Quaternion Quaternion::from_euler_rotation(float yaw, float pitch, float roll) {
+     
+    // Switch axes (PRY -> RPY)
+    std::swap(pitch, roll);
+
     float cy = cos(yaw / 2);
     float cp = cos(pitch / 2);
     float cr = cos(roll / 2);

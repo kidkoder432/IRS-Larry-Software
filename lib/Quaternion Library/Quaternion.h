@@ -44,6 +44,7 @@ public:
     float norm() const;
     Quaternion& normalize();
     const Quaternion conj() const;
+    const Quaternion operator-() const { return Quaternion(-a, -b, -c, -d); }
 };
 
 #endif
