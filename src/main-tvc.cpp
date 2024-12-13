@@ -1,144 +1,84 @@
-// Main flight loop
+// Test all components and features
 
-#include <Arduino.h>
-#include <Serial.h>
-#include <Servo.h>
+#include <rocket.h>
 
-#include <orientation.h>
+#define SD_ATTACHED 1
+#define LOG_DATA_BATCH 1
 
-#include <tvc.h>
-#include <leds.h>
-#include <pyro.h>
+Rocket rocket;
 
-#include <alt.h>
-#include <Arduino_LPS22HB.h>
+char receivedChar;
+bool newCommand = false;
 
-#include <config.h>
-#include <datalog.h>
-#include <prints.h>
-#include <HardwareBLESerial.h>
+HardwareBLESerial& bleSerial = rocket.getBle();
 
-HardwareBLESerial& bleSerial = HardwareBLESerial::getInstance();
-bool bleOn = false;
-
-float yaw, pitch, roll;
-TVC tvc;
-float x_out, y_out;
-
-SensorReadings readings;
-Vec3D dir;
-Biases biases;
-Quaternion attitude;
-
-Config config;
-
-long long lastLoopTime;
-
-float vertVel = 0;
-
-bool logData = true;
-File dataFile;
-File logFile;
-
-float pressureOffset = 0;
-
-int currentState = 0;   // 0: Pad-Idle
-bool aborted = false;
-
-float mag3(float a, float b, float c) {
-    return sqrt(pow(a, 2) + pow(b, 2) + pow(c, 2));
+void recvOneChar() {
+    if (Serial.available() > 0) {
+        receivedChar = Serial.read();
+        receivedChar = toupper(receivedChar);
+        // rocket.printMessage(receivedChar);
+        newCommand = true;
+    }
+    if (bleSerial.available() > 0) {
+        receivedChar = bleSerial.read();
+        receivedChar = toupper(receivedChar);
+        // rocket.printMessage(receivedChar);
+        newCommand = true;
+    }
+    if (receivedChar == '\n' || receivedChar == '\r') {
+        newCommand = false;
+    }
 }
+
+bool isLaunched = false;
+
+char HELP_STR[] =
+R"(Welcome!
+This is the LAUNCH CONTROL SOFTWARE for the TAX COLLECTOR"
+Use this software to control launch, run specific routines, or abort the launch.
+Commands:
+L: Launch
+A: Abort
+C: Calibrate Sensors
+)";
 
 void setup() {
 
-    // Init serial and sensors
-    Serial.begin(115200);
-
-    initSensors();
-    BARO.begin();
-
-    // Init angles
-    readSensors(readings, biases);
-    yaw = atan2(readings.ax, -sign(readings.ay) * sqrt(readings.az * readings.az + readings.ay * readings.ay)) * 180 / PI;
-    pitch = atan2(readings.az, readings.ay) * 180 / PI;
-
-    dir.x = 0;
-    dir.y = pitch;
-    dir.z = yaw;
-
-    attitude = Quaternion();
-
-    // Init pyros
-    pinMode(PYRO_LANDING_LEGS_DEPLOY, OUTPUT);
-    pinMode(PYRO_LANDING_MOTOR_IGNITION, OUTPUT);
-
-    // Init LEDs
-    pinMode(LEDR, OUTPUT);
-    pinMode(LEDG, OUTPUT);
-    pinMode(LEDB, OUTPUT);
-    showColor(COLOR_OFF);
-
-    // Init SD Card | Read Config
-    SD.begin(10);
-    logFile = SD.open("log.txt", O_TRUNC | O_WRITE);
-
-    if (!logFile) {
-        msgPrintln(bleOn, bleSerial, "Failed to open log file!");
-        while (1) {
-            flash(COLOR_RED);
-
-        }
-    }
-
-    logStatus("Initialized", logFile);
-    config = readConfig();
-    logStatus("Config read successfully", logFile);
-
-    logStatus("Calibrating Barometer", logFile);
-    pressureOffset = calculateOffset(config.PRESSURE_0);
-    logStatus("Barometer calibrated", logFile);
+    // Setup basic interfaces
+    rocket.initSerial();
+    delay(2000);
 
 
-    // Open data file
-    dataFile = SD.open("data.csv", O_TRUNC | O_WRITE);
+#if SD_ATTACHED
+    // Setup SD card, config and data logging
+    rocket.initSD();
+    rocket.printMessage("SD card initialized!");
+    rocket.getSdInfo();
+    rocket.initLogs();
+    rocket.printMessage("Data logging initialized!");
+    rocket.initConfig();
+    rocket.printMessage("Config initialized!");
 
-    if (!dataFile) {
-        msgPrintln(bleOn, bleSerial, "Failed to open data file!");
-        while (1) {
-            flash(COLOR_RED);
-
-        }
-    }
-    dataFile.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
-
-    // Init TVC
-    tvc.begin();
-    tvc.lock();
-    tvc.updatePID(tvc.pid_x, config.Kp, config.Ki, config.Kd, config.N);
-    tvc.updatePID(tvc.pid_y, config.Kp, config.Ki, config.Kd, config.N);
-
-    delay(1000);
-
-    // Init BLE
-    msgPrintln(bleOn, bleSerial, "Initializing BLE...");
-    logStatus("Initializing BLE", logFile);
-
-    if (!bleSerial.beginAndSetupBLE("Tax Collector")) {
-        msgPrintln(bleOn, bleSerial, "Failed to initialize BLE!");
-        logStatus("WARN: Failed to initialize BLE! ", logFile);
-        logFile.close();
-        dataFile.close();
-        while (1) {
-            flash(COLOR_PURPLE);
-
-        }
-    }
-
+    rocket.initBle();
     int waits = 0;
-    while (!bleSerial && waits < 30) {
+    bool override = false;
+    while (!bleSerial && waits < 30 && !override) {
+        flash(COLOR_BLUE);
+        recvOneChar();
+        if (newCommand) {
+            switch (receivedChar) {
+                case 'Z':
+                    rocket.bleOn = false;
+                    override = true;
+                    break;
+                default:
+                    override = false;
+                    break;
+            }
+        }
 
         if (millis() % 1000 < 40) {
-            msgPrintln(bleOn, bleSerial, "BLE not connected, waiting...");
+            rocket.printMessage("BLE not connected, waiting...");
             waits++;
             delay(50);
             showColor(COLOR_OFF);
@@ -147,151 +87,146 @@ void setup() {
     }
 
     if (bleSerial) {
-        bleOn = true;
-        msgPrintln(bleOn, bleSerial, "HardwareBLESerial central device connected!");
-        logStatus("HardwareBLESerial central device connected!", logFile);
+        rocket.bleOn = true;
+        rocket.printMessage("HardwareBLESerial central device connected!");
+        rocket.logMessage("HardwareBLESerial central device connected!");
     }
     else {
-        bleOn = false;
-        msgPrintln(bleOn, bleSerial, "BLE not connected! Using USB serial...");
-        logStatus("WARN: BLE not connected! Using USB serial...", logFile);
+        rocket.bleOn = false;
+        rocket.printMessage("BLE not connected! Using USB serial...");
+        rocket.logMessage("WARN: BLE not connected! Using USB serial...");
 
     }
+#endif
 
-    // Calibrate Gyro
-    msgPrintln(bleOn, bleSerial, "Calibrating Sensors...");
-    logStatus("Calibrating Sensors", logFile);
-    biases = calibrateSensors();
+    // Init sensors and angles
+    rocket.setupSensors();
+    rocket.calibrateAndLog();
+    rocket.initAngles();
+    rocket.printMessage("Sensors and angles initialized!");
 
-    char buf[64];
-    snprintf(buf, sizeof(buf), "bx = %f, by = %f, bz = %f", biases.bx, biases.by, biases.bz);
+    // init hardware
+    rocket.initLeds();
+    rocket.printMessage("LEDs initialized!");
+    rocket.initTvc();
+    rocket.printMessage("TVC initialized!");
 
+    // init pyros and complete only after other inits succeed
+    rocket.initPyros();
+    rocket.printMessage("Pyros initialized!");
+    rocket.finishSetup();
 
-    char calStr[128];
-    strcat(calStr, "Calibration values: ");
-    strcat(calStr, buf);
-    logStatus("Calibration complete", logFile);
-    logStatus(calStr, logFile);
-
-    msgPrintln(bleOn, bleSerial, "Initialized");
-
-    delay(200);
-    lastLoopTime = micros();
-
+    rocket.printMessage("Setup complete!");
+    rocket.printMessage(HELP_STR);
 }
 
 void loop() {
 
-    bleSerial.poll();
-    readSensors(readings, biases);
+    if (rocket.bleOn) rocket.updateBle();
 
-    vertVel -= readings.ay * 9.80665 * deltaTime;
+    rocket.updateTvc();
+    rocket.updateSensors();
+    rocket.updateAngles();
+    rocket.updateAltVel();
+    rocket.updateState();
+    rocket.updatePyros();
+    rocket.updateDataLog();
 
-    Vec2D tvc_out = tvc.update(dir, deltaTime);
-    x_out = tvc_out.x;
-    y_out = tvc_out.y;
+    if (!isLaunched) {
+        recvOneChar();
+        rocket.updateAngleLeds();
 
-    dir = get_angles_quat(readings, attitude, deltaTime);
+        if (newCommand == true) {
+            switch (receivedChar) {
+                case 'L': {
 
-    roll = dir.x;
-    pitch = dir.y;
-    yaw = dir.z;
+                    rocket.printMessage("Launch sequence initiated!");
+                    rocket.logMessage("Launch sequence initiated!");
+                    rocket.printMessage("Performing pre-launch tasks.");
+                    rocket.logMessage("Performing pre-launch tasks.");
+                    rocket.printMessage("Calibrating Sensors");
+                    rocket.calibrateAndLog();
 
-    if (yaw > 180) {
-        yaw = yaw - 360;
-    }
-    else if (yaw < -180) {
-        yaw = yaw + 360;
-    }
+                    int launchSecs = 21;
+                    newCommand = false;
+                    while (launchSecs > 0) {
 
-    if (pitch > 180) {
-        pitch = pitch - 360;
-    }
+                        if (launchSecs > 12) flash(COLOR_YELLOW, 1000);
+                        else if (launchSecs > 5) flash(COLOR_RED, 1000);
+                        else flash(COLOR_RED, 500);
+                        recvOneChar();
+                        if (newCommand) {
+                            rocket.printMessage("Launch aborted!");
+                            rocket.logMessage("Launch aborted!");
+                            newCommand = false;
 
-    else if (pitch < -180) {
-        pitch = pitch + 360;
-    }
+                            rocket.finish();
 
-    LED(currentState);
+                        }
 
-    // --- States --- //
-    switch (currentState) {
-        case 0:  // Pad-Idle
-            tvc.lock();
-            break;
-        case 1:  // Powered Ascent
-            tvc.unlock();
-            break;
-        case 3:  // Coast
-            tvc.lock();
-            break;
-        case 4:  // Powered Descent
-            tvc.unlock();
-            break;
-        case 5:  // Touchdown
-            break;
+                        if (millis() % 1000 < 40) {
+                            rocket.printMessage("Launching in T - ", false);
+                            rocket.printMessage((int64_t) launchSecs, false);
+                            rocket.printMessage(" seconds! Press any key + ENTER to abort the launch.");                        launchSecs--;
+                            delay(41);
 
-        case 127:  // Abort
-            logData = false;
-            bleOn = false;
-            bleSerial.end();
-            tvc.abort();
-            dataFile.close();
-            logFile.close();
+                        }
+                    }
 
-            break;
-    }
+                    rocket.printMessage("Launching!");
+                    rocket.logMessage("Launching!");
+                    rocket.disableCompl();
 
-    // --- State Transitions --- //
+                    rocket.printMessage("Firing Engine");
+                    rocket.logMessage("Firing Engine");
+                    rocket.firePyro1();
 
-    // ABORT: State -> 127
-    if (abs(yaw) >= 45 || abs(pitch) >= 45) {
-        logStatus("ERR: ABORT - UNSTABLE", logFile);
-        currentState = 127;
-    }
+                    rocket.setDataLog(true);
 
-    // TOUCHDOWN: State 3 -> 5
-    if (currentState == 3 && mag3(readings.ax, readings.ay, readings.az) <= 1.5) {
-        currentState = 5;
-    }
+                    rocket.printMessage("Ignition Complete");
+                    rocket.logMessage("Ignition Complete");
 
-    // STAGE 1 BURNOUT: State 1 -> 3
-    if (currentState == 1 && mag3(readings.ax, readings.ay, readings.az) <= 1.1) {
-        currentState = 3;
-    }
-
-    // LAUNCH: State 0 -> 1
-    if (currentState == 0 && mag3(readings.ax, readings.ay, readings.az) >= 1.5) {
-        currentState = 1;
+                    isLaunched = true;
+                    break;
+                } case 'A':
+                    rocket.printMessage("Abort sequence initiated!");
+                    rocket.logMessage("Abort sequence initiated!");
+                    rocket.abort();
+                    break;
+                case 'C':
+                    rocket.printMessage("Calibrating Sensors");
+                    rocket.calibrateAndLog();
+                    break;
+            }
+        }
     }
 
-    // --- Data Logging --- //
-    vertVel -= readings.ay * 9.81 * deltaTime;
+    else {
+        rocket.updateStateLeds();
+        switch (rocket.getCurrentState()) {
+            case 0:     // Pad-Idle
+                rocket.tvc.lock();
+                break;
+            case 1:     // Powered Ascent
+                rocket.tvc.unlock();
+                break;
+            case 2:     // Coast
+                rocket.tvc.lock();
+                break;
+            case 3:     // Powered Descent
+                rocket.tvc.unlock();
+                break;
+            case 4:     // Touchdown
+                rocket.logMessage("Touchdown confirmed. We are safe on Earth!");
+                rocket.finish();
+                break;
+            case 127:   // Abort
+                rocket.tvc.lock();
+                rocket.logMessage("Mission abort!");
+                rocket.abort();
+                break;
 
-    if (logData) {
-
-        DataPoint p;
-        p.timestamp = lastLoopTime;
-        p.DELTA_T = deltaTime;
-        p.r = readings;
-        p.o = dir;
-        p.x_out = x_out;
-        p.y_out = y_out;
-        p.alt = getAltitude(config.PRESSURE_0, pressureOffset);
-        p.currentState = currentState;
-        p.vert_vel = vertVel;
-        p.px = tvc.pid_x.p;
-        p.ix = tvc.pid_x.i;
-        p.dx = tvc.pid_x.d;
-        p.py = tvc.pid_y.p;
-        p.iy = tvc.pid_y.i;
-        p.dy = tvc.pid_y.d;
-
-        logDataPoint(p, dataFile);
+        }
 
     }
-
-
-    deltaTime = (micros() - lastLoopTime) / 1000000.0;
-    lastLoopTime = micros();
 }
