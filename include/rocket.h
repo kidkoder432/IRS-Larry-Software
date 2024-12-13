@@ -1,5 +1,3 @@
-#define USE_BLE 0
-
 #include <Arduino.h>
 #include <Serial.h>
 
