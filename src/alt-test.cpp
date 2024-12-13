@@ -1,9 +1,12 @@
-#include <rocket-noble.h>
+#include <rocket.h>
 
 Rocket rocket;
 
+float alpha = 0.95;
+float alpha_alt = 0.95;
+
 float newAlt, vel;
-float prevBaroAlt = 0;
+float prevBaroAlt_filtered = 0;
 float altAccel_raw = 0;
 
 float lerp(float a, float b, float t) { return a + (b - a) * t; }
@@ -29,7 +32,7 @@ void loop() {
     rocket.updateAngleLeds();
     rocket.updateTime();
 
-    float alt = rocket.getAlt();
+    float baroAlt_raw = rocket.getAlt();
     Quaternion attitude = rocket.getAttitude();
     SensorReadings readings = rocket.getReadings();
 
@@ -46,21 +49,21 @@ void loop() {
     // vel = vel - ayMps * rocket.deltaTime;
 
     float velAccel = vel - ayMps * rocket.deltaTime;
-    float baroAlt = lerp(prevBaroAlt, alt, 0.8);
+    float baroAlt_filtered = lerp(prevBaroAlt_filtered, baroAlt_raw, 0.7);
 
-    float baroVel = (baroAlt - prevBaroAlt) / rocket.deltaTime;
-    vel = lerp(baroVel, velAccel, rocket.getConfigValue("ALT_FILTER_ALPHA_ACCEL"));
+    float baroVel = (baroAlt_filtered - prevBaroAlt_filtered) / rocket.deltaTime;
+    vel = lerp(baroVel, velAccel, alpha);
 
-    prevBaroAlt = alt;
+    prevBaroAlt_filtered = baroAlt_filtered;
 
 
     float altAccel = newAlt + vel * rocket.deltaTime;
     altAccel_raw += vel * rocket.deltaTime;
-    newAlt = lerp(baroAlt, altAccel, rocket.getConfigValue("ALT_FILTER_ALPHA_ACCEL"));
+    newAlt = lerp(baroAlt_filtered, altAccel, alpha_alt);
 
-    rocket.printMessage(baroAlt, false);
-    rocket.printMessage(altAccel, false);
-    rocket.printMessage(alt, false);
+    rocket.printMessage(ay, false);
+    rocket.printMessage(baroAlt_raw, false);
+    rocket.printMessage(baroAlt_filtered, false);
     rocket.printMessage(newAlt);
 
 
