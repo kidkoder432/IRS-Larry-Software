@@ -2,12 +2,13 @@
 
 #include <rocket.h>
 
-#define SD_ATTACHED 1
 #define LOG_DATA_BATCH 1
 
 Rocket rocket;
 
+#if USE_BLE 
 HardwareBLESerial& bleSerial = rocket.getBle();
+#endif
 
 char receivedChar;
 bool newCommand = false;
@@ -45,12 +46,14 @@ void recvOneChar() {
         // rocket.printMessage(receivedChar);
         newCommand = true;
     }
+#if USE_BLE 
     if (bleSerial.available() > 0) {
         receivedChar = bleSerial.read();
         receivedChar = toupper(receivedChar);
         // rocket.printMessage(receivedChar);
         newCommand = true;
     }
+#endif
     if (receivedChar == '\n' || receivedChar == '\r') {
         newCommand = false;
     }
@@ -63,7 +66,6 @@ void setup() {
     delay(2000);
 
 
-#if SD_ATTACHED
     // Setup SD card, config and data logging
     rocket.initSD();
     rocket.printMessage("SD card initialized!");
@@ -73,6 +75,7 @@ void setup() {
     rocket.initConfig();
     rocket.printMessage("Config initialized!");
 
+#if USE_BLE
     rocket.initBle();
     int waits = 0;
     bool override = false;
@@ -112,7 +115,6 @@ void setup() {
 
     }
 #endif
-
     // Init sensors and angles
     rocket.setupSensors();
     rocket.calibrateAndLog();
@@ -140,13 +142,13 @@ void setup() {
 void loop() {
 
     recvOneChar();
+#if USE_BLE
     if (rocket.bleOn) rocket.updateBle();
-
+#endif
     rocket.updateTvc();
     rocket.updateSensors();
     rocket.updateAngles();
     rocket.updateAltVel();
-    // rocket.updateState();
     rocket.updatePyros();
     rocket.updateAngleLeds();
     rocket.updateDataLog();

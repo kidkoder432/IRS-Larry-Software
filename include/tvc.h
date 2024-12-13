@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <pid.h>
+#include <Servo.h>
 #include <config.h>
 
 #define ACTUAL_PID 1
@@ -52,23 +53,23 @@ public:
             dir = o;
             // Serial.println(dir.z);
             // Serial.println(dir.y);
-#if ACTUAL_PID
+        #if ACTUAL_PID
             x_out = pid_x.update(0, dir.z, dt);
             y_out = pid_y.update(0, dir.y, dt);
 
-#else
+        #else
             x_out = -dir.z;
             y_out = -dir.y;
 
-#endif
+        #endif
 
-#if PRINT_OUTPUT 
+        #if PRINT_OUTPUT 
             Serial.print("X/Y Raw: ");
             Serial.print(x_out);
             Serial.print(" ");
             Serial.print(y_out);
             Serial.print("\t");
-#endif
+        #endif
 
             float tvcXRaw = (x_out - XDEF) * PI / 180;
             float tvcYRaw = (y_out - YDEF) * PI / 180;
@@ -85,7 +86,7 @@ public:
             if (FLIP_X) x_out = -x_out;
             if (FLIP_Y) y_out = -y_out;
 
-#if PRINT_OUTPUT
+        #if PRINT_OUTPUT
 
             x_out = clamp(x_out, XMIN, XMAX);
             y_out = clamp(y_out, YMIN, YMAX);
@@ -93,7 +94,7 @@ public:
             Serial.print(x_out);
             Serial.print(" ");
             Serial.println(y_out);
-#endif
+        #endif
 
             write(x_out, y_out);
 

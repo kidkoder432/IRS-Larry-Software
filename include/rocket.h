@@ -1,6 +1,7 @@
+#define USE_BLE 0
+
 #include <Arduino.h>
 #include <Serial.h>
-#include <Servo.h>
 
 #include <SparkFun_BMI270_Arduino_Library.h>
 #include <orientation.h>
@@ -14,8 +15,10 @@
 
 #include <config.h>
 #include <datalog.h>
+#if USE_BLE
 #include <prints.h>
 #include <HardwareBLESerial.h>
+#endif
 
 float mag3(float x, float y, float z) { return sqrt(x * x + y * y + z * z); }
 
@@ -23,7 +26,9 @@ float mag3(float x, float y, float z) { return sqrt(x * x + y * y + z * z); }
 class Rocket {
 
 private:  // Member variables and internal functions
+#if USE_BLE 
     HardwareBLESerial& bleSerial = HardwareBLESerial::getInstance();
+#endif
 
     SensorReadings readings;
     Biases biases;
@@ -87,7 +92,9 @@ public: // Public functions
     // General setup function
     bool setup() {
         if (!initSerial()) return false;
+    #if USE_BLE 
         if (!initBle()) return false;
+    #endif
         if (!initSD()) return false;
         if (!initLogs()) return false;
         if (!initConfig()) return false;
@@ -107,19 +114,20 @@ public: // Public functions
     }
 
     // Initialize BLE
+#if USE_BLE 
     bool initBle() {
         if (!bleSerial.beginAndSetupBLE("Rocket Controller")) {
-            msgPrintln(bleOn, bleSerial, "Failed to initialize BLE!");
+            printMessage("Failed to initialize BLE!");
             HALT_AND_CATCH_FIRE();
             return false;
         }
         return true;
-    }
-
+}
+#endif
     // Initialize SD Card
     bool initSD() {
         if (!sd.begin(10, SPI_FULL_SPEED)) {
-            msgPrintln(bleOn, bleSerial, "Failed to initialize SD card!");
+            printMessage("Failed to initialize SD card!");
             HALT_AND_CATCH_FIRE();
             return false;
         }
@@ -134,14 +142,14 @@ public: // Public functions
     // Initialize log files
     bool initLogs() {
         if (!logFile.open("log.txt", O_TRUNC | O_WRITE | O_CREAT)) {
-            msgPrintln(bleOn, bleSerial, "Failed to open log file!");
+            printMessage("Failed to open log file!");
             HALT_AND_CATCH_FIRE();
             return false;
         }
         logStatus("Log file initialized", logFile);
 
         if (!dataFile.open("data.bin", O_TRUNC | O_WRITE | O_CREAT)) {
-            msgPrintln(bleOn, bleSerial, "Failed to open data file!");
+            printMessage("Failed to open data file!");
             HALT_AND_CATCH_FIRE();
             return false;
         }
@@ -170,7 +178,7 @@ public: // Public functions
 
     // Calibrate sensors and log results
     bool calibrateAndLog() {
-        msgPrintln(bleOn, bleSerial, "Calibrating sensors");
+        printMessage("Calibrating sensors");
         logStatus("Calibrating Sensors", logFile);
         biases = calibrateSensors(config);
 
@@ -178,22 +186,23 @@ public: // Public functions
         snprintf(buf, sizeof(buf), "bx = %f, by = %f, bz = %f", biases.bx, biases.by, biases.bz);
         logStatus(buf, logFile);
 
-        msgPrintln(bleOn, bleSerial, "Sensors calibrated");
+        printMessage("Sensors calibrated");
         return true;
     }
 
     // Initialize angles
     bool initAngles() {
         if (config["INIT_ACCEL"] > 0) {
-            msgPrintln(bleOn, bleSerial, "Initializing angles using accelerometer");
+            printMessage("Initializing angles using accelerometer");
             readSensors(readings, biases);
             yaw = atan2(readings.ax, sqrt(readings.az * readings.az + readings.ay * readings.ay));
             pitch = atan2(readings.az, readings.ay);
             dir = Vec3D(0, -pitch, -yaw);
-            attitude = Quaternion::from_euler_rotation(yaw, 0, pitch);
+            attitude = Quaternion::from_euler_rotation(yaw, pitch, 0);
         }
         else {
-            msgPrintln(bleOn, bleSerial, "Using default angles");
+            printMessage("Using default angles");
+            dir = Vec3D(0, 0, 0);
             attitude = Quaternion();
         }
         return true;
@@ -237,7 +246,9 @@ public: // Public functions
 
     // General update function
     void update() {
+    #if USE_BLE 
         updateBle();
+    #endif
         updateSensors();
         updateAngles();
         updateAltVel();
@@ -249,9 +260,11 @@ public: // Public functions
     }
 
     // Update BLE communication
+#if USE_BLE
     void updateBle() {
         bleSerial.poll();
     }
+#endif
 
     // Update TVC control
     void updateTvc() {
@@ -297,6 +310,7 @@ public: // Public functions
 
     // Update altitude and vertical velocity
     void updateAltVel() {
+
         altitude = getAltitude(config["PRESSURE_REF"], pressureOffset);
         vertVel -= readings.ay * 9.80665 * deltaTime;
     }
@@ -503,19 +517,7 @@ public: // Public functions
 
         logStatus("Resetting Angles", logFile);
 
-        if (config["INIT_ACCEL"] > 0) {
-            msgPrintln(bleOn, bleSerial, "Resetting angles using accelerometer");
-            readSensors(readings, biases);
-            yaw = atan2(readings.ax, sqrt(readings.az * readings.az + readings.ay * readings.ay));
-            pitch = atan2(readings.az, readings.ay);
-            dir = Vec3D(0, -pitch, -yaw);
-            attitude = Quaternion::from_euler_rotation(yaw, 0, pitch);
-        }
-        else {
-            msgPrintln(bleOn, bleSerial, "Using default angles");
-            dir = Vec3D(0, 0, 0);
-            attitude = Quaternion();
-        }
+        initAngles();
     }
 
     // Fire pyro 1
@@ -535,21 +537,44 @@ public: // Public functions
     }
 
     void printMessage(auto message) {
+    #if USE_BLE 
         msgPrintln(bleOn, bleSerial, message);
+    #else
+        Serial.println(message);
+    #endif
     }
 
     void printMessage(auto message, bool ln) {
-        if (ln) msgPrintln(bleOn, bleSerial, message);
-        else msgPrint(bleOn, bleSerial, message);
+        if (ln) {
+        #if USE_BLE
+            msgPrintln(bleOn, bleSerial, message);
+        #else
+            Serial.println(message);
+        #endif
+    }
+        else {
+        #if USE_BLE
+            msgPrint(bleOn, bleSerial, message);
+            msgPrint(bleOn, bleSerial, " ");
+        #else
+            Serial.print(message);
+            Serial.print(" ");
+        #endif
+        }
     }
 
     // --- Getters --- //
 
+#if USE_BLE 
     HardwareBLESerial& getBle() { return bleSerial; }
+#endif
     Vec3D getDir() { return dir; }
+    Quaternion getAttitude() { return attitude; }
     const SensorReadings& getReadings() { return readings; }
     float getAlt() { return altitude; }
     int getCurrentState() { return currentState; }
+    float getConfigValue(std::string key) { return config[key]; }
+
 
     void cleanupLogs() {
         dataFile.sync();
@@ -581,10 +606,12 @@ public: // Public functions
 
         printMessage("Cleaning up logs...");
         cleanupLogs();
-        sd.end();
+        cleanupSD();
 
         printMessage("All systems shut down. Please reset the board. ");
+    #if USE_BLE 
         bleSerial.end();
+    #endif
         Serial.end();
 
 
@@ -598,7 +625,6 @@ public: // Public functions
 
     void finish() {
         fullCleanup();
-
         HALT_DONE();
     }
 };
