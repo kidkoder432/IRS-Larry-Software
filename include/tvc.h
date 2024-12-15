@@ -77,8 +77,8 @@ public:
             float cr = cos(dir.x * PI / 180);
             float sr = sin(dir.x * PI / 180);
 
-            x_out = tvcXRaw * cr - tvcYRaw * sr;
-            y_out = tvcXRaw * sr + tvcYRaw * cr;
+            x_out = tvcXRaw * cr + tvcYRaw * sr;
+            y_out = tvcXRaw * sr - tvcYRaw * cr;
 
             x_out = (x_out * 180 / PI) + XDEF;
             y_out = (y_out * 180 / PI) + YDEF;
