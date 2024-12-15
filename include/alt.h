@@ -18,4 +18,3 @@ float getAltitude(float pressureRef, float offset) {
     float TEMP = BARO.readTemperature() + 273.15f;
     return TEMP / 0.0065f * (1 - pow((BARO.readPressure() - offset) / pressureRef, 1 / 5.255f));
 }
-}

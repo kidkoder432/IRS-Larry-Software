@@ -61,8 +61,8 @@ public: // Public functions
     bool bleOn = true;
     float deltaTime = 0;
 
-    PyroChannel pyro1_motor = PyroChannel(PYRO_LANDING_MOTOR_IGNITION, 2000L, false, true);
-    PyroChannel pyro2_land = PyroChannel(PYRO_LANDING_LEGS_DEPLOY, 2000L, false, true);
+    PyroChannel pyro1_motor;
+    PyroChannel pyro2_land;
 
     TVC tvc;
 
@@ -226,6 +226,16 @@ public: // Public functions
 
     // Initialize Pyros
     bool initPyros() {
+        
+        bool p1os = config["PYRO_1_ONE_SHOT"] > 0;
+        bool p2os = config["PYRO_2_ONE_SHOT"] > 0;
+
+        long p1ft = (long) max(2000L, config["PYRO_1_FIRE_TIME"]);
+        long p2ft = (long) max(2000L, config["PYRO_2_FIRE_TIME"]);
+        
+        pyro1_motor = PyroChannel(PYRO_LANDING_MOTOR_IGNITION, p1ft, false, p1os);
+        pyro2_land = PyroChannel(PYRO_LANDING_LEGS_DEPLOY, p2ft, false, p2os);
+
         pyro1_motor.begin();
         pyro2_land.begin();
         pyro1_motor.arm();

@@ -2,8 +2,8 @@
 #include <Serial.h>
 #include <pyro.h>
 
-PyroChannel pyro1 = PyroChannel(LED_BUILTIN, 1000);
-PyroChannel pyro2 = PyroChannel(LEDR, 1000, true);
+PyroChannel pyro1 = PyroChannel(LED_BUILTIN, 1000, false, false);
+PyroChannel pyro2 = PyroChannel(LEDR, 1000, true, false);
 
 void setup() {
     Serial.begin(115200);

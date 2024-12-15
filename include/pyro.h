@@ -32,6 +32,14 @@ public:
     bool activeLow = false;
     bool oneShot = false;
 
+    PyroChannel() {
+        this->pin = LEDG;
+        this->fireTime = 0;
+        this->activeLow = false;
+        this->oneShot = false;
+
+    }
+
     PyroChannel(int pin, long fireTime) {
         this->pin = pin;
         this->fireTime = fireTime;
