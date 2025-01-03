@@ -1,3 +1,4 @@
+from re import X
 from vpython import *
 import serial
 import math
@@ -15,14 +16,15 @@ scene = canvas(
     background=vec(0.2, 0.2, 0.2),
 )
 
-scene.forward = vector(-1, -1, 0)
-scene.up = vector(0, 0, 1)
+scene.forward = vector(0, 1, -1)
+scene.up = vector(1, 0, 0)
 
 scene.width = 600
 scene.height = 600
 
+xarrow = arrow(length=2, shaftwidth=0.1, color=color.red, axis=vector(1, 0, 0))
 yarrow = arrow(length=2, shaftwidth=0.1, color=color.green, axis=vector(0, 1, 0))
-zarrow = arrow(length=2, shaftwidth=0.1, color=color.blue, axis=vector(0, 0, 1))
+# zarrow = arrow(length=2, shaftwidth=0.1, color=color.blue, axis=vector(0, 0, 1))
 
 frontArrow = arrow(length=1, shaftwidth=0.1, color=color.purple, axis=vector(1, 0, 0))
 upArrow = arrow(length=1, shaftwidth=0.1, color=color.magenta, axis=vector(0, 1, 0))
@@ -133,7 +135,9 @@ while True:
         pitch = 20
         yaw = 0
 
-        tvcx = 0
+        rocket.pos = vector(0, 0, 0)
+
+        tvcx = pidx.compute(yaw, 0.01)
         tvcy = pidy.compute(pitch, 0.01)
 
         # pitch += 90
@@ -146,6 +150,23 @@ while True:
         #     round(pitch * 180 / pi, 2),
         #     round(yaw * 180 / pi, 2),
         # )
+
+        xrot = vrot
+        yrot = cross(k, vrot)
+
+        print("r", tvcx, tvcy)
+
+        tvcx_a = cos(roll) * tvcx + sin(roll) * tvcy
+        tvcy_a = cos(roll) * tvcy - sin(roll) * tvcx
+
+        tvcx, tvcy = tvcx_a, tvcy_a
+
+        print("a", roll * 180 / pi, tvcx, tvcy)
+
+        tvc.axis = -k
+        tvc.up = vrot
+        tvc.rotate(angle=tvcx * pi / 180, axis=xrot)
+        tvc.rotate(angle=tvcy * pi / 180, axis=yrot)
     else:
         print("Invalid line, skipping...")
 
@@ -163,19 +184,3 @@ while True:
     rocket.axis = k
     rocket.up = vrot
 
-    xrot = vrot
-    yrot = cross(k, vrot)
-
-    print("r", tvcx, tvcy)
-
-    tvcx_a = cos(roll) * tvcx - sin(roll) * tvcy
-    tvcy_a = cos(roll) * tvcy + sin(roll) * tvcx
-
-    tvcx, tvcy = tvcx_a, tvcy_a
-
-    print("a", roll * 180 / pi, tvcx, tvcy)
-
-    tvc.axis = -k
-    tvc.up = vrot
-    tvc.rotate(angle=tvcx * pi / 180, axis=xrot)
-    tvc.rotate(angle=tvcy * pi / 180, axis=yrot)
