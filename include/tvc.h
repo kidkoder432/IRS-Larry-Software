@@ -37,8 +37,8 @@ public:
 
     void begin(float deltaTime) {
         dir = Vec3D(0, 0, 0);
-        tvcx.attach(5);
-        tvcy.attach(6);
+        tvcx.attach(TVC_X_PIN);
+        tvcy.attach(TVC_Y_PIN);
 
         pid_x.begin(P, I, D, XDEF, deltaTime, XMIN, XMAX);
         tvcx.write(XDEF);

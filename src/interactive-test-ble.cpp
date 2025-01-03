@@ -31,7 +31,7 @@ D: Toggle Data Logging
 X: Cancel Printing
 G: Activate Pyro 1 (Motor Ignition)
 T: Activate Pyro 2 (Landing Legs Deploy)
-S: Read SD Card
+S: SD Card Info
 Q: Reset Angles
 P: Show Performance Metrics
 B: Edit Config (INOP)
@@ -130,6 +130,10 @@ void setup() {
     // init pyros and complete only after other inits succeed
     rocket.initPyros();
     rocket.printMessage("Pyros initialized!");
+
+    rocket.initBuzzer();
+    rocket.printMessage("Buzzer initialized!");
+
     rocket.finishSetup();
 
     rocket.printMessage("Setup complete!");
@@ -150,15 +154,18 @@ void loop() {
     rocket.updateAngles();
     rocket.updateAltVel();
     rocket.updatePyros();
+    rocket.updateBuzzer();
     rocket.updateAngleLeds();
     rocket.updateDataLog();
 
     if (newCommand == true) {
         switch (receivedChar) {
             case 'U':
+                rocket.printMessage("Unlocking TVC");
                 rocket.tvc.unlock();
                 break;
             case 'L':
+                rocket.printMessage("Locking TVC");
                 rocket.tvc.lock();
                 break;
             case 'K':
@@ -267,7 +274,7 @@ void loop() {
 
     if (((millis() - currentMs) > 7000) && (experimentMode == true)) {
         experimentMode = false;
-        rocket.setState(0);
+        rocket.setState(42);
         rocket.printMessage("Experiment Mode OFF - Test Complete");
         rocket.logMessage("Experiment Mode OFF - Test Complete");
         rocket.printMessage("Locking TVC");

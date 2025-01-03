@@ -4,22 +4,24 @@
 #include <SparkFun_BMI270_Arduino_Library.h>
 #include <orientation.h>
 
+#include <pins.h>
 #include <tvc.h>
 #include <leds.h>
 #include <pyro.h>
+#include <buzzer.h>
 
 #include <alt.h>
 #include <Arduino_LPS22HB.h>
 
 #include <config.h>
 #include <datalog.h>
+
 #if USE_BLE
 #include <prints.h>
 #include <HardwareBLESerial.h>
 #endif
 
 float mag3(float x, float y, float z) { return sqrt(x * x + y * y + z * z); }
-
 
 class Rocket {
 
@@ -61,15 +63,18 @@ public: // Public functions
     bool bleOn = true;
     float deltaTime = 0;
 
-    PyroChannel pyro1_motor;
-    PyroChannel pyro2_land;
+    PyroChannel pyro1_motor = PyroChannel(PYRO_1_LANDING_MOTOR_PIN, 6000L, false, false);
+    PyroChannel pyro2_land = PyroChannel(PYRO_2_LANDING_LEGS_PIN, 6000L, false, false);
 
     TVC tvc;
 
     // Handle catastrophic failures
     void HALT_AND_CATCH_FIRE() {
+
         while (true) {
             flash(COLOR_RED, 400);
+            playAbortSound();
+
         }
     }
 
@@ -80,7 +85,9 @@ public: // Public functions
     }
 
     void HALT_DONE() {
+        playShutdownSound();
         while (true) {
+            playLocatorSound();
             flash(COLOR_GREEN, COLOR_LIGHTBLUE, 1600);
         }
     }
@@ -101,6 +108,7 @@ public: // Public functions
         if (!initLeds()) return false;
         if (!initTvc()) return false;
         if (!initPyros()) return false;
+        if (!initBuzzer()) return false;
         return finishSetup();
     }
 
@@ -120,7 +128,7 @@ public: // Public functions
             return false;
         }
         return true;
-}
+    }
 #endif
     // Initialize SD Card
     bool initSD() {
@@ -226,20 +234,27 @@ public: // Public functions
 
     // Initialize Pyros
     bool initPyros() {
-        
+
         bool p1os = config["PYRO_1_ONE_SHOT"] > 0;
         bool p2os = config["PYRO_2_ONE_SHOT"] > 0;
 
-        long p1ft = (long) max(2000L, config["PYRO_1_FIRE_TIME"]);
-        long p2ft = (long) max(2000L, config["PYRO_2_FIRE_TIME"]);
-        
-        pyro1_motor = PyroChannel(PYRO_LANDING_MOTOR_IGNITION, p1ft, false, p1os);
-        pyro2_land = PyroChannel(PYRO_LANDING_LEGS_DEPLOY, p2ft, false, p2os);
+        long p1ft = (long)max(2000L, config["PYRO_1_FIRE_TIME"]);
+        long p2ft = (long)max(2000L, config["PYRO_2_FIRE_TIME"]);
+
+        // pyro1_motor = PyroChannel(PYRO_LANDING_MOTOR_IGNITION, p1ft, false, p1os);
+        // pyro2_land = PyroChannel(PYRO_LANDING_LEGS_DEPLOY, p2ft, false, p2os);
 
         pyro1_motor.begin();
         pyro2_land.begin();
         pyro1_motor.arm();
-        pyro2_land.arm();
+        pyro2_land.
+            arm();
+        return true;
+    }
+
+    // Inititalize buzzer
+    bool initBuzzer() {
+        pinMode(BUZZER_PIN, OUTPUT);
         return true;
     }
 
@@ -247,6 +262,7 @@ public: // Public functions
     bool finishSetup() {
         lastLoopTime = millis();
         logStatus("Setup complete", logFile);
+        playStartupSound();
         return true;
     }
 
@@ -263,6 +279,9 @@ public: // Public functions
         updateState();
         updateTvc();
         updatePyros();
+        updateBuzzer();
+        updateAngleLeds();
+        updateDataLog();
 
         updateTime();
     }
@@ -321,6 +340,13 @@ public: // Public functions
 
         altitude = getAltitude(config["PRESSURE_REF"], pressureOffset);
         vertVel -= readings.ay * 9.80665 * deltaTime;
+    }
+
+    // Play buzzer heartbeat tone
+    void updateBuzzer() {
+        if (millis() % 1500 < 50) {
+            playConstantTone(415, 200);
+        }
     }
 
     // Update current state of the system
@@ -559,7 +585,7 @@ public: // Public functions
         #else
             Serial.println(message);
         #endif
-    }
+        }
         else {
         #if USE_BLE
             msgPrint(bleOn, bleSerial, message);
@@ -568,7 +594,7 @@ public: // Public functions
             Serial.print(message);
             Serial.print(" ");
         #endif
-        }
+}
     }
 
     // --- Getters --- //
