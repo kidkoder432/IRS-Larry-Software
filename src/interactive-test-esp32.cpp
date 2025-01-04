@@ -71,8 +71,8 @@ void setup() {
     delay(2000);
 
     // Init pyros
-    pinMode(PYRO_LANDING_LEGS_DEPLOY, OUTPUT);
-    pinMode(PYRO_LANDING_MOTOR_IGNITION, OUTPUT);
+    pinMode(PYRO_1_LANDING_MOTOR_PIN, OUTPUT);
+    pinMode(PYRO_2_LANDING_LEGS_PIN, OUTPUT);
 
     // Init LEDs
     pinMode(LEDR, OUTPUT);
@@ -82,32 +82,32 @@ void setup() {
 
     // Init SD Card | Read Config
     SD.begin(10);
-    logFile.open("/log.txt", FILE_WRITE);
+    // logFile.open("/log.txt", FILE_WRITE);
 
-    if (!logFile) {
-        Serial.println("Failed to open log file!");
-        while (1) {
-            flash(COLOR_RED);
+    // if (!logFile) {
+    //     Serial.println("Failed to open log file!");
+    //     while (1) {
+    //         flash(COLOR_RED);
 
-        }
-    }
+    //     }
+    // }
 
-    logStatus("Initialized", logFile);
-    config = readConfig();
-    logStatus("Config read successfully", logFile);
+    // logStatus("Initialized", logFile);
+    // config = readConfig();
+    // logStatus("Config read successfully", logFile);
 
 
-    // Open data file
-    dataFile.open("/data.csv", FILE_WRITE);
+    // // Open data file
+    // dataFile.open("/data.csv", FILE_WRITE);
 
-    if (!dataFile) {
-        Serial.println("Failed to open data file!");
-        while (1) {
-            flash(COLOR_RED);
+    // if (!dataFile) {
+    //     Serial.println("Failed to open data file!");
+    //     while (1) {
+    //         flash(COLOR_RED);
 
-        }
-    }
-    dataFile.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
+    //     }
+    // }
+    // dataFile.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
 
     // Init TVC
     tvc.begin(deltaTime);
@@ -154,16 +154,16 @@ void loop() {
             case 'D':
                 logData = !logData;
                 if (logData) {
-                    dataFile.open("/data.csv", FILE_WRITE);
-                    logFile.open("/log.txt", FILE_WRITE);
+                    // dataFile.open("/data.csv", FILE_WRITE);
+                    // logFile.open("/log.txt", FILE_WRITE);
                     Serial.println("Logging Data ON");
                     logStatus("Logging Data ON", logFile);
                 }
                 else {
                     Serial.println("Logging Data OFF");
                     logStatus("Logging Data OFF", logFile);
-                    dataFile.close();
-                    logFile.close();
+                    // dataFile.close();
+                    // logFile.close();
                 }
                 break;
 
@@ -188,6 +188,16 @@ void loop() {
             case 'L':
                 Serial.println("Nudging TVC Right");
                 logStatus("Nudging TVC Right", logFile);
+                tvc.nudge(0);
+                break;
+            
+            case 'X':
+                Serial.println("Running TVC Test");
+                logStatus("Running TVC Test", logFile);
+                tvc.testRoutine();
+                Serial.println("TVC Test Complete");
+                logStatus("TVC Test Complete", logFile);
+                break;
 
             default:
                 Serial.println("Invalid command");
