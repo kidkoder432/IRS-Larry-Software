@@ -5,12 +5,15 @@
 
 #include <orientation.h>
 
+#include <pins.h>
 #include <tvc.h>
 #include <leds.h>
 #include <pyro.h>
 
+
 #include <config.h>
 #include <datalog.h>
+
 
 float yaw, pitch, roll;
 TVC tvc;
@@ -20,22 +23,34 @@ long long lastLoopTime;
 char receivedChar;
 bool newCommand = false;
 
+double deltaTime = 0.01;
+
 Config config;
 
 bool logData = true;
 bool led = true;
-File dataFile;
-File logFile;
+
+SdExFat SD;
+
+ExFile dataFile;
+ExFile logFile;
 
 int currentState = 42;   // Test state = 42
 
 const char HELP_STR[] =
 R"(Input commands to test the following:
-K: Toggle LEDs
+Y: Toggle LEDs
 D: Toggle Data Logging
 G: Activate Pyro 1 (Motor Ignition)
 T: Activate Pyro 2 (Landing Legs Deploy)
 S: Read SD Card
+
+TVC Commands:
+I: Nudge TVC Up
+J: Nudge TVC left
+K: Nudge TVC Down
+L: Nudge TVC Right
+X: Full TVC Test (will block until done)
 H: Help)";
 
 void recvOneChar() {
@@ -67,7 +82,7 @@ void setup() {
 
     // Init SD Card | Read Config
     SD.begin(10);
-    logFile = SD.open("log.txt", FILE_WRITE);
+    logFile.open("/log.txt", FILE_WRITE);
 
     if (!logFile) {
         Serial.println("Failed to open log file!");
@@ -83,7 +98,7 @@ void setup() {
 
 
     // Open data file
-    dataFile = SD.open("data.csv", FILE_WRITE);
+    dataFile.open("/data.csv", FILE_WRITE);
 
     if (!dataFile) {
         Serial.println("Failed to open data file!");
@@ -95,7 +110,7 @@ void setup() {
     dataFile.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
 
     // Init TVC
-    tvc.begin();
+    tvc.begin(deltaTime);
     tvc.lock();
 
     delay(1000);
@@ -117,26 +132,20 @@ void loop() {
     if (newCommand == true) {
         switch (receivedChar) {
 
-            case 'K':
-                Serial.println("Toggling LEDs");
-                logStatus("Toggling LEDs", logFile);
-                led = !led;
-                break;
-
             case 'G':
                 Serial.println("Pyro 1: Motor Ignition");
                 logStatus("Pyro 1: Motor Ignition", logFile);
-                fire_pyro_test(PYRO_LANDING_MOTOR_IGNITION);
+                fire_pyro_test(PYRO_1_LANDING_MOTOR_PIN);
                 break;
             case 'T':
                 Serial.println("Pyro 2: Landing Legs Deploy");
                 logStatus("Pyro 2: Landing Legs Deploy", logFile);
-                fire_pyro_test(PYRO_LANDING_LEGS_DEPLOY);
+                fire_pyro_test(PYRO_2_LANDING_LEGS_PIN);
                 break;
             case 'S':
                 Serial.println("Reading SD Card Info");
                 logStatus("Reading SD Card Info", logFile);
-                checkSDCard();
+                sdCardInfo(SD);
                 break;
             case 'H':
                 Serial.println(HELP_STR);
@@ -145,15 +154,40 @@ void loop() {
             case 'D':
                 logData = !logData;
                 if (logData) {
-                    SD.begin(10);
+                    dataFile.open("/data.csv", FILE_WRITE);
+                    logFile.open("/log.txt", FILE_WRITE);
                     Serial.println("Logging Data ON");
                     logStatus("Logging Data ON", logFile);
                 }
                 else {
                     Serial.println("Logging Data OFF");
                     logStatus("Logging Data OFF", logFile);
+                    dataFile.close();
+                    logFile.close();
                 }
                 break;
+
+            case 'I':
+                Serial.println("Nudging TVC Up");
+                logStatus("Nudging TVC Up", logFile);
+                tvc.nudge(2);
+                break;
+
+            case 'J':
+                Serial.println("Nudging TVC Left");
+                logStatus("Nudging TVC Left", logFile);
+                tvc.nudge(1);
+                break;
+
+            case 'K':
+                Serial.println("Nudging TVC Down");
+                logStatus("Nudging TVC Down", logFile);
+                tvc.nudge(3);
+                break;
+
+            case 'L':
+                Serial.println("Nudging TVC Right");
+                logStatus("Nudging TVC Right", logFile);
 
             default:
                 Serial.println("Invalid command");

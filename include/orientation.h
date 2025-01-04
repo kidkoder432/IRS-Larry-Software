@@ -218,7 +218,7 @@ Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, float delta
 
     // Update attitude quaternion
     float norm = sqrt(wx * wx + wy * wy + wz * wz);
-    norm = copysignf(max(abs(norm), 1e-9), norm); // NO DIVIDE BY 0
+    norm = copysignf(max(abs(norm), 1e-9f), norm); // NO DIVIDE BY 0
 
     wx /= norm;
     wy /= norm;

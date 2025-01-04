@@ -1,9 +1,9 @@
 #include <Arduino.h>
-#include <Serial.h>
 
 #include <SparkFun_BMI270_Arduino_Library.h>
 #include <orientation.h>
 
+#include <Servo.h>
 #include <pins.h>
 #include <tvc.h>
 #include <leds.h>
@@ -174,11 +174,18 @@ public: // Public functions
 
     // Initialize sensors
     bool setupSensors() {
+        #if USE_RP2040
+        initSensors_RP2040();
+        #else
         initSensors();
+        #endif
+
+
+        #if !USE_RP2040
         logStatus("Calibrating Barometer", logFile);
         pressureOffset = calculateOffset(config["PRESSURE_REF"]);
         logStatus("Barometer calibrated", logFile);
-
+        #endif
         return true;
     }
 
@@ -186,8 +193,11 @@ public: // Public functions
     bool calibrateAndLog() {
         printMessage("Calibrating sensors");
         logStatus("Calibrating Sensors", logFile);
+        #if USE_RP2040
+        biases = calibrateSensors_RP2040(config);
+        #else
         biases = calibrateSensors(config);
-
+        #endif
         char buf[64];
         snprintf(buf, sizeof(buf), "bx = %f, by = %f, bz = %f", biases.bx, biases.by, biases.bz);
         logStatus(buf, logFile);
@@ -238,8 +248,8 @@ public: // Public functions
         bool p1os = config["PYRO_1_ONE_SHOT"] > 0;
         bool p2os = config["PYRO_2_ONE_SHOT"] > 0;
 
-        long p1ft = (long)max(2000L, config["PYRO_1_FIRE_TIME"]);
-        long p2ft = (long)max(2000L, config["PYRO_2_FIRE_TIME"]);
+        long p1ft = (long)max(2000L, (long) round(config["PYRO_1_FIRE_TIME"]));
+        long p2ft = (long)max(2000L, (long) round(config["PYRO_2_FIRE_TIME"]));
 
         // pyro1_motor = PyroChannel(PYRO_LANDING_MOTOR_IGNITION, p1ft, false, p1os);
         // pyro2_land = PyroChannel(PYRO_LANDING_LEGS_DEPLOY, p2ft, false, p2os);
