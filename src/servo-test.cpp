@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <Servo.h> 
+#include <pins.h>
 #include <orientation.h>
 
 Servo xservo, yservo;  // create servo object to control a servo 
@@ -8,8 +9,8 @@ String readString;
 void setup() {
     Serial.begin(9600);
     delay(2000);
-    xservo.attach(5);
-    yservo.attach(6);
+    xservo.attach(TVC_X_PIN);
+    yservo.attach(TVC_Y_PIN);
     Serial.println("servo-test"); // so I can keep track of what is loaded
 }
 

@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <pid.h>
-#include <Servo.h>
 #include <config.h>
 
 #define ACTUAL_PID 1
@@ -120,8 +119,11 @@ public:
         if (x < XMIN) x = XMIN;
         if (y > YMAX) y = YMAX;
         if (y < YMIN) y = YMIN;
-        tvcx.write(x);
-        tvcy.write(y);
+        tvcx.write(roundf(x));
+        tvcy.write(roundf(y));
+
+        x_out = x;
+        y_out = y;
     }
 
     Vec2D getAngle() {
@@ -148,11 +150,73 @@ public:
         locked = true;
     }
 
+    void nudge(int dir) {
+        switch (dir) {
+            case 0:
+                x_out += 1;
+                write(x_out, y_out);
+                break;
+            case 1:
+                x_out -= 1;
+                write(x_out, y_out);
+                break;
+            case 2:
+                y_out += 1;
+                write(x_out, y_out);
+                break;
+            case 3:
+                y_out -= 1;
+                write(x_out, y_out);
+                break;
+        }
+    }
+
+    void testRoutine() {
+        // Move to limits
+        for (float x = XDEF; x <= XMAX; x += 0.1) {
+            write(x, YDEF);
+            delay(10);
+        }
+        for (float y = YDEF; y <= YMAX; y += 0.1) {
+            write(XMAX, y);
+            delay(10);
+        }
+        for (float x = XMAX; x >= XMIN; x -= 0.1) {
+            write(x, YMAX);
+            delay(10);
+        }
+        for (float y = YMAX; y >= YMIN; y -= 0.1) {
+            write(XMIN, y);
+            delay(10);
+        }
+        for (float x = XMIN; x <= XDEF; x += 0.1) {
+            write(x, YMIN);
+            delay(10);
+        }
+        for (float y = YMIN; y <= YDEF; y += 0.1) {
+            write(XDEF, y);
+            delay(10);
+        }
+        // Move in a spiral
+        float angle = 0;
+        float radius = 3;
+        while (radius < (XMAX - XMIN) / 2) {
+            float x = XDEF + radius * cos(angle);
+            float y = YDEF + radius * sin(angle);
+            write(x, y);
+            delay(7);
+            angle += 0.1;
+            if (angle > 2 * PI) {
+                angle = 0;
+                radius += 0.1;
+            }
+        }
+    }
+
 
 private:
     Servo tvcx, tvcy;
 
-    // placeholder values; replace with actual limits
     float XMIN = 83;  // TVC X Min
     float XMAX = 105; // TVC X Max
     float YMIN = 73;  // TVC Y Min
