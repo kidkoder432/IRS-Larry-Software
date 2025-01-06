@@ -1,7 +1,15 @@
 #include <Arduino.h>
 
+#if !USE_RP2040
+#include <alt.h>
+#endif
+
 #include <SparkFun_BMI270_Arduino_Library.h>
 #include <orientation.h>
+
+#if USE_RP2040
+#include <WiFiNINA.h>
+#endif
 
 #include <Servo.h>
 #include <pins.h>
@@ -9,9 +17,6 @@
 #include <leds.h>
 #include <pyro.h>
 #include <buzzer.h>
-
-#include <alt.h>
-#include <Arduino_LPS22HB.h>
 
 #include <config.h>
 #include <datalog.h>
@@ -31,7 +36,7 @@ private:  // Member variables and internal functions
 #endif
 
     SensorReadings readings;
-    Biases biases;
+    GyroBiases biases;
     float pressureOffset = 0;
 
     Quaternion attitude;
@@ -174,18 +179,12 @@ public: // Public functions
 
     // Initialize sensors
     bool setupSensors() {
-        #if USE_RP2040
-        initSensors_RP2040();
-        #else
         initSensors();
-        #endif
-
-
-        #if !USE_RP2040
+    #if !USE_RP2040
         logStatus("Calibrating Barometer", logFile);
         pressureOffset = calculateOffset(config["PRESSURE_REF"]);
         logStatus("Barometer calibrated", logFile);
-        #endif
+    #endif
         return true;
     }
 
@@ -193,11 +192,7 @@ public: // Public functions
     bool calibrateAndLog() {
         printMessage("Calibrating sensors");
         logStatus("Calibrating Sensors", logFile);
-        #if USE_RP2040
-        biases = calibrateSensors_RP2040(config);
-        #else
         biases = calibrateSensors(config);
-        #endif
         char buf[64];
         snprintf(buf, sizeof(buf), "bx = %f, by = %f, bz = %f", biases.bx, biases.by, biases.bz);
         logStatus(buf, logFile);
@@ -248,8 +243,8 @@ public: // Public functions
         bool p1os = config["PYRO_1_ONE_SHOT"] > 0;
         bool p2os = config["PYRO_2_ONE_SHOT"] > 0;
 
-        long p1ft = (long)max(2000L, (long) round(config["PYRO_1_FIRE_TIME"]));
-        long p2ft = (long)max(2000L, (long) round(config["PYRO_2_FIRE_TIME"]));
+        long p1ft = (long)max(2000L, (long)round(config["PYRO_1_FIRE_TIME"]));
+        long p2ft = (long)max(2000L, (long)round(config["PYRO_2_FIRE_TIME"]));
 
         // pyro1_motor = PyroChannel(PYRO_LANDING_MOTOR_IGNITION, p1ft, false, p1os);
         // pyro2_land = PyroChannel(PYRO_LANDING_LEGS_DEPLOY, p2ft, false, p2os);
@@ -347,9 +342,12 @@ public: // Public functions
 
     // Update altitude and vertical velocity
     void updateAltVel() {
-
+    #if !USE_RP2040
         altitude = getAltitude(config["PRESSURE_REF"], pressureOffset);
-        vertVel -= readings.ay * 9.80665 * deltaTime;
+    #else
+        altitude = 0;
+    #endif
+        vertVel -= (readings.ay - 1) * 9.80665 * deltaTime;
     }
 
     // Play buzzer heartbeat tone
@@ -604,7 +602,7 @@ public: // Public functions
             Serial.print(message);
             Serial.print(" ");
         #endif
-}
+        }
     }
 
     // --- Getters --- //
@@ -646,7 +644,6 @@ public: // Public functions
 
         printMessage("Shutting down sensors...");
         logMessage("Shutting down sensors...");
-        BARO.end();
 
         printMessage("Cleaning up logs...");
         cleanupLogs();

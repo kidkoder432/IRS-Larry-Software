@@ -5,9 +5,13 @@
 
 #include <math.h>
 #include <SparkFun_BMI270_Arduino_Library.h>
-#include <Arduino_LPS22HB.h>
 #include <config.h>
 
+#if USE_RP2040
+#include <SparkFunLSM6DSO.h>
+#else
+#include <alt.h>
+#endif
 
 #include <Kalman.h>
 #include <Quaternion.h>
@@ -15,6 +19,10 @@
 // ========= Angles & Orientation ========= //
 
 BMI270 imu;
+
+#if USE_RP2040
+LSM6DSO rp_imu;
+#endif
 
 // ========= Sensor Variables ========= //
 struct SensorReadings {
@@ -54,13 +62,65 @@ int sign(float x) {
     return x > 0 ? 1 : -1;
 }
 
-struct Biases {
+struct GyroBiases {
     float bx, by, bz;
-    Biases() { bx = by = bz = 0; };
-    Biases(float x, float y, float z) : bx(x), by(y), bz(z) {}
+    GyroBiases() { bx = by = bz = 0; };
+    GyroBiases(float x, float y, float z) : bx(x), by(y), bz(z) {}
 
 };
 
+#if USE_RP2040
+void initSensors() {
+    Wire.begin();
+    rp_imu.begin();
+    rp_imu.setAccelRange(8);
+    rp_imu.setAccelDataRate(416);
+    rp_imu.setGyroRange(1000);
+    rp_imu.setGyroDataRate(416);
+    rp_imu.setBlockDataUpdate(true);
+}
+
+void readSensors(SensorReadings& r, GyroBiases biases) {
+    r.ax = rp_imu.readFloatAccelX();
+    r.ay = rp_imu.readFloatAccelY();
+    r.az = rp_imu.readFloatAccelZ();
+
+    r.gx = rp_imu.readFloatGyroX() - biases.bx;
+    r.gy = rp_imu.readFloatGyroY() - biases.by;
+    r.gz = rp_imu.readFloatGyroZ() - biases.bz;
+
+}
+
+GyroBiases calibrateSensors(Config& config) {
+
+    Serial.println("Starting Sensor Calibration...");
+
+    long long now = micros();
+    float x_angle_c, y_angle_c, z_angle_c;
+    x_angle_c = y_angle_c = z_angle_c = 0;
+    float dt = 0.005;
+    SensorReadings r;
+    long long lastM = micros();
+    while (micros() - now < 3000000LL) {
+
+        r.gx = rp_imu.readFloatGyroX();
+        r.gy = rp_imu.readFloatGyroY();
+        r.gz = rp_imu.readFloatGyroZ();
+        x_angle_c += dt * r.gx;
+        y_angle_c += dt * r.gy;
+        z_angle_c += dt * r.gz;
+        dt = (micros() - lastM) / 1000000.0;
+        lastM = micros();
+    }
+
+    float bx = ((x_angle_c) / (float)(micros() - now)) * 1000000;
+    float by = ((y_angle_c) / (float)(micros() - now)) * 1000000;
+    float bz = ((z_angle_c) / (float)(micros() - now)) * 1000000;
+
+    return GyroBiases(bx, by, bz);
+}
+
+#else
 void initSensors() {
     Wire1.begin();
     imu.beginI2C(0x68, Wire1);
@@ -88,10 +148,10 @@ void initSensors() {
 
     BARO.begin();
     BARO.setOutputRate(RATE_75_HZ);
-    
+
 }
 
-void readSensors(SensorReadings& r, Biases biases) {
+void readSensors(SensorReadings& r, GyroBiases biases) {
     imu.getSensorData();
 
     r.ax = imu.data.accelX;
@@ -103,7 +163,7 @@ void readSensors(SensorReadings& r, Biases biases) {
     r.gz = imu.data.gyroZ - biases.bz;
 }
 
-Biases calibrateSensors(Config& config) {
+GyroBiases calibrateSensors(Config& config) {
 
     Serial.println("Starting Sensor Calibration...");
 
@@ -148,15 +208,13 @@ Biases calibrateSensors(Config& config) {
         lastM = micros();
     }
 
-    Serial.println(y_angle_c);
-    Serial.println(micros() - now);
-
     float bx = ((x_angle_c) / (float)(micros() - now)) * 1000000;
     float by = ((y_angle_c) / (float)(micros() - now)) * 1000000;
     float bz = ((z_angle_c) / (float)(micros() - now)) * 1000000;
 
-    return Biases(bx, by, bz);
+    return GyroBiases(bx, by, bz);
 }
+#endif
 
 // GYRO-BASED ANGLE CALCULATION
 Vec3D get_angles(SensorReadings r, SensorReadings pr = SensorReadings(), Vec3D dir = Vec3D(0, 0, 0), float dt = 0.02) {
@@ -191,7 +249,7 @@ Vec2D get_angles_complementary(float A, float dt, SensorReadings r, float yaw, f
 
 
 // KALMAN FILTERING
-Vec2D get_angles_kalman(float dt, SensorReadings r, Kalman& kx, Kalman& ky, Biases b) {
+Vec2D get_angles_kalman(float dt, SensorReadings r, Kalman& kx, Kalman& ky, GyroBiases b) {
     float accel_angle_x = atan2(r.ax, -sign(r.ay) * sqrt(r.az * r.az + r.ay * r.ay)) * 180 / PI;
     float accel_angle_y = atan2(r.az, -r.ay) * 180 / PI;
 
@@ -206,7 +264,7 @@ Vec2D get_angles_kalman(float dt, SensorReadings r, Kalman& kx, Kalman& ky, Bias
 // QUATERNION BASED ANGLE CALCULATION
 // Returns roll, pitch, yaw
 Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, float deltaTime) {
-    
+
     // wx = pitch  (rotation around x-axis)
     // wy = roll   (rotation around y-axis) 
     // wz = yaw    (rotation around z-axis)

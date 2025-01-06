@@ -2,8 +2,6 @@
 
 #include <rocket.h>
 
-#define LOG_DATA_BATCH 1
-
 Rocket rocket;
 
 #if USE_BLE 
