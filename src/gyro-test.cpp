@@ -7,7 +7,7 @@
 float yaw, pitch;
 SensorReadings readings, prevReadings;
 Vec2D dir;
-Biases biases;
+GyroBiases biases;
 
 bool newCommand = false;
 char receivedChar;

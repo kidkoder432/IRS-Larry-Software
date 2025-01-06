@@ -11,10 +11,10 @@ struct Color {
 
 // Basic Colors
 struct Color COLOR_RED(255, 0, 0);
-struct Color COLOR_GREEN(0, 255, 0);
-struct Color COLOR_LIGHTGREEN(128, 255, 0);
 struct Color COLOR_ORANGE(255, 128, 0);
 struct Color COLOR_YELLOW(255, 200, 0);
+struct Color COLOR_LIGHTGREEN(128, 255, 0);
+struct Color COLOR_GREEN(0, 255, 0);
 struct Color COLOR_LIGHTBLUE(0, 128, 255);
 struct Color COLOR_BLUE(0, 0, 255);
 struct Color COLOR_PURPLE(128, 0, 255);

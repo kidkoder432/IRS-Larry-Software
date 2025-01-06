@@ -10,7 +10,7 @@ Kalman kx, ky;
 float yaw, pitch;
 SensorReadings readings;
 Vec2D dir;
-Biases biases;
+GyroBiases biases;
 
 void setup() {
     Serial.begin(9600);

@@ -6,7 +6,7 @@
 
 SensorReadings readings;
 Vec2D dir;
-Biases biases;
+GyroBiases biases;
 Quaternion attitude;
 
 float yaw, pitch, roll;

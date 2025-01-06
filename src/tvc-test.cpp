@@ -7,7 +7,7 @@
 float roll, pitch, yaw;
 SensorReadings readings;
 Vec3D dir;
-Biases biases;
+GyroBiases biases;
 TVC tvc;
 
 Quaternion attitude;

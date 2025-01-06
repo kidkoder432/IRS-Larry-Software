@@ -8,7 +8,7 @@
 float yaw, pitch;
 SensorReadings readings;
 Vec2D dir;
-Biases biases;
+GyroBiases biases;
 
 float ALPHA = 0.05;
 

@@ -33,7 +33,7 @@ float yaw, pitch;
 float altitude, maxAltitude = -10000000;
 
 // --------- Filter Init --------- //
-Biases biases;
+GyroBiases biases;
 float ALPHA = 0.05;
 Kalman kx, ky;
 
