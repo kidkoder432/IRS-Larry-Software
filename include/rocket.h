@@ -1,14 +1,12 @@
 #include <Arduino.h>
 
-#if !USE_RP2040
-#include <alt.h>
-#endif
-
 #include <SparkFun_BMI270_Arduino_Library.h>
 #include <orientation.h>
 
 #if USE_RP2040
 #include <WiFiNINA.h>
+#elif USE_BLE_SENSE
+#include <alt.h>
 #endif
 
 #include <Servo.h>
@@ -179,13 +177,7 @@ public: // Public functions
 
     // Initialize sensors
     bool setupSensors() {
-        initSensors();
-    #if !USE_RP2040
-        logStatus("Calibrating Barometer", logFile);
-        pressureOffset = calculateOffset(config["PRESSURE_REF"]);
-        logStatus("Barometer calibrated", logFile);
-    #endif
-        return true;
+        return initSensors();
     }
 
     // Calibrate sensors and log results
@@ -342,7 +334,7 @@ public: // Public functions
 
     // Update altitude and vertical velocity
     void updateAltVel() {
-    #if !USE_RP2040
+    #if USE_BLE_SENSE
         altitude = getAltitude(config["PRESSURE_REF"], pressureOffset);
     #else
         altitude = 0;

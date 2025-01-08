@@ -1,13 +1,13 @@
 // Read config file from SD card
 
+#ifndef CONFIG_H
+#define CONFIG_H
+
 #include <Arduino.h>
 #include <SdFat.h>
 #include <SDConfig.h>
 #include <stdlib.h>
 #include <unordered_map>
-
-#ifndef CONFIG_H
-#define CONFIG_H
 
 const int chipSelect = 10; // Adjust pin according to your SD card module
 
