@@ -225,6 +225,14 @@ void loop() {
                 rocket.printMessage(1 / rocket.deltaTime);
                 break;
 
+            case 'Y':
+                rocket.printMessage("Running test routine");
+                rocket.logMessage("Running test routine");
+                rocket.tvc.testRoutine();
+                rocket.printMessage("Test routine complete!");
+                rocket.logMessage("Test routine complete!");
+                break;
+
             case 'E':
                 experimentMode = !experimentMode;
                 if (experimentMode) {
