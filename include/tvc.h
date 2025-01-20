@@ -79,11 +79,13 @@ public:
             x_out = tvcXRaw * cr + tvcYRaw * sr;
             y_out = tvcXRaw * sr - tvcYRaw * cr;
 
+            if (FLIP_X) x_out = -x_out;
+            if (FLIP_Y) y_out = -y_out;
+
             x_out = (x_out * 180 / PI) + XDEF;
             y_out = (y_out * 180 / PI) + YDEF;
 
-            if (FLIP_X) x_out = -x_out;
-            if (FLIP_Y) y_out = -y_out;
+            
 
         #if PRINT_OUTPUT
 

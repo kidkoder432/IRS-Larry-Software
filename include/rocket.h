@@ -84,6 +84,8 @@ public: // Public functions
     void HALT_AND_CATCH_FIRE(Color color) {
         while (true) {
             flash(color);
+            playAbortSound();
+
         }
     }
 
@@ -150,17 +152,25 @@ public: // Public functions
 
     // Initialize log files
     bool initLogs() {
-        if (!logFile.open("log.txt", O_TRUNC | O_WRITE | O_CREAT)) {
+        if (!logFile.open("log.txt", O_WRITE | O_CREAT)) {
             printMessage("Failed to open log file!");
             HALT_AND_CATCH_FIRE();
             return false;
         }
+        if (logFile.size() > 0) {
+            printMessage("Log file is not empty!");
+            HALT_AND_CATCH_FIRE(COLOR_YELLOW);
+        }
         logStatus("Log file initialized", logFile);
 
-        if (!dataFile.open("data.bin", O_TRUNC | O_WRITE | O_CREAT)) {
+        if (!dataFile.open("data.bin", O_WRITE | O_CREAT)) {
             printMessage("Failed to open data file!");
             HALT_AND_CATCH_FIRE();
             return false;
+        }
+        if (dataFile.size() > 0) {
+            printMessage("Data file is not empty!");
+            HALT_AND_CATCH_FIRE(COLOR_YELLOW);
         }
         dataFile.println("Timestamp,Delta Time,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Roll,TvcX,TvcY,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
         dataFile.sync();

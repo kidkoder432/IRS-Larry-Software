@@ -122,6 +122,8 @@ bool initSensors() {
     BARO.setOutputRate(RATE_75_HZ);
 #endif
 
+    return true;
+
 }
 
 void readSensors(SensorReadings& r, GyroBiases biases) {
