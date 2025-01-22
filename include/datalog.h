@@ -4,14 +4,17 @@
 #include <SdFat.h>
 
 #define DEBUG 0
+
+// i12f3h8f
 struct DataPoint {
-    long timestamp;         // Milliseconds
+    int timestamp;         // Milliseconds
     float DELTA_T;         // Delta Time
     SensorReadings r;       // Sensor Readings
     Vec3D o;                // Current Orientation
     float x_out, y_out;    // TVC Outputs
+    short x_act, y_act;      // TVC Readings
+    short currentState;       // Current State
     float alt;             // Altitude
-    int currentState;       // Current State
     float vert_vel;        // Vertical Velocity
     float px, ix, dx;      // PID Values (X)
     float py, iy, dy;      // PID Values (Y)

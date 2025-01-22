@@ -172,7 +172,7 @@ public: // Public functions
             printMessage("Data file is not empty!");
             HALT_AND_CATCH_FIRE(COLOR_YELLOW);
         }
-        dataFile.println("Timestamp,Delta Time,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Roll,TvcX,TvcY,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
+        dataFile.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Roll,Pitch,Yaw,TvcX,TvcY,ActX,ActY,State,Alt,Vel,Px,Ix,Dx,Py,Iy,Dy");
         dataFile.sync();
         return true;
     }
@@ -248,14 +248,13 @@ public: // Public functions
         long p1ft = (long)max(2000L, (long)round(config["PYRO_1_FIRE_TIME"]));
         long p2ft = (long)max(2000L, (long)round(config["PYRO_2_FIRE_TIME"]));
 
-        // pyro1_motor = PyroChannel(PYRO_LANDING_MOTOR_IGNITION, p1ft, false, p1os);
-        // pyro2_land = PyroChannel(PYRO_LANDING_LEGS_DEPLOY, p2ft, false, p2os);
+        pyro1_motor = PyroChannel(PYRO_LANDING_MOTOR_IGNITION, p1ft, false, p1os);
+        pyro2_land = PyroChannel(PYRO_LANDING_LEGS_DEPLOY, p2ft, false, p2os);
 
         pyro1_motor.begin();
         pyro2_land.begin();
         pyro1_motor.arm();
-        pyro2_land.
-            arm();
+        pyro2_land.arm();
         return true;
     }
 
@@ -444,6 +443,8 @@ public: // Public functions
         p.o = Vec3D(roll, pitch, yaw);
         p.x_out = x_out;
         p.y_out = y_out;
+        p.x_act = (short) tvc.read().x;
+        p.y_act = (short) tvc.read().y;
         p.alt = altitude; // getAltitude(config["PRESSURE_REF"], pressureOffset);
         p.currentState = currentState;
         p.vert_vel = vertVel;

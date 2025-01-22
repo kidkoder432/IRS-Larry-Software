@@ -1,31 +1,31 @@
-# Timestamp,Delta Time,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Roll,TvcX,TvcY,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy
-
-from re import S
 import struct
 
-fmt = "<l13fi7f"
+fmt = "<i12f3h8f"
 
 SIZEOF_STRUCT = struct.calcsize(fmt)
+
+# Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Roll,Pitch,Yaw,TvcX,TvcY,ActX,ActY,State,Alt,Vel,Px,Ix,Dx,Py,Iy,Dy
+SIZEOF_HEADER = 92
 
 def strify(f):
     return str(round(f, 4))
 
 with open("data.bin", "rb") as f:
     data = f.read()
-    print((len(data) - 97))
+    print((len(data) - SIZEOF_HEADER))
 
-    header = data[:97]
-    data = data[97:]
+    header = data[:SIZEOF_HEADER]
+    data = data[SIZEOF_HEADER:]
 
     with open("data.csv", "w") as f:
         f.write(header.decode("utf-8"))
         print(repr(header.decode("utf-8")))
 
-        data = [data[i:i+88] for i in range(0, len(data), 88)]
+        data = [data[i:i+SIZEOF_STRUCT] for i in range(0, len(data), SIZEOF_STRUCT)]
 
         i = 0
         while i < len(data):
-            if len(data[i]) != 88:
+            if len(data[i]) != SIZEOF_STRUCT:
                 print(f"Invalid line {i}, skipping")
                 i += 1
                 continue
