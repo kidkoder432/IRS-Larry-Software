@@ -32,6 +32,7 @@ public:
 
         FLIP_X = config["FLIP_X"] > 0;
         FLIP_Y = config["FLIP_Y"] > 0;
+        ROLL_COMP = config["ROLL_COMP"] > 0;
     }
 
     void begin(float deltaTime) {
@@ -62,6 +63,9 @@ public:
 
         #endif
 
+
+
+
         #if PRINT_OUTPUT 
             Serial.print("X/Y Raw: ");
             Serial.print(x_out);
@@ -69,23 +73,23 @@ public:
             Serial.print(y_out);
             Serial.print("\t");
         #endif
+            if (ROLL_COMP) {
+                float tvcXRaw = (x_out)*PI / 180;
+                float tvcYRaw = (y_out)*PI / 180;
 
-            float tvcXRaw = (x_out - XDEF) * PI / 180;
-            float tvcYRaw = (y_out - YDEF) * PI / 180;
+                float cr = cos(dir.x * PI / 180);
+                float sr = sin(dir.x * PI / 180);
 
-            float cr = cos(dir.x * PI / 180);
-            float sr = sin(dir.x * PI / 180);
+                x_out = tvcXRaw * cr + tvcYRaw * sr;
+                y_out = tvcXRaw * sr - tvcYRaw * cr;
 
-            x_out = tvcXRaw * cr + tvcYRaw * sr;
-            y_out = tvcXRaw * sr - tvcYRaw * cr;
+                x_out = (x_out * 180 / PI);
+                y_out = (y_out * 180 / PI);
+            }
 
             if (FLIP_X) x_out = -x_out;
             if (FLIP_Y) y_out = -y_out;
 
-            x_out = (x_out * 180 / PI) + XDEF;
-            y_out = (y_out * 180 / PI) + YDEF;
-
-            
 
         #if PRINT_OUTPUT
 
@@ -96,6 +100,21 @@ public:
             Serial.print(" ");
             Serial.println(y_out);
         #endif
+
+            // Scale values less than defaults so that they have the full range of motion
+            if (x_out < 0) {
+                x_out *= (XDEF - XMIN) / (XMAX - XDEF);
+            }
+
+            if (y_out < 0) {
+                y_out *= (YDEF - YMIN) / (YMAX - YDEF);
+            }
+
+            x_out += XDEF;
+            y_out += YDEF;
+
+            x_out = clamp(x_out, XMIN, XMAX);
+            y_out = clamp(y_out, YMIN, YMAX);
 
             write(x_out, y_out);
 
@@ -238,6 +257,7 @@ private:
 
     bool FLIP_X = false;
     bool FLIP_Y = false;
+    bool ROLL_COMP = true;
 
     Vec3D dir;
     boolean locked = false;

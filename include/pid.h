@@ -51,9 +51,10 @@ public:
         // Set previous state
         last_filter = filtered_error;
         last_error = error;
-
-        // Output saturation
-        return clip(p + i + d + bias, min, max);
+        
+        return p + i + d;
+        // // Output saturation
+        // return clip(p + i + d + bias, min, max);
     }
 
     void reset() {
