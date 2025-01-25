@@ -160,10 +160,12 @@ void loop() {
         switch (receivedChar) {
             case 'U':
                 rocket.printMessage("Unlocking TVC");
+                rocket.logMessage("Unlocking TVC");
                 rocket.tvc.unlock();
                 break;
             case 'L':
                 rocket.printMessage("Locking TVC");
+                rocket.logMessage("Locking TVC");
                 rocket.tvc.lock();
                 break;
             case 'K':
@@ -194,11 +196,13 @@ void loop() {
                 break;
             case 'G':
                 rocket.printMessage("Pyro 1: Motor Ignition");
+                rocket.logMessage("Pyro 1: Motor Ignition");
                 rocket.firePyro1();
                 // fire_pyro_test(PYRO_LANDING_MOTOR_IGNITION);
                 break;
             case 'T':
                 rocket.printMessage("Pyro 2: Landing Legs Deploy");
+                rocket.logMessage("Pyro 2: Landing Legs Deploy");
                 rocket.firePyro2();
                 // fire_pyro_test(PYRO_LANDING_LEGS_DEPLOY);
                 break;
