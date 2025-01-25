@@ -316,10 +316,6 @@ public: // Public functions
 
         dir = get_angles_quat(readings, attitude, deltaTime);
 
-        if (config["FLIP_DIR_X"] > 0) dir.x = -dir.x;
-        if (config["FLIP_DIR_Y"] > 0) dir.y = -dir.y;
-        if (config["FLIP_DIR_Z"] > 0) dir.z = -dir.z;
-
         if (useCompl) {
             Vec2D dir_c = get_angles_complementary(config["COMP_FILTER_ALPHA_GYRO"], deltaTime, readings, yaw, pitch);
             yaw = dir_c.x;
@@ -333,6 +329,9 @@ public: // Public functions
         roll = dir.x;
 
         dir = Vec3D(roll, pitch, yaw);
+        if (config["FLIP_DIR_X"] > 0) dir.x = -dir.x;
+        if (config["FLIP_DIR_Y"] > 0) dir.y = -dir.y;
+        if (config["FLIP_DIR_Z"] > 0) dir.z = -dir.z;
 
         // Normalize angles to the range [-180, 180]
         if (yaw > 180) yaw -= 360;

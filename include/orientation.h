@@ -134,8 +134,8 @@ Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, float delta
     attitude = attitude.normalize();
 
     roll *= -180 / PI;
-    pitch *= -180 / PI;
-    yaw *= -180 / PI;
+    pitch *= 180 / PI;
+    yaw *= 180 / PI;
 
     return Vec3D(roll, pitch, yaw);
 }
