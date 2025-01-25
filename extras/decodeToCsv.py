@@ -1,11 +1,13 @@
 import struct
 
-fmt = "<i12f3h8f"
+fmt = "<l12f3h2x8f"
 
 SIZEOF_STRUCT = struct.calcsize(fmt)
 
+print(SIZEOF_STRUCT)
+
 # Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Roll,Pitch,Yaw,TvcX,TvcY,ActX,ActY,State,Alt,Vel,Px,Ix,Dx,Py,Iy,Dy
-SIZEOF_HEADER = 92
+SIZEOF_HEADER = 94
 
 def strify(f):
     return str(round(f, 4))
@@ -26,7 +28,7 @@ with open("data.bin", "rb") as f:
         i = 0
         while i < len(data):
             if len(data[i]) != SIZEOF_STRUCT:
-                print(f"Invalid line {i}, skipping")
+                print(f"Invalid line {i}, skipping", len(data[i]))
                 i += 1
                 continue
 
