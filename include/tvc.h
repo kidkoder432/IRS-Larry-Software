@@ -93,8 +93,6 @@ public:
 
         #if PRINT_OUTPUT
 
-            x_out = clamp(x_out, XMIN, XMAX);
-            y_out = clamp(y_out, YMIN, YMAX);
             Serial.print("X/Y Adjust: ");
             Serial.print(x_out);
             Serial.print(" ");
