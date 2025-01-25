@@ -315,9 +315,9 @@ void loop() {
 
     if (!dirOutLock) {
         Vec3D dir = rocket.getDir();
-        float yaw = dir.x;
+        float yaw = dir.z;
         float pitch = dir.y;
-        float roll = dir.z;
+        float roll = dir.x;
         rocket.printMessage(yaw, false);
         rocket.printMessage(" ", false);
         rocket.printMessage(pitch, false);

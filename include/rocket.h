@@ -332,7 +332,7 @@ public: // Public functions
 
         roll = dir.x;
 
-        dir = Vec3D(yaw, pitch, roll);
+        dir = Vec3D(roll, pitch, yaw);
 
         // Normalize angles to the range [-180, 180]
         if (yaw > 180) yaw -= 360;
