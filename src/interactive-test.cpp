@@ -63,6 +63,8 @@ void setup() {
     rocket.initSerial();
     delay(2000);
 
+    rocket.initBuzzer();
+    rocket.printMessage("Buzzer initialized!");
 
     // Setup SD card, config and data logging
     rocket.initSD();
@@ -128,9 +130,6 @@ void setup() {
     // init pyros and complete only after other inits succeed
     rocket.initPyros();
     rocket.printMessage("Pyros initialized!");
-
-    rocket.initBuzzer();
-    rocket.printMessage("Buzzer initialized!");
 
     rocket.finishSetup();
 
@@ -297,7 +296,7 @@ void loop() {
         rocket.pyro2_land.disarm();
 
         currentMs = millis();
-        rocket.disableCompl();
+        rocket.enableCompl();
     }
 
     if (!sensorOutLock) {

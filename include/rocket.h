@@ -484,6 +484,7 @@ public: // Public functions
             }
             logDataPointBin(dataArr[i], dataFile);
         }
+        dataFile.sync();
     }
 
     // Log a single data point
@@ -526,6 +527,8 @@ public: // Public functions
 
             cleanupLogs();
             cleanupSD();
+
+            printMessage("Logs saved successfully");
 
         }
     }
