@@ -442,8 +442,8 @@ public: // Public functions
         p.o = Vec3D(roll, pitch, yaw);
         p.x_out = x_out;
         p.y_out = y_out;
-        p.x_act = (short) tvc.read().x;
-        p.y_act = (short) tvc.read().y;
+        p.x_act = (short)tvc.read().x;
+        p.y_act = (short)tvc.read().y;
         p.alt = altitude; // getAltitude(config["PRESSURE_REF"], pressureOffset);
         p.currentState = currentState;
         p.vert_vel = vertVel;
@@ -525,9 +525,12 @@ public: // Public functions
                 logPoint(getDataPoint());
             }
 
-            cleanupLogs();
+            if (!cleanupLogs()) {
+                printMessage("Failed to save logs!");
+                cleanupSD();
+                HALT_AND_CATCH_FIRE();
+            }
             cleanupSD();
-
             printMessage("Logs saved successfully");
 
         }
@@ -623,12 +626,13 @@ public: // Public functions
     float getConfigValue(std::string key) { return config[key]; }
 
 
-    void cleanupLogs() {
-        dataFile.sync();
-        dataFile.close();
+    bool cleanupLogs() {
         logMessage("Cleaning up logs...");
-        logFile.sync();
-        logFile.close();
+        return
+            dataFile.sync() &&
+            dataFile.close() &&
+            logFile.sync() &&
+            logFile.close();
     }
 
     void cleanupSD() {

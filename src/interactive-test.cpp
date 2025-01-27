@@ -260,9 +260,9 @@ void loop() {
                     rocket.setDataLog(true);
                 }
                 else {
-                    rocket.setState(0);
-                    rocket.printMessage("Experiment Mode OFF - Test Complete");
-                    rocket.logMessage("Experiment Mode OFF - Test Complete");
+                    rocket.setState(127);
+                    rocket.printMessage("Experiment Mode ABORTED");
+                    rocket.logMessage("Experiment Mode ABORTED");
                     rocket.printMessage("Locking TVC");
                     rocket.logMessage("Locking TVC");
                     rocket.tvc.lock();
