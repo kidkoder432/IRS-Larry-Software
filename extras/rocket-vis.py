@@ -151,6 +151,12 @@ while True:
         #     round(yaw * 180 / pi, 2),
         # )
 
+        k = vector(cos(yaw) * cos(pitch), sin(pitch), sin(yaw) * cos(pitch))
+        y = vector(0, 1, 0)
+        s = cross(k, y)
+        v = cross(s, k)
+        vrot = v * cos(roll) + cross(k, v) * sin(roll)
+
         xrot = vrot
         yrot = cross(k, vrot)
 
@@ -170,11 +176,7 @@ while True:
     else:
         print("Invalid line, skipping...")
 
-    k = vector(cos(yaw) * cos(pitch), sin(pitch), sin(yaw) * cos(pitch))
-    y = vector(0, 1, 0)
-    s = cross(k, y)
-    v = cross(s, k)
-    vrot = v * cos(roll) + cross(k, v) * sin(roll)
+    
 
     rate(120)  # Update scene at 60 frames per second
     t += 0.01
