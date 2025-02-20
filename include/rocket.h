@@ -467,7 +467,7 @@ public: // Public functions
         if (doBatchLog)
             dataArr[loopCount - 1] = d;
         if (loopCount >= BUFFER_SIZE) {
-            logDataBatch(dataArr, BUFFER_SIZE);
+            logDataBatchOneShot(dataArr, BUFFER_SIZE);
             loopCount = 0;
 
             for (int i = 0; i < BUFFER_SIZE; i++) {
@@ -485,6 +485,19 @@ public: // Public functions
             logDataPointBin(dataArr[i], dataFile);
         }
         dataFile.sync();
+    }
+
+    void logDataBatchOneShot(const DataPoint dataArr[], int bufferSize) {
+        uint8_t bytes[bufferSize * (sizeof(DataPoint) - 4)];
+        
+        for (int i = 0; i < bufferSize; i++) {
+            if (dataArr[i].isEmpty) {
+                continue;
+            }
+            memcpy(&bytes[i * (sizeof(DataPoint) - 4)], &dataArr[i], sizeof(DataPoint) - 4);
+        }
+
+        logDataRaw(bytes, dataFile);
     }
 
     // Log a single data point
