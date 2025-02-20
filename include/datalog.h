@@ -83,14 +83,14 @@ bool logDataPointBin(DataPoint p, ExFile& dataFile) {
 
 }
 
-bool logDataRaw(uint8_t data[], ExFile& dataFile) {
+bool logDataRaw(uint8_t data[], int size, ExFile& dataFile) {
 
     if (!dataFile.isOpen()) {
         Serial.println("Couldn't open data file");
         return false;
     }
 
-    dataFile.write(data, sizeof(data));
+    dataFile.write(data, size);
     dataFile.sync();
 
     return true;

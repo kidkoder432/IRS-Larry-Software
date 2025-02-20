@@ -488,16 +488,18 @@ public: // Public functions
     }
 
     void logDataBatchOneShot(const DataPoint dataArr[], int bufferSize) {
-        uint8_t bytes[bufferSize * (sizeof(DataPoint) - 4)];
+        unsigned char bytes[bufferSize * (sizeof(DataPoint) - 4)];
         
         for (int i = 0; i < bufferSize; i++) {
             if (dataArr[i].isEmpty) {
                 continue;
             }
-            memcpy(&bytes[i * (sizeof(DataPoint) - 4)], &dataArr[i], sizeof(DataPoint) - 4);
+            DataPointBin pBin;
+            pBin.p = dataArr[i];
+            memcpy(&bytes[i * (sizeof(DataPoint) - 4)], pBin.dataBytes, sizeof(DataPoint) - 4);
         }
 
-        logDataRaw(bytes, dataFile);
+        logDataRaw(bytes, bufferSize * (sizeof(DataPoint) - 4), dataFile);
     }
 
     // Log a single data point
