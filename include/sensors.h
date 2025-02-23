@@ -36,7 +36,7 @@ struct GyroBiases {
 };
 
 #if USE_RP2040
-void initSensors() {
+bool initSensors() {
     Wire.begin();
     rp_imu.begin();
     rp_imu.setAccelRange(8);
@@ -44,6 +44,8 @@ void initSensors() {
     rp_imu.setGyroRange(1000);
     rp_imu.setGyroDataRate(416);
     rp_imu.setBlockDataUpdate(true);
+
+    return true;
 }
 
 void readSensors(SensorReadings& r, GyroBiases biases) {

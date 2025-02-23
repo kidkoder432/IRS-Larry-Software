@@ -1,6 +1,9 @@
 // DATA LOGGING 
 #include <Arduino.h>
 #include <SPI.h>
+#if USE_RP2040
+#include <LittleFS_Mbed_RP2040.h>
+#endif
 #include <SdFat.h>
 
 #define DEBUG 0
@@ -197,9 +200,6 @@ bool logDataPoint(DataPoint p, ExFile& dataFile) {
 
 }
 
-
-
-
 void sdCardInfo(SdExFat& sd) {
 
 
@@ -247,3 +247,70 @@ void sdCardInfo(SdExFat& sd) {
     Serial.println("Listing files on the card:");
     sd.ls(LS_R | LS_DATE | LS_SIZE);  // Recursive, show date and size
 }
+
+#if USE_RP2040
+
+bool logDataRaw(uint8_t data[], int size, FILE *dataFile) {
+    if (!dataFile) {
+        Serial.println("Couldn't open flash file");
+        return false;
+    }
+
+    if (!fwrite(data, size, 1, dataFile)) {
+        Serial.println("Failed to write to flash file");
+        return false;
+    }
+
+    fflush(dataFile);
+
+    return true;
+}
+
+bool logDataPointBin(DataPoint p, FILE *dataFile) {
+
+    DataPointBin pBin;
+    pBin.p = p;
+
+    if (!dataFile) {
+        Serial.println("Couldn't open flash file");
+        return false;
+    }
+
+    if (!fwrite(pBin.dataBytes, sizeof(DataPoint) - 4, 1, dataFile)) {
+        Serial.println("Failed to write to flash file");
+        return false;
+    }
+    
+    fflush(dataFile);
+
+    return true;
+}
+
+bool writeSD(FILE *flashFile, ExFile& dataFile) {
+    if (!dataFile.isOpen()) {
+        Serial.println("Couldn't open data file");
+        return false;
+    }
+
+    if (!flashFile) {
+        Serial.println("Couldn't open flash file");
+        return false;
+    }
+
+    char buf[512];
+    while (!feof(flashFile)) {
+        int bytesRead = fread(buf, 1, sizeof(buf), flashFile);
+        if (bytesRead > 0) {
+            if (!dataFile.write(buf, bytesRead)) {
+                Serial.println("Failed to write to data file");
+                return false;
+            }
+            dataFile.sync();
+        }
+    }
+
+    return true;
+
+}
+
+#endif

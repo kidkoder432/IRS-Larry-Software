@@ -1,13 +1,15 @@
 #include <Arduino.h>
 
-#include <SparkFun_BMI270_Arduino_Library.h>
-#include <orientation.h>
 
 #if USE_RP2040
 #include <WiFiNINA.h>
 #elif USE_BLE_SENSE
 #include <alt.h>
+#include <SparkFun_BMI270_Arduino_Library.h>
 #endif
+
+#include <orientation.h>
+
 
 #include <Servo.h>
 #include <pins.h>
@@ -57,6 +59,11 @@ private:  // Member variables and internal functions
     ExFile dataFile;
     ExFile logFile;
     Config config;
+
+    #if USE_RP2040
+    LittleFS_MBED* fs = new LittleFS_MBED;
+    FILE* flashFile;
+    #endif
 
     int currentState = 0;
     unsigned long lastLoopTime;
@@ -162,6 +169,19 @@ public: // Public functions
             HALT_AND_CATCH_FIRE(COLOR_YELLOW);
         }
         logStatus("Log file initialized", logFile);
+
+        #if USE_RP2040
+        if (!fs->init()) {
+            printMessage("Failed to initialize LittleFS!");
+            HALT_AND_CATCH_FIRE();
+        }
+        flashFile = fopen("flash.bin", "wb");
+        if (!flashFile) {
+            printMessage("Failed to open flash file!");
+            HALT_AND_CATCH_FIRE();
+        }
+
+        #endif
 
         if (!dataFile.open("data.bin", O_WRITE | O_CREAT)) {
             printMessage("Failed to open data file!");
@@ -482,9 +502,14 @@ public: // Public functions
             if (dataArr[i].isEmpty) {
                 continue;
             }
+            #if USE_RP2040
+            logDataPointBin(dataArr[i], flashFile);
+            #else
             logDataPointBin(dataArr[i], dataFile);
+            #endif
         }
         dataFile.sync();
+        fflush(flashFile);
     }
 
     void logDataBatchOneShot(const DataPoint dataArr[], int bufferSize) {
@@ -499,12 +524,20 @@ public: // Public functions
             memcpy(&bytes[i * (sizeof(DataPoint) - 4)], pBin.dataBytes, sizeof(DataPoint) - 4);
         }
 
+        #if USE_RP2040
+        logDataRaw(bytes, bufferSize * (sizeof(DataPoint) - 4), flashFile);
+        #else
         logDataRaw(bytes, bufferSize * (sizeof(DataPoint) - 4), dataFile);
+        #endif
     }
 
     // Log a single data point
     void logPoint(DataPoint p) {
+        #if USE_RP2040
+        logDataPointBin(p, flashFile);
+        #else
         logDataPointBin(p, dataFile);
+        #endif
     }
 
     // Update loop timing
@@ -644,6 +677,10 @@ public: // Public functions
     bool cleanupLogs() {
         logMessage("Cleaning up logs...");
         return
+            #if USE_RP2040
+            fflush(flashFile) &&
+            fclose(flashFile) &&
+            #endif
             dataFile.sync() &&
             dataFile.close() &&
             logFile.sync() &&
