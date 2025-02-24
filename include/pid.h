@@ -37,8 +37,31 @@ public:
         i = Ki * integrated_error;
 
         // Derivative + low-pass filtering
-        filtered_error = b * (error + last_error) + (1 - b * 2) * last_filter;
-        d = Kd * (filtered_error - last_filter) / dt;
+
+        // y is filtered
+        // x is raw
+
+        // https://github.com/curiores/ArduinoTutorials/blob/main/BasicFilters/Design/LowPass/
+        // alpha = N*dt
+        // a = -(alpha - 2) / (alpha + 2)
+        // b = alpha / (alpha + 2)
+        // y = a * last_y + b * (x + last_x)
+        // a = -(alpha - 2) / (alpha + 2);
+        // b = alpha / (alpha + 2);
+        // filtered_error = a * last_filter + b * (error + last_error);
+
+        // EMA Filter
+        alpha = 1.0 / N;
+        filtered_error = alpha * filtered_error + (1 - alpha) * error;
+
+        // d = Kd * (filtered_error - last_filter) / dt;
+
+        if (dt <= 0.02) {
+            d = Kd * (filtered_error - last_filter) / dt;
+        }
+        else {
+            d = 0;
+        }
 
         // Integrator clamping
         if (doIntegratorClamp(p + i + d + bias, bias)) {
@@ -83,6 +106,7 @@ private:
 
 
     float alpha = 0;
+    float a = 0;
     float b = 0;
     float clip(float value, float min, float max) {
         return min < value && value < max ? value : min < value ? max : min;
