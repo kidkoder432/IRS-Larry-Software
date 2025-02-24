@@ -506,8 +506,11 @@ public: // Public functions
             logDataPointBin(dataArr[i], dataFile);
         #endif
         }
-        dataFile.sync();
+    #if USE_RP2040
         fflush(flashFile);
+    #else
+        dataFile.sync();
+    #endif
     }
 
     void logDataBatchOneShot(const DataPoint dataArr[], int bufferSize) {
@@ -688,7 +691,9 @@ public: // Public functions
 
     void cleanupStorage() {
         sd.end();
+    #if USE_RP2040 
         LittleFS.end();
+    #endif
     }
 
     void fullCleanup() {
