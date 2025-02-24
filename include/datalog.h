@@ -2,11 +2,10 @@
 #include <Arduino.h>
 #include <SPI.h>
 #if USE_RP2040
-#include <LittleFS_Mbed_RP2040.h>
+#include <LittleFS.h>
+#include <VFS.h>
 #endif
 #include <SdFat.h>
-
-#define DEBUG 0
 
 // <l12f3h2x8f
 struct DataPoint {
@@ -96,6 +95,7 @@ bool logDataRaw(uint8_t data[], int size, ExFile& dataFile) {
     dataFile.write(data, size);
     dataFile.sync();
 
+    
     return true;
 }
 

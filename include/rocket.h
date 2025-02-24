@@ -60,10 +60,9 @@ private:  // Member variables and internal functions
     ExFile logFile;
     Config config;
 
-    #if USE_RP2040
-    LittleFS_MBED* fs = new LittleFS_MBED;
+#if USE_RP2040
     FILE* flashFile;
-    #endif
+#endif
 
     int currentState = 0;
     unsigned long lastLoopTime;
@@ -80,11 +79,10 @@ public: // Public functions
 
     // Handle catastrophic failures
     void HALT_AND_CATCH_FIRE() {
-
         while (true) {
             flash(COLOR_RED, 400);
             playAbortSound();
-
+            delay(1);
         }
     }
 
@@ -92,7 +90,7 @@ public: // Public functions
         while (true) {
             flash(color);
             playAbortSound();
-
+            delay(1);
         }
     }
 
@@ -101,6 +99,7 @@ public: // Public functions
         while (true) {
             playLocatorSound();
             flash(COLOR_GREEN, COLOR_LIGHTBLUE, 1600);
+            delay(1);
         }
     }
 
@@ -147,7 +146,6 @@ public: // Public functions
         if (!sd.begin(10, SPI_FULL_SPEED)) {
             printMessage("Failed to initialize SD card!");
             HALT_AND_CATCH_FIRE();
-            return false;
         }
         return true;
     }
@@ -162,7 +160,6 @@ public: // Public functions
         if (!logFile.open("log.txt", O_WRITE | O_CREAT)) {
             printMessage("Failed to open log file!");
             HALT_AND_CATCH_FIRE();
-            return false;
         }
         if (logFile.size() > 0) {
             printMessage("Log file is not empty!");
@@ -170,18 +167,19 @@ public: // Public functions
         }
         logStatus("Log file initialized", logFile);
 
-        #if USE_RP2040
-        if (!fs->init()) {
+    #if USE_RP2040
+        if (!LittleFS.begin()) {
             printMessage("Failed to initialize LittleFS!");
             HALT_AND_CATCH_FIRE();
         }
+        VFS.root(LittleFS);
         flashFile = fopen("flash.bin", "wb");
         if (!flashFile) {
             printMessage("Failed to open flash file!");
             HALT_AND_CATCH_FIRE();
         }
 
-        #endif
+    #endif
 
         if (!dataFile.open("data.bin", O_WRITE | O_CREAT)) {
             printMessage("Failed to open data file!");
@@ -502,11 +500,11 @@ public: // Public functions
             if (dataArr[i].isEmpty) {
                 continue;
             }
-            #if USE_RP2040
+        #if USE_RP2040
             logDataPointBin(dataArr[i], flashFile);
-            #else
+        #else
             logDataPointBin(dataArr[i], dataFile);
-            #endif
+        #endif
         }
         dataFile.sync();
         fflush(flashFile);
@@ -514,7 +512,7 @@ public: // Public functions
 
     void logDataBatchOneShot(const DataPoint dataArr[], int bufferSize) {
         unsigned char bytes[bufferSize * (sizeof(DataPoint) - 4)];
-        
+        showColor(COLOR_ORANGE);
         for (int i = 0; i < bufferSize; i++) {
             if (dataArr[i].isEmpty) {
                 continue;
@@ -524,20 +522,21 @@ public: // Public functions
             memcpy(&bytes[i * (sizeof(DataPoint) - 4)], pBin.dataBytes, sizeof(DataPoint) - 4);
         }
 
-        #if USE_RP2040
+    #if USE_RP2040
         logDataRaw(bytes, bufferSize * (sizeof(DataPoint) - 4), flashFile);
-        #else
+    #else
         logDataRaw(bytes, bufferSize * (sizeof(DataPoint) - 4), dataFile);
-        #endif
+    #endif
+        showColor(COLOR_OFF);
     }
 
     // Log a single data point
     void logPoint(DataPoint p) {
-        #if USE_RP2040
+    #if USE_RP2040
         logDataPointBin(p, flashFile);
-        #else
+    #else
         logDataPointBin(p, dataFile);
-        #endif
+    #endif
     }
 
     // Update loop timing
@@ -575,10 +574,10 @@ public: // Public functions
 
             if (!cleanupLogs()) {
                 printMessage("Failed to save logs!");
-                cleanupSD();
+                cleanupStorage();
                 HALT_AND_CATCH_FIRE();
             }
-            cleanupSD();
+            cleanupStorage();
             printMessage("Logs saved successfully");
 
         }
@@ -677,18 +676,19 @@ public: // Public functions
     bool cleanupLogs() {
         logMessage("Cleaning up logs...");
         return
-            #if USE_RP2040
+        #if USE_RP2040
             fflush(flashFile) &&
             fclose(flashFile) &&
-            #endif
+        #endif
             dataFile.sync() &&
             dataFile.close() &&
             logFile.sync() &&
             logFile.close();
     }
 
-    void cleanupSD() {
+    void cleanupStorage() {
         sd.end();
+        LittleFS.end();
     }
 
     void fullCleanup() {
@@ -708,7 +708,7 @@ public: // Public functions
 
         printMessage("Cleaning up logs...");
         cleanupLogs();
-        cleanupSD();
+        cleanupStorage();
 
         printMessage("All systems shut down. Please reset the board. ");
     #if USE_BLE 

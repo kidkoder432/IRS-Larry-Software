@@ -16,12 +16,9 @@
 
 #define FORCE_REFORMAT          false
 
-#include <LittleFS_Mbed_RP2040.h>
-#include <rocket.h>
+#include <LittleFS.h>
+#include <VFS.h>
 #include <Arduino.h>
-
-LittleFS_MBED* myFS;
-Rocket rocket;
 
 void readCharsFromFile(const char* path) {
     Serial.print("readCharsFromFile: ");
@@ -264,27 +261,16 @@ void setup() {
 
     Serial.print("\nStart LittleFS_Test on ");
     Serial.println(BOARD_NAME);
-    Serial.println(LFS_MBED_RP2040_VERSION);
 
-#if defined(LFS_MBED_RP2040_VERSION_MIN)
-
-    if (LFS_MBED_RP2040_VERSION_INT < LFS_MBED_RP2040_VERSION_MIN) {
-        Serial.print("Warning. Must use this example on Version equal or later than : ");
-        Serial.println(LFS_MBED_RP2040_VERSION_MIN_TARGET);
+    if (!LittleFS.begin()) {
+        Serial.println("LittleFS Mount Failed");
+        while (1);
     }
 
-#endif
+    VFS.root(LittleFS);
 
-    myFS = new LittleFS_MBED();
-
-    if (!myFS->init()) {
-        Serial.println("LITTLEFS Mount Failed");
-
-        return;
-    }
-
-    char fileName1[] = MBED_LITTLEFS_FILE_PREFIX "/hello1.txt";
-    char fileName2[] = MBED_LITTLEFS_FILE_PREFIX "/hello2.txt";
+    char fileName1[] = "/hello1.txt";
+    char fileName2[] = "/hello2.txt";
 
     char message[] = "Hello from " BOARD_NAME "\n";
 

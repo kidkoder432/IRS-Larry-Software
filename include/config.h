@@ -6,7 +6,12 @@
 #include <Arduino.h>
 #include <SdFat.h>
 #include <SDConfig.h>
+#if USE_RP2040
+#include <pico/stdlib.h>
+#include <string>
+#else
 #include <stdlib.h>
+#endif
 #include <unordered_map>
 
 const int chipSelect = 10; // Adjust pin according to your SD card module

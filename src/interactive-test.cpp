@@ -64,7 +64,7 @@ void setup() {
     delay(2000);
 
     rocket.initBuzzer();
-    rocket.printMessage("Buzzer initialized!");
+    rocket.initLeds();
 
     // Setup SD card, config and data logging
     rocket.initSD();
@@ -122,7 +122,6 @@ void setup() {
     rocket.printMessage("Sensors and angles initialized!");
 
     // init hardware
-    rocket.initLeds();
     rocket.printMessage("LEDs initialized!");
     rocket.initTvc();
     rocket.printMessage("TVC initialized!");
