@@ -84,7 +84,7 @@ public: // Public functions
         while (true) {
             flash(COLOR_RED, 400);
             playAbortSound();
-
+            delay(2);
         }
     }
 
@@ -92,6 +92,7 @@ public: // Public functions
         while (true) {
             flash(color);
             playAbortSound();
+            delay(2);
 
         }
     }
@@ -101,6 +102,7 @@ public: // Public functions
         while (true) {
             playLocatorSound();
             flash(COLOR_GREEN, COLOR_LIGHTBLUE, 1600);
+            delay(2);
         }
     }
 
@@ -508,9 +510,13 @@ public: // Public functions
             logDataPointBin(dataArr[i], dataFile);
             #endif
         }
-        dataFile.sync();
+    #if USE_RP2040
         fflush(flashFile);
+    #else
+        dataFile.sync();
+    #endif
     }
+
 
     void logDataBatchOneShot(const DataPoint dataArr[], int bufferSize) {
         unsigned char bytes[bufferSize * (sizeof(DataPoint) - 4)];

@@ -7,6 +7,7 @@
 #include <SdFat.h>
 
 #define DEBUG 0
+#define RP2040_FS_SIZE_KB 1024
 
 // <l12f3h2x8f
 struct DataPoint {
