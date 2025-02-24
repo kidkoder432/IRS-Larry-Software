@@ -5,14 +5,14 @@
 const int DELAY_MS = 100;
 
 struct Color {
-    char r, g, b;
-    Color(char r, char g, char b) : r(r), g(g), b(b) {}
+    int r, g, b;
+    Color(int r, int g, int b) : r(r), g(g), b(b) {}
 };
 
 // Basic Colors
 struct Color COLOR_RED(255, 0, 0);
 struct Color COLOR_ORANGE(255, 128, 0);
-struct Color COLOR_YELLOW(255, 200, 0);
+struct Color COLOR_YELLOW(255, 255, 0);
 struct Color COLOR_LIGHTGREEN(128, 255, 0);
 struct Color COLOR_GREEN(0, 255, 0);
 struct Color COLOR_LIGHTBLUE(0, 128, 255);
