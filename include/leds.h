@@ -5,14 +5,14 @@
 const int DELAY_MS = 100;
 
 struct Color {
-    char r, g, b;
-    Color(char r, char g, char b) : r(r), g(g), b(b) {}
+    int r, g, b;
+    Color(int r, int g, int b) : r(r), g(g), b(b) {}
 };
 
 // Basic Colors
 struct Color COLOR_RED(255, 0, 0);
 struct Color COLOR_ORANGE(255, 128, 0);
-struct Color COLOR_YELLOW(255, 200, 0);
+struct Color COLOR_YELLOW(255, 255, 0);
 struct Color COLOR_LIGHTGREEN(128, 255, 0);
 struct Color COLOR_GREEN(0, 255, 0);
 struct Color COLOR_LIGHTBLUE(0, 128, 255);
@@ -23,9 +23,36 @@ struct Color COLOR_WHITE(255, 255, 255);
 struct Color COLOR_OFF(0, 0, 0);
 
 void showColor(Color c) {
-    analogWrite(LEDR, 255 - c.r);
-    analogWrite(LEDG, 255 - c.g);
-    analogWrite(LEDB, 255 - c.b);
+    pinMode(LEDR, OUTPUT);
+    pinMode(LEDG, OUTPUT);
+    pinMode(LEDB, OUTPUT);
+    if (c.r == 255) {
+        digitalWrite(LEDR, HIGH);
+    }
+    else if (c.r == 0) {
+        digitalWrite(LEDR, LOW);
+    }
+    else {
+        analogWrite(LEDR, 255 - c.r);
+    }
+    if (c.g == 255) {
+        digitalWrite(LEDG, HIGH);
+    }
+    else if (c.g == 0) {
+        digitalWrite(LEDG, LOW);
+    }
+    else {
+        analogWrite(LEDG, 255 - c.g);
+    }
+    if (c.b == 255) {
+        digitalWrite(LEDB, HIGH);
+    }
+    else if (c.b == 0) {
+        digitalWrite(LEDB, LOW);
+    }
+    else {
+        analogWrite(LEDB, 255 - c.b);
+    }
 }
 
 void off() {
