@@ -49,6 +49,12 @@ public:
 
     // X axis = yaw correction, Y axis = pitch correctin
     Vec2D update(Vec3D o, float dt) {
+
+        // Hack for when we just finished calibration and dt is absurd
+        if (dt > 0.2) {
+            dt = 0.015;
+        }
+
         if (!locked) {
             dir = o;
             // Serial.println(dir.z);

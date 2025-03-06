@@ -222,6 +222,7 @@ public: // Public functions
         logStatus(buf, logFile);
 
         printMessage("Sensors calibrated");
+        updateTime(false);
         return true;
     }
 
@@ -547,10 +548,10 @@ public: // Public functions
     }
 
     // Update loop timing
-    void updateTime() {
+    void updateTime(bool inc = true) {
         deltaTime = (millis() - lastLoopTime) / 1000.0;
         lastLoopTime = millis();
-        loopCount++;
+        if (inc) loopCount++;
 
     }
 
