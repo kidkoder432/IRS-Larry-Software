@@ -18,7 +18,7 @@
 
 class SDConfig {
   private:
-    ExFile _file;            // the open configuration file
+    File _file;            // the open configuration file
     boolean _atEnd;        // If true, there is no more of the file to read.
     char *_line;           // the current line of the file (see _lineLength)
                            // Allocated by begin().

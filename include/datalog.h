@@ -2,21 +2,26 @@
 #include <Arduino.h>
 #include <SPI.h>
 #if USE_RP2040
+#define RP2040_FS_SIZE_KB 1536
+#define MBED_LFS_BLOCK_SIZE  512
+#define MBED_LFS_CACHE_SIZE  512
+#define MBED_LFS_LOOKAHEAD_SIZE  128
+#define MBED_LFS_PROG_SIZE  256
+#define _LFS_LOGLEVEL_ 4
+
 #include <LittleFS_Mbed_RP2040.h>
 #endif
 #include <SdFat.h>
 
 #define DEBUG 0
-#define RP2040_FS_SIZE_KB 1024
 
-// <l12f3h2x8f
+// <l12fh2x8f
 struct DataPoint {
     int timestamp;          // Milliseconds
     float DELTA_T;          // Delta Time
     SensorReadings r;       // Sensor Readings
     Vec3D o;                // Current Orientation
     float x_out, y_out;     // TVC Outputs
-    short x_act, y_act;     // TVC Readings
     short currentState;     // Current State
     float alt;              // Altitude
     float vert_vel;         // Vertical Velocity
@@ -39,7 +44,7 @@ union DataPointBin {
 
 
 
-bool logStatus(const char* msg, ExFile& logFile) {
+bool logStatus(const char* msg, File& logFile) {
     if (!logFile.isOpen()) {
         Serial.println("Couldn't open log file");
         return false;
@@ -71,7 +76,7 @@ bool logStatus(const char* msg, ExFile& logFile) {
     return true;
 };
 
-bool logDataPointBin(DataPoint p, ExFile& dataFile) {
+bool logDataPointBin(DataPoint p, File& dataFile) {
 
     if (!dataFile.isOpen()) {
         Serial.println("Couldn't open data file");
@@ -87,7 +92,7 @@ bool logDataPointBin(DataPoint p, ExFile& dataFile) {
 
 }
 
-bool logDataRaw(uint8_t data[], int size, ExFile& dataFile) {
+bool logDataRaw(uint8_t data[], long size, File& dataFile) {
 
     if (!dataFile.isOpen()) {
         Serial.println("Couldn't open data file");
@@ -100,7 +105,7 @@ bool logDataRaw(uint8_t data[], int size, ExFile& dataFile) {
     return true;
 }
 
-bool logDataPoint(DataPoint p, ExFile& dataFile) {
+bool logDataPoint(DataPoint p, File& dataFile) {
 
     if (!dataFile.isOpen()) {
         Serial.println("Couldn't open data file");
@@ -201,7 +206,7 @@ bool logDataPoint(DataPoint p, ExFile& dataFile) {
 
 }
 
-void sdCardInfo(SdExFat& sd) {
+void sdCardInfo(SdFat& sd) {
 
 
     // Print card type
@@ -251,13 +256,50 @@ void sdCardInfo(SdExFat& sd) {
 
 #if USE_RP2040
 
+unsigned long getFreeSpace() {
+    struct statvfs fs_info;
+    if (statvfs("/littlefs", &fs_info) == 0) {
+        return fs_info.f_bsize * fs_info.f_bfree;
+    }
+    else {
+        return 0;
+    }
+}
+
+void printFilesystemInfo() {
+    struct statvfs fs_info;
+
+    if (statvfs("/littlefs", &fs_info) == 0) {
+        unsigned long totalSize = fs_info.f_bsize * fs_info.f_blocks;
+        unsigned long freeSize = fs_info.f_bsize * fs_info.f_bfree;
+
+        Serial.print("Total Filesystem Size: ");
+        Serial.print(totalSize);
+        Serial.println(" bytes");
+
+        Serial.print("Free Space: ");
+        Serial.print(freeSize);
+        Serial.println(" bytes");
+
+        Serial.print("Used Space: ");
+        Serial.print(totalSize - freeSize);
+        Serial.println(" bytes");
+    }
+    else {
+        Serial.println("Failed to retrieve filesystem info.");
+    }
+}
+
 bool logDataRaw(uint8_t data[], int size, FILE *dataFile) {
     if (!dataFile) {
         Serial.println("Couldn't open flash file");
         return false;
     }
 
-    if (!fwrite(data, size, 1, dataFile)) {
+    int written = fwrite(data, 1, size, dataFile);
+    Serial.println(written);
+    Serial.println(size);
+    if (written != size) {
         Serial.println("Failed to write to flash file");
         return false;
     }
@@ -287,7 +329,7 @@ bool logDataPointBin(DataPoint p, FILE *dataFile) {
     return true;
 }
 
-bool writeSD(FILE *flashFile, ExFile& dataFile) {
+bool writeSD(FILE *flashFile, File& dataFile) {
     if (!dataFile.isOpen()) {
         Serial.println("Couldn't open data file");
         return false;
