@@ -1,5 +1,5 @@
 #ifndef SENSORS_H
-#define SENSOR_H
+#define SENSORS_H
 
 #include <config.h>
 
@@ -8,13 +8,13 @@
 #endif
 
 #if USE_RP2040
-#include <SparkFunLSM6DSO.h>
+#include <Adafruit_LSM6DSOX.h>
 #else
 #include <SparkFun_BMI270_Arduino_Library.h>
 #endif
 
 #if USE_RP2040
-LSM6DSO rp_imu;
+Adafruit_LSM6DSOX rp_imu;
 #else
 BMI270 imu;
 #endif
@@ -38,24 +38,27 @@ struct GyroBiases {
 #if USE_RP2040
 bool initSensors() {
     Wire.begin();
-    rp_imu.begin();
-    rp_imu.setAccelRange(8);
-    rp_imu.setAccelDataRate(416);
-    rp_imu.setGyroRange(1000);
-    rp_imu.setGyroDataRate(416);
-    rp_imu.setBlockDataUpdate(true);
+    rp_imu.begin_I2C();
+    rp_imu.setAccelRange(LSM6DS_ACCEL_RANGE_16_G);
+    rp_imu.setAccelDataRate(LSM6DS_RATE_416_HZ);
+    rp_imu.setGyroRange(LSM6DS_GYRO_RANGE_2000_DPS);
+    rp_imu.setGyroDataRate(LSM6DS_RATE_416_HZ);
 
     return true;
 }
 
 void readSensors(SensorReadings& r, GyroBiases biases) {
-    r.ax = rp_imu.readFloatAccelX();
-    r.ay = rp_imu.readFloatAccelY();
-    r.az = rp_imu.readFloatAccelZ();
+    sensors_event_t accel, gyro;
 
-    r.gx = rp_imu.readFloatGyroX() - biases.bx;
-    r.gy = rp_imu.readFloatGyroY() - biases.by;
-    r.gz = rp_imu.readFloatGyroZ() - biases.bz;
+    rp_imu.getEvent(&accel, &gyro, nullptr);
+
+    r.ay = accel.acceleration.x;
+    r.ax = -accel.acceleration.y;
+    r.az = accel.acceleration.z;
+
+    r.gy = gyro.gyro.x * 180.0 / PI - biases.bx;
+    r.gx = -gyro.gyro.y * 180.0 / PI - biases.by;
+    r.gz = gyro.gyro.z * 180.0 / PI - biases.bz;
 
 }
 
@@ -71,9 +74,14 @@ GyroBiases calibrateSensors(Config& config) {
     long long lastM = micros();
     while (micros() - now < 3000000LL) {
 
-        r.gx = rp_imu.readFloatGyroX();
-        r.gy = rp_imu.readFloatGyroY();
-        r.gz = rp_imu.readFloatGyroZ();
+        sensors_event_t gyro;
+
+        rp_imu.getEvent(nullptr, &gyro, nullptr);
+
+        r.gy = gyro.gyro.x * 180.0 / PI;
+        r.gx = -gyro.gyro.y * 180.0 / PI;
+        r.gz = gyro.gyro.z * 180.0 / PI;
+
         x_angle_c += dt * r.gx;
         y_angle_c += dt * r.gy;
         z_angle_c += dt * r.gz;

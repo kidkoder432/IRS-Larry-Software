@@ -22,6 +22,51 @@ struct Color COLOR_PINK(255, 0, 255);
 struct Color COLOR_WHITE(255, 255, 255);
 struct Color COLOR_OFF(0, 0, 0);
 
+#define OLD_LED 0
+
+#if OLD_LED
+void showColor(Color c) {
+    
+    analogWrite(LEDR, 255 - c.r);
+    analogWrite(LEDG, 255 - c.g);
+    analogWrite(LEDB, 255 - c.b);
+}
+
+#elif !USE_RP2040
+void showColor(Color c) {
+    pinMode(LEDR, OUTPUT);
+    pinMode(LEDG, OUTPUT);
+    pinMode(LEDB, OUTPUT);
+    if (c.r == 255) {
+        digitalWrite(LEDR, LOW);
+    }
+    else if (c.r == 0) {
+        digitalWrite(LEDR, HIGH);
+    }
+    else {
+        analogWrite(LEDR, 255 - c.r);
+    }
+    if (c.g == 255) {
+        digitalWrite(LEDG, LOW);
+    }
+    else if (c.g == 0) {
+        digitalWrite(LEDG, HIGH);
+    }
+    else {
+        analogWrite(LEDG, 255 - c.g);
+    }
+    if (c.b == 255) {
+        digitalWrite(LEDB, LOW);
+    }
+    else if (c.b == 0) {
+        digitalWrite(LEDB, HIGH);
+    }
+    else {
+        analogWrite(LEDB, 255 - c.b);
+    }
+}
+
+#else
 void showColor(Color c) {
     pinMode(LEDR, OUTPUT);
     pinMode(LEDG, OUTPUT);
@@ -54,6 +99,8 @@ void showColor(Color c) {
         analogWrite(LEDB, 255 - c.b);
     }
 }
+
+#endif
 
 void off() {
     showColor(COLOR_OFF);
