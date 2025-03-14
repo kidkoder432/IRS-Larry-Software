@@ -33,6 +33,7 @@ void playStartupSound() {
         tone(BUZZER_PIN, notes[i], 215);
         delay(250);
     }
+    noTone(BUZZER_PIN);
 }
 
 void playAbortSound() {

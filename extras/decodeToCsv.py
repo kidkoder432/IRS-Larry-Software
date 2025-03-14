@@ -1,6 +1,6 @@
 import struct
 
-fmt = "<l12f3h2x8f"
+fmt = "<l12fh2x8f"
 
 SIZEOF_STRUCT = struct.calcsize(fmt)
 
