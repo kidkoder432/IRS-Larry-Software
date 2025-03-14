@@ -73,6 +73,9 @@ void setup() {
     rocket.printMessage("SD card initialized!");
     rocket.getSdInfo();
     rocket.initLogs();
+#if USE_RP2040
+    rocket.initFlash();
+#endif
     rocket.printMessage("Data logging initialized!");
     rocket.initConfig();
     rocket.printMessage("Config initialized!");
@@ -83,6 +86,7 @@ void setup() {
     bool override = false;
     while (!bleSerial && waits < 30 && !override) {
         flash(COLOR_BLUE);
+        delay(2);
         recvOneChar();
         if (newCommand) {
             switch (receivedChar) {
@@ -152,7 +156,7 @@ void loop() {
     rocket.updateAngles();
     rocket.updateAltVel();
     rocket.updatePyros();
-    rocket.updateBuzzer();
+    // rocket.updateBuzzer();
     rocket.updateAngleLeds();
     rocket.updateDataLog();
 
@@ -241,6 +245,7 @@ void loop() {
                 experimentMode = !experimentMode;
                 if (experimentMode) {
                     rocket.setState(76);
+                    rocket.setLogSpeed(FAST);
                     rocket.printMessage("Experiment Mode ON");
                     rocket.logMessage("Experiment Mode ON - Running Test");
                     rocket.initAngles();
@@ -285,6 +290,7 @@ void loop() {
     if (((millis() - currentMs) > 7000) && (experimentMode == true)) {
         experimentMode = false;
         rocket.setState(42);
+        rocket.setLogSpeed(SLOW);
         rocket.printMessage("Experiment Mode OFF - Test Complete");
         rocket.logMessage("Experiment Mode OFF - Test Complete");
         rocket.printMessage("Locking TVC");
@@ -329,6 +335,7 @@ void loop() {
         rocket.printMessage(roll);
     }
 
+    // constrain to 100hz
     rocket.updateTime();
 }
 

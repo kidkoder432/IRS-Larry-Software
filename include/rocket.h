@@ -26,7 +26,16 @@
 #include <HardwareBLESerial.h>
 #endif
 
+#define CHECK_EMPTY_LOG 0
+
 float mag3(float x, float y, float z) { return sqrt(x * x + y * y + z * z); }
+float absx(float x) { return x < 0 ? -x : x; }
+
+enum DataLogSpeed {
+    SLOW,
+    MEDIUM,
+    FAST
+};
 
 class Rocket {
 
@@ -49,21 +58,23 @@ private:  // Member variables and internal functions
 
     bool doLog = true;
     bool doBatchLog = true;
-    static const int BUFFER_SIZE = 100;
+    static const int BUFFER_SIZE = 256;
     DataPoint dataArr[BUFFER_SIZE];
-    int loopCount = 1;
+    int loopCount = 0;
 
     bool ledsOn = true;
 
-    SdExFat sd;
-    ExFile dataFile;
-    ExFile logFile;
+    SdFat sd;
+    File dataFile;
+    File logFile;
     Config config;
+    DataLogSpeed logSpeed = SLOW;
+    int bufferCount = 0;
 
-    #if USE_RP2040
+#if USE_RP2040
     LittleFS_MBED* fs = new LittleFS_MBED;
     FILE* flashFile;
-    #endif
+#endif
 
     int currentState = 0;
     unsigned long lastLoopTime;
@@ -166,37 +177,61 @@ public: // Public functions
             HALT_AND_CATCH_FIRE();
             return false;
         }
+    #if CHECK_EMPTY_LOG
         if (logFile.size() > 0) {
             printMessage("Log file is not empty!");
             HALT_AND_CATCH_FIRE(COLOR_YELLOW);
         }
+    #endif
+        logFile.truncate(0);
         logStatus("Log file initialized", logFile);
-
-        #if USE_RP2040
-        if (!fs->init()) {
-            printMessage("Failed to initialize LittleFS!");
-            HALT_AND_CATCH_FIRE();
-        }
-        flashFile = fopen("flash.bin", "wb");
-        if (!flashFile) {
-            printMessage("Failed to open flash file!");
-            HALT_AND_CATCH_FIRE();
-        }
-
-        #endif
-
+        logFile.sync();
         if (!dataFile.open("data.bin", O_WRITE | O_CREAT)) {
             printMessage("Failed to open data file!");
             HALT_AND_CATCH_FIRE();
             return false;
         }
+    #if CHECK_EMPTY_LOG
         if (dataFile.size() > 0) {
             printMessage("Data file is not empty!");
             HALT_AND_CATCH_FIRE(COLOR_YELLOW);
         }
-        dataFile.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Roll,Pitch,Yaw,TvcX,TvcY,ActX,ActY,State,Alt,Vel,Px,Ix,Dx,Py,Iy,Dy");
+    #endif
+        dataFile.truncate(0);
+        dataFile.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Roll,Pitch,Yaw,TvcX,TvcY,State,Alt,Vel,Px,Ix,Dx,Py,Iy,Dy");
         dataFile.sync();
+        // dataFile.close();
         return true;
+    }
+
+#if USE_RP2040
+    bool initFlash() {
+        if (!fs->init()) {
+            printMessage("Failed to initialize LittleFS!");
+            HALT_AND_CATCH_FIRE();
+        }
+        flashFile = fopen("/littlefs/data.bin", "wb");
+        if (!flashFile) {
+            printMessage("Failed to open flash file!");
+            HALT_AND_CATCH_FIRE();
+        }
+        return true;
+    }
+#endif
+
+    void setLogSpeed(DataLogSpeed _logSpeed) {
+        logSpeed = _logSpeed;
+        switch (logSpeed) {
+            case SLOW:
+                printMessage("Setting log speed to LOW (10 Hz)");
+                break;
+            case MEDIUM:
+                printMessage("Setting log speed to MEDIUM (33 Hz)");
+                break;
+            case FAST:
+                printMessage("Setting log speed to FAST (100 Hz)");
+                break;
+        }
     }
 
     // Initialize configuration
@@ -291,7 +326,7 @@ public: // Public functions
     bool finishSetup() {
         lastLoopTime = millis();
         logStatus("Setup complete", logFile);
-        playStartupSound();
+        // playStartupSound();
         return true;
     }
 
@@ -383,7 +418,7 @@ public: // Public functions
     // Update current state of the system
     void updateState() {
         // ABORT: State -> 127
-        if (abs(yaw) >= 35 || abs(pitch) >= 35) {
+        if (absx(yaw) >= 35 || absx(pitch) >= 35) {
             logMessage("ERR: ABORT - UNSTABLE");
             currentState = 127;
         }
@@ -415,24 +450,26 @@ public: // Public functions
     }
 
     void updateAngleLeds() {
-        if (ledsOn) {
-            if (abs(yaw) >= 15) {
-                showColor(COLOR_RED);
-                if (abs(pitch) >= 15) {
-                    showColor(COLOR_PURPLE);
-                }
-            }
-            else {
-                showColor(COLOR_GREEN);
-                if (abs(pitch) >= 15) {
-                    showColor(COLOR_LIGHTBLUE);
-                }
-            }
-        }
-        else {
+        if (!ledsOn) {
             showColor(COLOR_OFF);
+            return;
         }
+
+        Color color = COLOR_GREEN;  // Default color
+
+        if (abs(yaw) >= 15 && abs(pitch) >= 15) {
+            color = COLOR_PURPLE;
+        }
+        else if (abs(yaw) >= 15) {
+            color = COLOR_RED;
+        }
+        else if (abs(pitch) >= 15) {
+            color = COLOR_LIGHTBLUE;
+        }
+
+        showColor(color); // Single function call
     }
+
 
     void updateStateLeds() {
         switch (currentState) {
@@ -465,8 +502,6 @@ public: // Public functions
         p.o = Vec3D(roll, pitch, yaw);
         p.x_out = x_out;
         p.y_out = y_out;
-        p.x_act = (short)tvc.read().x;
-        p.y_act = (short)tvc.read().y;
         p.alt = altitude; // getAltitude(config["PRESSURE_REF"], pressureOffset);
         p.currentState = currentState;
         p.vert_vel = vertVel;
@@ -481,17 +516,77 @@ public: // Public functions
         return p;
     }
 
+    #if USE_RP2040
+    bool saveFlashFile(FILE* flashFile, File& dataFile) {
+        uint8_t buffer[88];
+        // char header[] = "Time,Dt,ax,ay,az,gx,gy,gz,roll,pitch,yaw,x_out,y_out,x_act,y_act,alt,state,vel,px,ix,dx,py,iy,dy\n";
+        // dataFile.write(header, strlen(header));
+
+        dataFile.open("data.bin", O_WRITE | O_CREAT);
+        dataFile.sync();
+        dataFile.seekSet(dataFile.size());
+        Serial.println(dataFile.size());
+
+        fclose(flashFile);
+        flashFile = fopen("/littlefs/data.bin", "rb");
+        if (!flashFile) {
+            printMessage("Couldn't open flash file");
+            logMessage("Couldn't open flash file");
+            return false;
+        }
+        long totalSize = 0;
+        while (true) {
+            size_t bytesRead = fread(buffer, 1, sizeof(buffer), flashFile);
+            if (feof(flashFile)) break;
+            if (bytesRead > 0) {
+                size_t bytesWritten = dataFile.write(buffer, bytesRead);
+
+                if (bytesWritten != bytesRead) {
+                    printMessage("Error writing to data file");
+                    logMessage("Error writing to data file");
+                    return false;
+                }
+                totalSize += bytesRead;
+                Serial.println(dataFile.size());
+            }
+            else {
+                printMessage("Error reading from flash file");
+                logMessage("Error reading from flash file");
+                return false;
+            }
+        }
+
+        fclose(flashFile);
+        flashFile = fopen("/littlefs/data.bin", "wb");
+        dataFile.sync();
+        return true;
+
+    }
+    #endif
+
     void updateDataLog() {
 
         if (!doLog) return;
 
+        if (logSpeed == SLOW) {
+            if (loopCount % 10 != 0) return;
+        }
+        else if (logSpeed == MEDIUM) {
+            if (loopCount % 3 != 0) return;
+        }
+
+
         DataPoint d = getDataPoint();
 
-        if (doBatchLog)
-            dataArr[loopCount - 1] = d;
-        if (loopCount >= BUFFER_SIZE) {
+        if (doBatchLog) {
+            dataArr[bufferCount] = d;
+            bufferCount++;
+        }
+
+
+        if (bufferCount >= BUFFER_SIZE) {
             logDataBatchOneShot(dataArr, BUFFER_SIZE);
-            loopCount = 0;
+            bufferCount = 0;
 
             for (int i = 0; i < BUFFER_SIZE; i++) {
                 dataArr[i] = DataPoint();
@@ -505,11 +600,11 @@ public: // Public functions
             if (dataArr[i].isEmpty) {
                 continue;
             }
-            #if USE_RP2040
+        #if USE_RP2040
             logDataPointBin(dataArr[i], flashFile);
-            #else
+        #else
             logDataPointBin(dataArr[i], dataFile);
-            #endif
+        #endif
         }
     #if USE_RP2040
         fflush(flashFile);
@@ -520,9 +615,8 @@ public: // Public functions
 
 
     void logDataBatchOneShot(const DataPoint dataArr[], int bufferSize) {
-        unsigned char bytes[bufferSize * (sizeof(DataPoint) - 4)];
-        
-        for (int i = 0; i < bufferSize; i++) {
+        unsigned char bytes[(bufferCount) * (sizeof(DataPoint) - 4)];
+        for (int i = 0; i < bufferCount; i++) {
             if (dataArr[i].isEmpty) {
                 continue;
             }
@@ -530,28 +624,40 @@ public: // Public functions
             pBin.p = dataArr[i];
             memcpy(&bytes[i * (sizeof(DataPoint) - 4)], pBin.dataBytes, sizeof(DataPoint) - 4);
         }
+    #if USE_RP2040
+        printFilesystemInfo();
 
-        #if USE_RP2040
-        logDataRaw(bytes, bufferSize * (sizeof(DataPoint) - 4), flashFile);
-        #else
-        logDataRaw(bytes, bufferSize * (sizeof(DataPoint) - 4), dataFile);
-        #endif
+        if (getFreeSpace() < 30 * 1024) {
+            printMessage("Out of space on flash");
+            saveFlashFile(flashFile, dataFile);
+        }
+    #endif
+
+
+    #if USE_RP2040
+        logDataRaw(bytes, (bufferCount + 1) * (sizeof(DataPoint) - 4), flashFile);
+    #else
+        logDataRaw(bytes, (bufferCount) * (sizeof(DataPoint) - 4), dataFile);
+    #endif
     }
 
     // Log a single data point
     void logPoint(DataPoint p) {
-        #if USE_RP2040
+    #if USE_RP2040
         logDataPointBin(p, flashFile);
-        #else
+    #else
         logDataPointBin(p, dataFile);
-        #endif
+    #endif
     }
 
     // Update loop timing
     void updateTime(bool inc = true) {
+        while (millis() - lastLoopTime < 10) {}
         deltaTime = (millis() - lastLoopTime) / 1000.0;
         lastLoopTime = millis();
         if (inc) loopCount++;
+
+        loopCount %= 1000;
 
     }
 
@@ -574,11 +680,20 @@ public: // Public functions
 
             // force log
             if (doBatchLog) {
-                logDataBatch(dataArr, BUFFER_SIZE);
+                logDataBatchOneShot(dataArr, BUFFER_SIZE);
             }
             else {
                 logPoint(getDataPoint());
             }
+
+        #if USE_RP2040
+            if (fflush(flashFile)) {
+                printMessage("Error syncing flash file");
+            }
+            if (!saveFlashFile(flashFile, dataFile)) {
+                printMessage("Failed to save flash file to SD card");
+            }
+        #endif
 
             if (!cleanupLogs()) {
                 printMessage("Failed to save logs!");
@@ -683,15 +798,35 @@ public: // Public functions
 
     bool cleanupLogs() {
         logMessage("Cleaning up logs...");
-        return
-            #if USE_RP2040
-            fflush(flashFile) &&
-            fclose(flashFile) &&
-            #endif
-            dataFile.sync() &&
-            dataFile.close() &&
-            logFile.sync() &&
-            logFile.close();
+    #if USE_RP2040 
+        printMessage("Closing flash file...");
+        if (fclose(flashFile)) {
+            printMessage("Error closing flash file");
+            return false;
+        }
+    #endif
+
+        printMessage("Closing data file...");
+        if (!dataFile.sync()) {
+            printMessage("Error syncing data file");
+            return false;
+        }
+        if (!dataFile.close()) {
+            printMessage("Error closing data file");
+            return false;
+        }
+
+        printMessage("Closing log file...");
+        if (!logFile.sync()) {
+            printMessage("Error syncing log file");
+            return false;
+        }
+        if (!logFile.close()) {
+            printMessage("Error closing log file");
+            return false;
+        }
+
+        return true;
     }
 
     void cleanupSD() {
