@@ -37,6 +37,74 @@ struct Vec3D {
 
 // ========= Angles & Orientation ========= //
 
+// QUATERNION MATH
+Quaternion slerp(Quaternion q1, Quaternion q2, float t) {
+    float dot =
+        q1.a * q2.a
+        + q1.b * q2.b
+        + q1.c * q2.c
+        + q1.d * q2.d;
+
+    // Ensure the shortest path
+    if (dot < 0.0f) {
+        q2 = -q2;
+        dot = -dot;
+    }
+
+    // If quaternions are very close, use linear interpolation
+    const float THRESHOLD = 0.9995f;
+    if (dot > THRESHOLD) {
+        Quaternion q = (q1 * (1.0f - t) + q2 * t);
+        q.normalize();  // Linear interpolation (LERP)
+        return q;
+    }
+
+    // Compute SLERP
+    float theta_0 = acosf(dot);
+    float theta = theta_0 * t;
+
+    float sin_theta = sinf(theta);
+    float sin_theta_0 = sinf(theta_0);
+
+    float s1 = cosf(theta) - dot * sin_theta / sin_theta_0;
+    float s2 = sin_theta / sin_theta_0;
+
+    Quaternion q = (q1 * s1 + q2 * s2);
+    q.normalize();
+
+    return q;
+}
+
+Vec3D quaternion_to_euler(Quaternion attitude) {
+    // --- Convert to Euler Angles --- //    
+    // https://www.euclideanspace.com/maths/standards/index.htm#:~:text=Euler%20angles
+    // Switch axes (X pitch, Y roll, Z yaw --> Z pitch, X roll, Y yaw)
+    float qw = attitude.a;
+    float qz = attitude.b;
+    float qx = attitude.c;
+    float qy = attitude.d;
+
+    // from https://www.euclideanspace.com/maths/standards/index.htm
+    if (qx * qy + qz * qw >= 0.5) {  // North pole
+        float yaw = 2 * atan2(qx, qw);
+        float pitch = PI / 2;
+        float roll = 0;
+        return Vec3D(roll, pitch, yaw);
+    }
+    else if (qx * qy + qz * qw <= -0.5) {  // South pole
+        float yaw = -2 * atan2(qx, qw);
+        float pitch = -PI / 2;
+        float roll = 0;
+        return Vec3D(roll, pitch, yaw);
+    }
+    else {
+        float yaw = atan2(2 * qy * qw - 2 * qx * qz, 1 - 2 * qy * qy - 2 * qz * qz);
+        float pitch = asin(2 * qx * qy + 2 * qz * qw);
+        float roll = atan2(2 * qx * qw - 2 * qy * qz, 1 - 2 * qx * qx - 2 * qz * qz);
+        return Vec3D(roll * -180 / PI, pitch * 180 / PI, yaw * 180 / PI);
+    }
+}
+
 // GYRO-BASED ANGLE CALCULATION
 Vec3D get_angles(SensorReadings r, SensorReadings pr = SensorReadings(), Vec3D dir = Vec3D(0, 0, 0), float dt = 0.02) {
     float x = dir.x - ((r.gy + pr.gy) * dt / 2);
@@ -69,23 +137,8 @@ Vec2D get_angles_complementary(float A, float dt, SensorReadings r, float yaw, f
     return Vec2D(angle_x, angle_y);
 }
 
-
-// KALMAN FILTERING
-Vec2D get_angles_kalman(float dt, SensorReadings r, Kalman& kx, Kalman& ky, GyroBiases b) {
-    float accel_angle_x = atan2(r.ax, -sign(r.ay) * sqrt(r.az * r.az + r.ay * r.ay)) * 180 / PI;
-    float accel_angle_y = atan2(r.az, -r.ay) * 180 / PI;
-
-    float kal_x = kx.getAngle(accel_angle_x, r.gz - b.bz, dt);
-    float kal_y = ky.getAngle(accel_angle_y, r.gx - b.bx, dt);
-
-    return Vec2D(kal_x, kal_y);
-
-}
-
-
 // QUATERNION BASED ANGLE CALCULATION
-// Returns roll, pitch, yaw
-Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, float deltaTime) {
+Quaternion get_angles_quat(SensorReadings readings, Quaternion& attitude, float deltaTime) {
 
     // wx = pitch  (rotation around x-axis)
     // wy = roll   (rotation around y-axis) 
@@ -93,8 +146,6 @@ Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, float delta
     float wx = readings.gx * (PI / 180);
     float wy = readings.gy * (PI / 180);
     float wz = readings.gz * (PI / 180);
-
-    float roll, pitch, yaw;
 
     // Update attitude quaternion
     float norm = sqrt(wx * wx + wy * wy + wz * wz);
@@ -107,38 +158,33 @@ Vec3D get_angles_quat(SensorReadings readings, Quaternion& attitude, float delta
     Quaternion QM = Quaternion::from_axis_angle(deltaTime * norm, wx, wy, wz);
     attitude = attitude * QM;
 
-    // --- Convert to Euler Angles --- //    
-    // https://www.euclideanspace.com/maths/standards/index.htm#:~:text=Euler%20angles
-    // Switch axes (X pitch, Y roll, Z yaw --> Z pitch, X roll, Y yaw)
-    float qw = attitude.a;
-    float qz = attitude.b;
-    float qx = attitude.c;
-    float qy = attitude.d;
+    return attitude;
+}
 
-    // from https://www.euclideanspace.com/maths/standards/index.htm
-    if (qx * qy + qz * qw >= 0.5) {  // North pole
-        yaw = 2 * atan2(qx, qw);
-        pitch = PI / 2;
-        roll = 0;
-    }
-    else if (qx * qy + qz * qw <= -0.5) {  // South pole
-        yaw = -2 * atan2(qx, qw);
-        pitch = -PI / 2;
-        roll = 0;
-    }
-    else {
-        yaw = atan2(2 * qy * qw - 2 * qx * qz, 1 - 2 * qy * qy - 2 * qz * qz);
-        pitch = asin(2 * qx * qy + 2 * qz * qw);
-        roll = atan2(2 * qx * qw - 2 * qy * qz, 1 - 2 * qx * qx - 2 * qz * qz);
-    }
+// COMPLEMENTARY FILTERING WITH QUATERNIONS
+Quaternion get_angles_compl_quat(float A, float dt, SensorReadings r, Quaternion attitude) {
 
-    attitude = attitude.normalize();
+    float accelYaw = -atan2(r.ax, sqrt(r.az * r.az + r.ay * r.ay));
+    float accelPitch = -atan2(r.az, r.ay);
 
-    roll *= -180 / PI;
-    pitch *= 180 / PI;
-    yaw *= 180 / PI;
+    Quaternion accel_q = Quaternion::from_euler_rotation(accelYaw, accelPitch, 0);
+    Quaternion gyro_q = get_angles_quat(r, attitude, dt);
+    Quaternion q = slerp(gyro_q, accel_q, 1.0f - A);
 
-    return Vec3D(roll, pitch, yaw);
+    return q;
+
+}
+
+// KALMAN FILTERING
+Vec2D get_angles_kalman(float dt, SensorReadings r, Kalman& kx, Kalman& ky, GyroBiases b) {
+    float accel_angle_x = atan2(r.ax, -sign(r.ay) * sqrt(r.az * r.az + r.ay * r.ay)) * 180 / PI;
+    float accel_angle_y = atan2(r.az, -r.ay) * 180 / PI;
+
+    float kal_x = kx.getAngle(accel_angle_x, r.gz - b.bz, dt);
+    float kal_y = ky.getAngle(accel_angle_y, r.gx - b.bx, dt);
+
+    return Vec2D(kal_x, kal_y);
+
 }
 
 #endif

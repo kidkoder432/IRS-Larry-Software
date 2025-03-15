@@ -266,9 +266,18 @@ public: // Public functions
         if (config["INIT_ACCEL"] > 0) {
             printMessage("Initializing angles using accelerometer");
             readSensors(readings, biases);
-            yaw = atan2(readings.ax, sqrt(readings.az * readings.az + readings.ay * readings.ay));
-            pitch = atan2(readings.az, readings.ay);
-            dir = Vec3D(0, -pitch, -yaw);
+            float totalYaw = 0;
+            float totalPitch = 0;
+
+            for (int i = 0; i < 20; ++i) {
+                readSensors(readings, biases);
+                totalYaw += -atan2(readings.ax, sqrt(readings.az * readings.az + readings.ay * readings.ay));
+                totalPitch += -atan2(readings.az, readings.ay);
+            }
+
+            yaw = totalYaw / 20;
+            pitch = totalPitch / 20;
+            dir = Vec3D(0, pitch * 180 / PI, yaw * 180 / PI);
             attitude = Quaternion::from_euler_rotation(yaw, pitch, 0);
         }
         else {
@@ -276,6 +285,13 @@ public: // Public functions
             dir = Vec3D(0, 0, 0);
             attitude = Quaternion();
         }
+
+        Serial.print("rpy init: ");
+        Serial.print(dir.x);
+        Serial.print(", ");
+        Serial.print(dir.y);
+        Serial.print(", ");
+        Serial.println(dir.z);
         return true;
     }
 
@@ -372,24 +388,23 @@ public: // Public functions
     // Update angles using sensor readings
     void updateAngles() {
 
-        dir = get_angles_quat(readings, attitude, deltaTime);
-
         if (useCompl) {
-            Vec2D dir_c = get_angles_complementary(config["COMP_FILTER_ALPHA_GYRO"], deltaTime, readings, yaw, pitch);
-            yaw = dir_c.x;
-            pitch = dir_c.y;
+            attitude = get_angles_compl_quat(config["COMP_FILTER_ALPHA_GYRO"], deltaTime, readings, attitude);
         }
         else {
-            yaw = dir.z;
-            pitch = dir.y;
+            attitude = get_angles_quat(readings, attitude, deltaTime);
         }
 
-        roll = dir.x;
+        dir = quaternion_to_euler(attitude);
 
-        dir = Vec3D(roll, pitch, yaw);
         if (config["FLIP_DIR_X"] > 0) dir.x = -dir.x;
         if (config["FLIP_DIR_Y"] > 0) dir.y = -dir.y;
         if (config["FLIP_DIR_Z"] > 0) dir.z = -dir.z;
+
+        roll = dir.x;
+        pitch = dir.y;
+        yaw = dir.z;
+
 
         // Normalize angles to the range [-180, 180]
         if (yaw > 180) yaw -= 360;
@@ -516,7 +531,7 @@ public: // Public functions
         return p;
     }
 
-    #if USE_RP2040
+#if USE_RP2040
     bool saveFlashFile(FILE* flashFile, File& dataFile) {
         uint8_t buffer[88];
         // char header[] = "Time,Dt,ax,ay,az,gx,gy,gz,roll,pitch,yaw,x_out,y_out,x_act,y_act,alt,state,vel,px,ix,dx,py,iy,dy\n";
@@ -562,7 +577,7 @@ public: // Public functions
         return true;
 
     }
-    #endif
+#endif
 
     void updateDataLog() {
 
