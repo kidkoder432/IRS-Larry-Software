@@ -248,8 +248,8 @@ void loop() {
                     rocket.setLogSpeed(FAST);
                     rocket.printMessage("Experiment Mode ON");
                     rocket.logMessage("Experiment Mode ON - Running Test");
-                    rocket.initAngles();
                     rocket.calibrateAndLog();
+                    rocket.initAngles();
                     rocket.disableCompl();
                     rocket.printMessage("Unlocking TVC");
                     rocket.logMessage("Unlocking TVC");
