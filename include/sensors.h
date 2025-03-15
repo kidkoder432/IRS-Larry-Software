@@ -2,6 +2,7 @@
 #define SENSORS_H
 
 #include <config.h>
+#include <leds.h>
 
 #if USE_BLE_SENSE
 #include <alt.h>
@@ -151,7 +152,7 @@ void readSensors(SensorReadings& r, GyroBiases biases) {
 GyroBiases calibrateSensors(Config& config) {
 
     Serial.println("Starting Sensor Calibration...");
-
+    showColor(COLOR_ORANGE);
     // Accelerometer + gyroscope CRT calibration
     if (config["DO_CRT"] > 0) {
         Serial.println("Performing component retrimming...");
@@ -197,6 +198,7 @@ GyroBiases calibrateSensors(Config& config) {
     float by = ((y_angle_c) / (float)(micros() - now)) * 1000000;
     float bz = ((z_angle_c) / (float)(micros() - now)) * 1000000;
 
+    showColor(COLOR_OFF);
     return GyroBiases(bx, by, bz);
 }
 #endif

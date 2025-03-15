@@ -1,5 +1,7 @@
 // LED CONTROLLER
 
+#ifndef LEDS_H
+#define LEDS_H
 #include <Arduino.h>
 
 const int DELAY_MS = 100;
@@ -22,7 +24,7 @@ struct Color COLOR_PINK(255, 0, 255);
 struct Color COLOR_WHITE(255, 255, 255);
 struct Color COLOR_OFF(0, 0, 0);
 
-#define OLD_LED 0
+#define OLD_LED 1
 
 #if OLD_LED
 void showColor(Color c) {
@@ -142,3 +144,4 @@ void flash(Color c1, Color c2, int DELAY_MS) {
     }
 }
 
+#endif
