@@ -208,50 +208,42 @@ bool logDataPoint(DataPoint p, File& dataFile) {
 
 void sdCardInfo(SdFat& sd) {
 
+    // Retrieve card type and sector-based information
+    SdCard* card = sd.card();
+    FsVolume* vol = sd.vol();
+
+    uint8_t cardType = card->type();
+    uint64_t sectorCount = card->sectorCount();
+    uint64_t sectorsPerCluster = vol->sectorsPerCluster();
+    uint64_t freeClusterCount = vol->freeClusterCount();
+    uint64_t freeSectorCount = freeClusterCount * sectorsPerCluster;
 
     // Print card type
-    uint8_t cardType = sd.card()->type();
     Serial.print("Card Type: ");
-    switch (cardType) {
-        case SD_CARD_TYPE_SD1: Serial.println("SD1"); break;
-        case SD_CARD_TYPE_SD2: Serial.println("SD2"); break;
-        case SD_CARD_TYPE_SDHC: Serial.println("SDHC/SDXC"); break;
-        default: Serial.println("Unknown"); break;
-    }
+    Serial.println((cardType == SD_CARD_TYPE_SD1) ? "SD1" :
+        (cardType == SD_CARD_TYPE_SD2) ? "SD2" :
+        (cardType == SD_CARD_TYPE_SDHC) ? "SDHC/SDXC" : "Unknown");
 
-    // Retrieve sector-based information
-    uint64_t sectorCount = sd.card()->sectorCount();
-    uint64_t sectorsPerCluster = sd.vol()->sectorsPerCluster();  // 1 block = 1 sector in SdFat
-    uint64_t freeSectorCount = (uint64_t)sd.vol()->freeClusterCount() * sectorsPerCluster;
+    // Print sector and space details
+    constexpr uint64_t SECTOR_SIZE = 512;
+    constexpr uint64_t MB_DIVISOR = 1024 * 1024;
 
-    // Print sector information
-    Serial.print("Total Sectors: ");
-    Serial.println(sectorCount);
+    Serial.print("Total Sectors: ");  Serial.println(sectorCount);
+    Serial.print("Sectors Per Cluster: ");  Serial.println(sectorsPerCluster);
+    Serial.print("Free Sectors: ");  Serial.println(freeSectorCount);
+    Serial.print("Used Sectors: ");  Serial.println(sectorCount - freeSectorCount);
 
-    Serial.print("Sectors Per Cluster: ");
-    Serial.println(sectorsPerCluster);
-
-    Serial.print("Free Sectors: ");
-    Serial.println(freeSectorCount);
-
-    Serial.print("Used Sectors: ");
-    Serial.println(sectorCount - freeSectorCount);
-
-    // Calculate card size (512 bytes per sector)
-    uint64_t cardSize = sectorCount * 512;  // Convert sectors to bytes
     Serial.print("Card Size: ");
-    Serial.print(cardSize / (1024 * 1024));  // Convert bytes to MB
+    Serial.print((sectorCount * SECTOR_SIZE) / MB_DIVISOR);
     Serial.println(" MB");
 
-    // Calculate free space
-    uint64_t freeSpace = freeSectorCount * 512;  // Convert sectors to bytes
     Serial.print("Free Space: ");
-    Serial.print(freeSpace / (1024 * 1024));  // Convert bytes to MB
+    Serial.print((freeSectorCount * SECTOR_SIZE) / MB_DIVISOR);
     Serial.println(" MB");
 
     // List files and directories
     Serial.println("Listing files on the card:");
-    sd.ls(LS_R | LS_DATE | LS_SIZE);  // Recursive, show date and size
+    sd.ls(LS_R | LS_DATE | LS_SIZE);
 }
 
 #if USE_RP2040
@@ -290,7 +282,7 @@ void printFilesystemInfo() {
     }
 }
 
-bool logDataRaw(uint8_t data[], int size, FILE *dataFile) {
+bool logDataRaw(uint8_t data[], int size, FILE* dataFile) {
     if (!dataFile) {
         Serial.println("Couldn't open flash file");
         return false;
@@ -309,7 +301,7 @@ bool logDataRaw(uint8_t data[], int size, FILE *dataFile) {
     return true;
 }
 
-bool logDataPointBin(DataPoint p, FILE *dataFile) {
+bool logDataPointBin(DataPoint p, FILE* dataFile) {
 
     DataPointBin pBin;
     pBin.p = p;
@@ -323,13 +315,13 @@ bool logDataPointBin(DataPoint p, FILE *dataFile) {
         Serial.println("Failed to write to flash file");
         return false;
     }
-    
+
     fflush(dataFile);
 
     return true;
 }
 
-bool writeSD(FILE *flashFile, File& dataFile) {
+bool writeSD(FILE* flashFile, File& dataFile) {
     if (!dataFile.isOpen()) {
         Serial.println("Couldn't open data file");
         return false;
