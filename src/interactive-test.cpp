@@ -32,7 +32,7 @@ T: Activate Pyro 2 (Landing Legs Deploy)
 S: SD Card Info
 Q: Reset Angles
 P: Show Performance Metrics
-B: Edit Config (INOP)
+B: Toggle Complementary Filter
 E: Toggle Experiment/Test Mode
 Z: Switch Bluetooth to USB (override)
 H: Help)";
@@ -279,7 +279,17 @@ void loop() {
                     rocket.pyro2_land.disarm();
                 }
                 break;
+            case 'B':
+                if (rocket.useCompl) {
+                    rocket.printMessage("Disabling Complementary Filter");
+                    rocket.disableCompl();
 
+                }
+                else {
+                    rocket.printMessage("Enabling Complementary Filter");
+                    rocket.enableCompl();
+                }
+                break;
             default:
                 rocket.printMessage("Invalid command");
                 break;
