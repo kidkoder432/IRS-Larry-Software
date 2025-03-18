@@ -44,7 +44,7 @@ union DataPointBin {
 
 
 
-bool logStatus(const char* msg, File& logFile) {
+bool logStatus(const char* msg, ExFile& logFile) {
     if (!logFile.isOpen()) {
         Serial.println("Couldn't open log file");
         return false;
@@ -76,7 +76,7 @@ bool logStatus(const char* msg, File& logFile) {
     return true;
 };
 
-bool logDataPointBin(DataPoint p, File& dataFile) {
+bool logDataPointBin(DataPoint p, ExFile& dataFile) {
 
     if (!dataFile.isOpen()) {
         Serial.println("Couldn't open data file");
@@ -92,7 +92,7 @@ bool logDataPointBin(DataPoint p, File& dataFile) {
 
 }
 
-bool logDataRaw(uint8_t data[], long size, File& dataFile) {
+bool logDataRaw(uint8_t data[], long size, ExFile& dataFile) {
 
     if (!dataFile.isOpen()) {
         Serial.println("Couldn't open data file");
@@ -105,7 +105,7 @@ bool logDataRaw(uint8_t data[], long size, File& dataFile) {
     return true;
 }
 
-bool logDataPoint(DataPoint p, File& dataFile) {
+bool logDataPoint(DataPoint p, ExFile& dataFile) {
 
     if (!dataFile.isOpen()) {
         Serial.println("Couldn't open data file");
@@ -206,11 +206,11 @@ bool logDataPoint(DataPoint p, File& dataFile) {
 
 }
 
-void sdCardInfo(SdFat& sd) {
+void sdCardInfo(SdExFat& sd) {
 
     // Retrieve card type and sector-based information
     SdCard* card = sd.card();
-    FsVolume* vol = sd.vol();
+    ExFatVolume* vol = sd.vol();
 
     uint8_t cardType = card->type();
     uint64_t sectorCount = card->sectorCount();
@@ -265,7 +265,7 @@ void printFilesystemInfo() {
         unsigned long totalSize = fs_info.f_bsize * fs_info.f_blocks;
         unsigned long freeSize = fs_info.f_bsize * fs_info.f_bfree;
 
-        Serial.print("Total Filesystem Size: ");
+        Serial.print("Total ExFilesystem Size: ");
         Serial.print(totalSize);
         Serial.println(" bytes");
 
@@ -321,7 +321,7 @@ bool logDataPointBin(DataPoint p, FILE* dataFile) {
     return true;
 }
 
-bool writeSD(FILE* flashFile, File& dataFile) {
+bool writeSD(FILE* flashFile, ExFile& dataFile) {
     if (!dataFile.isOpen()) {
         Serial.println("Couldn't open data file");
         return false;

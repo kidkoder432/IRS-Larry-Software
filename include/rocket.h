@@ -50,7 +50,6 @@ private:  // Member variables and internal functions
 
     Quaternion attitude;
     Vec3D dir;
-    bool useCompl = true;
     float yaw, pitch, roll;
     float vertVel, altitude;
 
@@ -64,9 +63,9 @@ private:  // Member variables and internal functions
 
     bool ledsOn = true;
 
-    SdFat sd;
-    File dataFile;
-    File logFile;
+    SdExFat sd;
+    ExFile dataFile;
+    ExFile logFile;
     Config config;
     DataLogSpeed logSpeed = SLOW;
     int bufferCount = 0;
@@ -83,6 +82,8 @@ public: // Public functions
 
     bool bleOn = true;
     float deltaTime = 0;
+    bool useCompl = true;
+
 
     PyroChannel pyro1_motor = PyroChannel(PYRO_1_LANDING_MOTOR_PIN, 6000L, false, false);
     PyroChannel pyro2_land = PyroChannel(PYRO_2_LANDING_LEGS_PIN, 6000L, false, false);
@@ -532,7 +533,7 @@ public: // Public functions
     }
 
 #if USE_RP2040
-    bool saveFlashFile(FILE* flashFile, File& dataFile) {
+    bool saveFlashFile(FILE* flashFile, ExFile& dataFile) {
         uint8_t buffer[88];
         // char header[] = "Time,Dt,ax,ay,az,gx,gy,gz,roll,pitch,yaw,x_out,y_out,x_act,y_act,alt,state,vel,px,ix,dx,py,iy,dy\n";
         // dataFile.write(header, strlen(header));
@@ -576,7 +577,7 @@ public: // Public functions
         dataFile.sync();
         return true;
 
-    }
+}
 #endif
 
     void updateDataLog() {
@@ -645,7 +646,7 @@ public: // Public functions
         if (getFreeSpace() < 30 * 1024) {
             printMessage("Out of space on flash");
             saveFlashFile(flashFile, dataFile);
-        }
+    }
     #endif
 
 
@@ -707,7 +708,7 @@ public: // Public functions
             }
             if (!saveFlashFile(flashFile, dataFile)) {
                 printMessage("Failed to save flash file to SD card");
-            }
+        }
         #endif
 
             if (!cleanupLogs()) {
@@ -718,7 +719,7 @@ public: // Public functions
             cleanupSD();
             printMessage("Logs saved successfully");
 
-        }
+    }
     }
 
     void toggleDataLog() {
@@ -818,7 +819,7 @@ public: // Public functions
         if (fclose(flashFile)) {
             printMessage("Error closing flash file");
             return false;
-        }
+    }
     #endif
 
         printMessage("Closing data file...");
