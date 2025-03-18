@@ -75,7 +75,7 @@ Quaternion slerp(Quaternion q1, Quaternion q2, float t) {
     return q;
 }
 
-Vec3D quaternion_to_euler(Quaternion attitude) {
+float quaternion_to_roll(Quaternion attitude) {
     // --- Convert to Euler Angles --- //    
     // https://www.euclideanspace.com/maths/standards/index.htm#:~:text=Euler%20angles
     // Switch axes (X pitch, Y roll, Z yaw --> Z pitch, X roll, Y yaw)
@@ -86,23 +86,66 @@ Vec3D quaternion_to_euler(Quaternion attitude) {
 
     // from https://www.euclideanspace.com/maths/standards/index.htm
     if (qx * qy + qz * qw >= 0.5) {  // North pole
-        float yaw = 2 * atan2(qx, qw);
-        float pitch = PI / 2;
-        float roll = 0;
-        return Vec3D(roll, pitch, yaw);
+        return 0;
     }
     else if (qx * qy + qz * qw <= -0.5) {  // South pole
-        float yaw = -2 * atan2(qx, qw);
-        float pitch = -PI / 2;
-        float roll = 0;
-        return Vec3D(roll, pitch, yaw);
+        return 0;
+    }
+    else {
+        float roll = atan2(2 * qx * qw - 2 * qy * qz, 1 - 2 * qx * qx - 2 * qz * qz);
+        return roll * -180 / PI;
+    }
+}
+
+float quaternion_to_pitch(Quaternion attitude) {
+    // --- Convert to Euler Angles --- //    
+    // https://www.euclideanspace.com/maths/standards/index.htm#:~:text=Euler%20angles
+    // Switch axes (X pitch, Y roll, Z yaw --> Z pitch, X roll, Y yaw)
+    float qw = attitude.a;
+    float qz = attitude.b;
+    float qx = attitude.c;
+    float qy = attitude.d;
+
+    // from https://www.euclideanspace.com/maths/standards/index.htm
+    if (qx * qy + qz * qw >= 0.5) {  // North pole
+        return PI / 2;
+    }
+    else if (qx * qy + qz * qw <= -0.5) {  // South pole
+        return -PI / 2;
+    }
+    else {
+        float pitch = asin(2 * qx * qy + 2 * qz * qw);
+        return pitch * 180 / PI;
+    }
+}
+
+float quaternion_to_yaw(Quaternion attitude) {
+    // --- Convert to Euler Angles --- //    
+    // https://www.euclideanspace.com/maths/standards/index.htm#:~:text=Euler%20angles
+    // Switch axes (X pitch, Y roll, Z yaw --> Z pitch, X roll, Y yaw)
+    float qw = attitude.a;
+    float qz = attitude.b;
+    float qx = attitude.c;
+    float qy = attitude.d;
+
+    // from https://www.euclideanspace.com/maths/standards/index.htm
+    if (qx * qy + qz * qw >= 0.5) {  // North pole
+        return 2 * atan2(qx, qw);
+    }
+    else if (qx * qy + qz * qw <= -0.5) {  // South pole
+        return -2 * atan2(qx, qw);
     }
     else {
         float yaw = atan2(2 * qy * qw - 2 * qx * qz, 1 - 2 * qy * qy - 2 * qz * qz);
-        float pitch = asin(2 * qx * qy + 2 * qz * qw);
-        float roll = atan2(2 * qx * qw - 2 * qy * qz, 1 - 2 * qx * qx - 2 * qz * qz);
-        return Vec3D(roll * -180 / PI, pitch * 180 / PI, yaw * 180 / PI);
+        return yaw * 180 / PI;
     }
+}
+
+Vec3D quaternion_to_euler(Quaternion attitude) {
+    float roll = quaternion_to_roll(attitude);
+    float pitch = quaternion_to_pitch(attitude);
+    float yaw = quaternion_to_yaw(attitude);
+    return Vec3D(roll, pitch, yaw);
 }
 
 // GYRO-BASED ANGLE CALCULATION
@@ -162,18 +205,22 @@ Quaternion get_angles_quat(SensorReadings readings, Quaternion& attitude, float 
 }
 
 // COMPLEMENTARY FILTERING WITH QUATERNIONS
-Quaternion get_angles_compl_quat(float A, float dt, SensorReadings r, Quaternion attitude) {
+Quaternion get_angles_compl_quat(float A, float dt, SensorReadings r, Quaternion& attitude) {
 
     float accelYaw = -atan2(r.ax, sqrt(r.az * r.az + r.ay * r.ay));
-    float accelPitch = -atan2(r.az, r.ay);
+    float accelPitch = -atan2(r.az, sqrt(r.az * r.az + r.ay * r.ay));
 
-    Quaternion accel_q = Quaternion::from_euler_rotation(accelYaw, accelPitch, 0);
     Quaternion gyro_q = get_angles_quat(r, attitude, dt);
-    Quaternion q = slerp(gyro_q, accel_q, 1.0f - A);
+    float roll = quaternion_to_roll(gyro_q) * (PI / 180);
 
-    return q;
+    Quaternion accel_q = Quaternion::from_euler_rotation(accelYaw, accelPitch, -roll);
 
-}
+    attitude = slerp(gyro_q, accel_q, 1.0f - A);
+
+    attitude.normalize();
+
+    return attitude;
+}   
 
 // KALMAN FILTERING
 Vec2D get_angles_kalman(float dt, SensorReadings r, Kalman& kx, Kalman& ky, GyroBiases b) {
