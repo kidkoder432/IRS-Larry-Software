@@ -148,17 +148,6 @@ void setup() {
 void loop() {
 
     recvOneChar();
-#if USE_BLE
-    if (rocket.bleOn) rocket.updateBle();
-#endif
-    rocket.updateTvc();
-    rocket.updateSensors();
-    rocket.updateAngles();
-    rocket.updateAltVel();
-    rocket.updatePyros();
-    // rocket.updateBuzzer();
-    rocket.updateAngleLeds();
-    rocket.updateDataLog();
 
     if (newCommand == true) {
         switch (receivedChar) {
@@ -345,7 +334,26 @@ void loop() {
         rocket.printMessage(roll);
     }
 
+#if USE_BLE
+    if (rocket.bleOn) rocket.updateBle();
+#endif
+
     // constrain to 100hz
     rocket.updateTime();
+
+    // Update spatial data
+    rocket.updateSensors();
+    rocket.updateAngles();
+    rocket.updateAltVel();
+
+    // Update hardware
+    rocket.updateTvc();
+    rocket.updatePyros();
+    // rocket.updateBuzzer();
+    rocket.updateAngleLeds();
+
+    // Update logging
+    rocket.updateDataLog();
+
 }
 

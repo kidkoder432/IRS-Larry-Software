@@ -12,6 +12,9 @@ public:
         Ki = _Ki;
         Kd = _Kd;
         N = _FilterN;
+
+        alpha = N * dt;
+        b = alpha / (alpha + 2);
     }
 
     void begin(float _Kp, float _Ki, float _Kd, float _b, float _dt, float _min, float _max) {
@@ -22,12 +25,13 @@ public:
         dt = _dt;
         min = _min;
         max = _max;
+
+        alpha = N * dt;
+        b = alpha / (alpha + 2);
     }
 
     float update(float target, float current, float _dt) {
         dt = _dt;
-        alpha = N * dt;
-        b = alpha / (alpha + 2);
         error = target - current;
 
         // Proportional
@@ -37,9 +41,14 @@ public:
         i = Ki * integrated_error;
 
         // Derivative + low-pass filtering
-        filtered_error = b * (error + last_error) + (1 - b * 2) * last_filter;
-        d = Kd * (filtered_error - last_filter) / dt;
 
+        if (N > 0) {
+            filtered_error = b * (error + last_error) + (1 - b * 2) * last_filter;
+            d = Kd * (filtered_error - last_filter) / dt;
+        }
+        else {
+            d = Kd * (error - last_error) / dt;
+        }
         // Integrator clamping
         if (doIntegratorClamp(p + i + d + bias, bias)) {
             integrated_error += 0;
@@ -51,7 +60,7 @@ public:
         // Set previous state
         last_filter = filtered_error;
         last_error = error;
-        
+
         return p + i + d;
         // // Output saturation
         // return clip(p + i + d + bias, min, max);
