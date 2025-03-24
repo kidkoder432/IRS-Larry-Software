@@ -13,7 +13,11 @@ public:
     PID pid_x;
     PID pid_y;
 
-    void configure(Config& config) {
+    void setup(float deltaTime, Config& config) {
+        dir = Vec3D(0, 0, 0);
+        tvcx.attach(TVC_X_PIN);
+        tvcy.attach(TVC_Y_PIN);
+
         P = config["Kp"];
         I = config["Ki"];
         D = config["Kd"];
@@ -27,24 +31,16 @@ public:
         XDEF = config["XDEF"];
         YDEF = config["YDEF"];
 
-        pid_x.update_gains(P, I, D, N);
-        pid_y.update_gains(P, I, D, N);
+        pid_x.begin(P, I, D, XDEF, deltaTime, XMIN, XMAX);
+        pid_y.begin(P, I, D, YDEF, deltaTime, YMIN, YMAX);
 
         FLIP_X = config["FLIP_X"] > 0;
         FLIP_Y = config["FLIP_Y"] > 0;
         ROLL_COMP = config["ROLL_COMP"] > 0;
-    }
 
-    void begin(float deltaTime) {
-        dir = Vec3D(0, 0, 0);
-        tvcx.attach(TVC_X_PIN);
-        tvcy.attach(TVC_Y_PIN);
-
-        pid_x.begin(P, I, D, XDEF, deltaTime, XMIN, XMAX);
         tvcx.write(XDEF);
-
-        pid_y.begin(P, I, D, YDEF, deltaTime, YMIN, YMAX);
         tvcy.write(YDEF);
+
     }
 
     // X axis = yaw correction, Y axis = pitch correctin
@@ -161,12 +157,12 @@ public:
 
     void lock() {
         locked = true;
+        write(XDEF, YDEF);
     }
 
     void unlock() {
-        tvcx.write(XDEF);
-        tvcy.write(YDEF);
         locked = false;
+        write(XDEF, YDEF);
     }
 
     void abort() {

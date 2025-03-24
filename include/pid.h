@@ -7,21 +7,11 @@ public:
     float i;
     float d;
 
-    void update_gains(float _Kp, float _Ki, float _Kd, float _FilterN) {
-        Kp = _Kp;
-        Ki = _Ki;
-        Kd = _Kd;
-        N = _FilterN;
-
-        alpha = N * dt;
-        b = alpha / (alpha + 2);
-    }
-
     void begin(float _Kp, float _Ki, float _Kd, float _b, float _dt, float _min, float _max) {
         Kp = _Kp;
         Ki = _Ki;
         Kd = _Kd;
-        bias = _b;
+        center = _b;
         dt = _dt;
         min = _min;
         max = _max;
@@ -50,7 +40,7 @@ public:
             d = Kd * (error - last_error) / dt;
         }
         // Integrator clamping
-        if (doIntegratorClamp(p + i + d + bias, bias)) {
+        if (doIntegratorClamp(p + i + d, center)) {
             integrated_error += 0;
         }
         else {
@@ -80,7 +70,7 @@ private:
     float Kd;
     float N;
 
-    float bias;
+    float center;
     float dt;
     float min;
     float max;
@@ -97,10 +87,13 @@ private:
         return min < value && value < max ? value : min < value ? max : min;
     }
 
-    bool doIntegratorClamp(float out, float b) {
+    bool doIntegratorClamp(float out, float center) {
+
+        out += center;
         bool saturated = out < min || out > max;
-        bool sameSign = sign(out - b) == sign(error);
+        bool sameSign = sign(out - center) == sign(error);
 
         return saturated && sameSign;
     }
 };
+

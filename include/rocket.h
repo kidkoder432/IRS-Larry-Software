@@ -307,9 +307,8 @@ public: // Public functions
 
     // Initialize TVC system
     bool initTvc() {
-        tvc.begin(deltaTime);
+        tvc.setup(deltaTime, config);
         tvc.lock();
-        tvc.configure(config);
         logStatus("TVC initialized", logFile);
         return true;
     }
