@@ -63,7 +63,7 @@ void setup() {
     rocket.initSerial();
     delay(2000);
 
-    rocket.initBuzzer();
+    // rocket.initBuzzer();
     rocket.initLeds();
 
     rocket.printMessage("Buzzer initialized!");
@@ -79,6 +79,10 @@ void setup() {
     rocket.printMessage("Data logging initialized!");
     rocket.initConfig();
     rocket.printMessage("Config initialized!");
+
+    // Init sensors and angles
+    rocket.setupSensors();
+    rocket.calibrateAndLog();
 
 #if USE_BLE
     rocket.initBle();
@@ -121,9 +125,7 @@ void setup() {
 
     }
 #endif
-    // Init sensors and angles
-    rocket.setupSensors();
-    rocket.calibrateAndLog();
+
     rocket.initAngles();
     rocket.printMessage("Sensors and angles initialized!");
 
