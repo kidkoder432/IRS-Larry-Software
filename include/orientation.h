@@ -207,7 +207,7 @@ Quaternion get_angles_quat(SensorReadings readings, Quaternion& attitude, float 
 // COMPLEMENTARY FILTERING WITH QUATERNIONS
 Quaternion get_angles_compl_quat(float A, float dt, SensorReadings r, Quaternion& attitude) {
 
-    float accelYaw = -atan2(r.ax, sqrt(r.az * r.az + r.ay * r.ay));
+    float accelYaw = atan2(r.ax, sqrt(r.az * r.az + r.ay * r.ay));
     float accelPitch = -atan2(r.az, sqrt(r.az * r.az + r.ay * r.ay));
 
     Quaternion gyro_q = get_angles_quat(r, attitude, dt);

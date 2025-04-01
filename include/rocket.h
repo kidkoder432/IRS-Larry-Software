@@ -276,7 +276,7 @@ public: // Public functions
                 totalPitch += -atan2(readings.az, readings.ay);
             }
 
-            yaw = totalYaw / 20;
+            yaw = -totalYaw / 20;
             pitch = totalPitch / 20;
             dir = Vec3D(0, pitch * 180 / PI, yaw * 180 / PI);
             attitude = Quaternion::from_euler_rotation(yaw, pitch, 0);
