@@ -196,27 +196,27 @@ public:
         // Move to limits
         for (float x = XDEF; x <= XMAX; x += 0.1) {
             write(x, YDEF);
-            delay(10);
+            delay(50);
         }
         for (float y = YDEF; y <= YMAX; y += 0.1) {
             write(XMAX, y);
-            delay(10);
+            delay(50);
         }
         for (float x = XMAX; x >= XMIN; x -= 0.1) {
             write(x, YMAX);
-            delay(10);
+            delay(50);
         }
         for (float y = YMAX; y >= YMIN; y -= 0.1) {
             write(XMIN, y);
-            delay(10);
+            delay(50);
         }
         for (float x = XMIN; x <= XDEF; x += 0.1) {
             write(x, YMIN);
-            delay(10);
+            delay(50);
         }
         for (float y = YMIN; y <= YDEF; y += 0.1) {
             write(XDEF, y);
-            delay(10);
+            delay(50);
         }
         // Move in a spiral
         float angle = 0;
@@ -225,11 +225,11 @@ public:
             float x = XDEF + radius * cos(angle);
             float y = YDEF + radius * sin(angle);
             write(x, y);
-            delay(7);
+            delay(5);
             angle += 0.1;
             if (angle > 2 * PI) {
                 angle = 0;
-                radius += 0.1;
+                radius += 1;
             }
         }
     }

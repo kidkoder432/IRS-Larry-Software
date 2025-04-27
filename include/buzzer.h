@@ -1,7 +1,13 @@
 #include <Arduino.h>
 
 void playConstantTone(int freq, int duration) {
+    noTone(BUZZER_PIN);
     tone(BUZZER_PIN, freq, duration);
+}
+
+void playToneForever(int freq) {
+    noTone(BUZZER_PIN);
+    tone(BUZZER_PIN, freq);
 }
 
 void stopTone() {
