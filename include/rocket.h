@@ -17,6 +17,7 @@
 #include <leds.h>
 #include <pyro.h>
 #include <buzzer.h>
+#include <chutes.h>
 
 #include <config.h>
 #include <datalog.h>
@@ -85,8 +86,10 @@ public: // Public functions
     bool useCompl = true;
 
 
-    PyroChannel pyro1_motor = PyroChannel(PYRO_1_LANDING_MOTOR_PIN, 6000L, false, false);
-    PyroChannel pyro2_land = PyroChannel(PYRO_2_LANDING_LEGS_PIN, 6000L, false, false);
+    PyroChannel pyro1_motor = PyroChannel(PYRO_1_LANDING_MOTOR_PIN, 2000L, false, false);
+    PyroChannel pyro2_land = PyroChannel(PYRO_2_LANDING_LEGS_PIN, 2000L, false, false);
+
+    Parachute parachute = Parachute(PYRO_2_LANDING_LEGS_PIN);
 
     TVC tvc;
 
@@ -135,6 +138,7 @@ public: // Public functions
         if (!initTvc()) return false;
         if (!initPyros()) return false;
         if (!initBuzzer()) return false;
+        if (!initChutes()) return false;
         return finishSetup();
     }
 
@@ -202,6 +206,7 @@ public: // Public functions
         dataFile.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Roll,Pitch,Yaw,TvcX,TvcY,State,Alt,Vel,Px,Ix,Dx,Py,Iy,Dy");
         dataFile.sync();
         // dataFile.close();
+        setLogSpeed(SLOW);
         return true;
     }
 
@@ -338,6 +343,13 @@ public: // Public functions
         return true;
     }
 
+    // Initialize parachutes
+    bool initChutes() {
+        parachute.config(config);
+        parachute.arm();
+        return true;
+    }
+
     // Finish setup
     bool finishSetup() {
         lastLoopTime = millis();
@@ -464,6 +476,16 @@ public: // Public functions
         pyro2_land.update();
     }
 
+    void updateChutes() {
+        if (parachute.update()) {
+            logMessage("Parachute deployed");
+        }
+    }
+
+    void fireChutes() {
+        parachute.deployTimer();
+    }
+
     void updateAngleLeds() {
         if (!ledsOn) {
             showColor(COLOR_OFF);
@@ -588,6 +610,9 @@ public: // Public functions
         }
         else if (logSpeed == MEDIUM) {
             if (loopCount % 3 != 0) return;
+        }
+        else if (logSpeed == FAST) {
+            if (loopCount % 1 != 0) return;
         }
 
 
@@ -718,7 +743,7 @@ public: // Public functions
             cleanupSD();
             printMessage("Logs saved successfully");
 
-    }
+        }
     }
 
     void toggleDataLog() {
@@ -856,6 +881,8 @@ public: // Public functions
         pyro1_motor.disarm();
         pyro2_land.disarm();
 
+        stopTone();
+
         printMessage("Shutting down TVC...");
         logMessage("Shutting down TVC...");
         tvc.abort();
@@ -864,6 +891,14 @@ public: // Public functions
         logMessage("Shutting down sensors...");
 
         printMessage("Cleaning up logs...");
+        // force log
+        if (doBatchLog) {
+            logDataBatchOneShot(dataArr, BUFFER_SIZE);
+        }
+        else {
+            logPoint(getDataPoint());
+        }
+
         cleanupLogs();
         cleanupSD();
 
@@ -877,12 +912,15 @@ public: // Public functions
     }
 
     void abort() {
+        setState(127);
+        parachute.deploy();
         fullCleanup();
         HALT_AND_CATCH_FIRE();
 
     }
 
     void finish() {
+        setState(42);
         fullCleanup();
         HALT_DONE();
     }

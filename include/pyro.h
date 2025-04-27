@@ -1,5 +1,7 @@
 // PYROTECHNIC CHANNELS
 
+#ifndef PYRO_H
+#define PYRO_H
 #include "Arduino.h" 
 
 
@@ -136,3 +138,5 @@ private:
     bool isArmed = false;
 
 };
+
+#endif

@@ -28,7 +28,7 @@ R: Print Sensor Readings
 D: Toggle Data Logging
 X: Cancel Printing
 G: Activate Pyro 1 (Motor Ignition)
-T: Activate Pyro 2 (Landing Legs Deploy)
+T: Deploy Parachute (3 Second Timer)
 S: SD Card Info
 Q: Reset Angles
 P: Show Performance Metrics
@@ -63,10 +63,11 @@ void setup() {
     rocket.initSerial();
     delay(2000);
 
-    // rocket.initBuzzer();
-    rocket.initLeds();
-
+    rocket.initBuzzer();
     rocket.printMessage("Buzzer initialized!");
+
+    rocket.initLeds();
+    rocket.printMessage("LEDs initialized!");
 
     // Setup SD card, config and data logging
     rocket.initSD();
@@ -129,14 +130,16 @@ void setup() {
     rocket.initAngles();
     rocket.printMessage("Sensors and angles initialized!");
 
-    // init hardware
-    rocket.printMessage("LEDs initialized!");
+    // init TVC
     rocket.initTvc();
     rocket.printMessage("TVC initialized!");
 
     // init pyros and complete only after other inits succeed
     rocket.initPyros();
     rocket.printMessage("Pyros initialized!");
+
+    rocket.initChutes();
+    rocket.printMessage("Chutes initialized!");
 
     rocket.finishSetup();
 
@@ -193,13 +196,11 @@ void loop() {
                 rocket.printMessage("Pyro 1: Motor Ignition");
                 rocket.logMessage("Pyro 1: Motor Ignition");
                 rocket.firePyro1();
-                // fire_pyro_test(PYRO_LANDING_MOTOR_IGNITION);
                 break;
             case 'T':
-                rocket.printMessage("Pyro 2: Landing Legs Deploy");
-                rocket.logMessage("Pyro 2: Landing Legs Deploy");
-                rocket.firePyro2();
-                // fire_pyro_test(PYRO_LANDING_LEGS_DEPLOY);
+                rocket.printMessage("Firing parachute");
+                rocket.logMessage("Firing parachute");
+                rocket.parachute.deployTimer();
                 break;
             case 'S':
                 rocket.printMessage("Reading SD Card Info");
