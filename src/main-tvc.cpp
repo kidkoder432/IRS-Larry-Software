@@ -224,7 +224,6 @@ void loop() {
                         break;
                 }
             }
-            break;
 
             if (!dirOutLock) {
                 Vec3D dir = rocket.getDir();
@@ -234,6 +233,7 @@ void loop() {
                 rocket.printMessage(", ", false);
                 rocket.printMessage(dir.z);
             }
+            break;
         case LAUNCHING:
             recvOneChar();
             if (newCommand) {
