@@ -354,6 +354,7 @@ void loop() {
     rocket.updatePyros();
     // rocket.updateBuzzer();
     rocket.updateAngleLeds();
+    rocket.updateChutes();
 
     // Update logging
     rocket.updateDataLog();

@@ -123,30 +123,11 @@ public: // Public functions
 
     // ---- Setup functions ---- //
 
-    // General setup function
-    bool setup() {
-        if (!initSerial()) return false;
-    #if USE_BLE 
-        if (!initBle()) return false;
-    #endif
-        if (!initSD()) return false;
-        if (!initLogs()) return false;
-        if (!initConfig()) return false;
-        if (!setupSensors()) return false;
-        if (!initAngles()) return false;
-        if (!initLeds()) return false;
-        if (!initTvc()) return false;
-        if (!initPyros()) return false;
-        if (!initBuzzer()) return false;
-        if (!initChutes()) return false;
-        return finishSetup();
-    }
-
     // Initialize Serial
     bool initSerial() {
         Serial.begin(115200);
 
-        return !(!Serial);
+        return true;
     }
 
     // Initialize BLE
@@ -359,24 +340,6 @@ public: // Public functions
     }
 
     // ---- Update functions ---- //
-
-    // General update function
-    void update() {
-    #if USE_BLE 
-        updateBle();
-    #endif
-        updateSensors();
-        updateAngles();
-        updateAltVel();
-        updateState();
-        updateTvc();
-        updatePyros();
-        updateBuzzer();
-        updateAngleLeds();
-        updateDataLog();
-
-        updateTime();
-    }
 
     // Update BLE communication
 #if USE_BLE
@@ -833,7 +796,7 @@ public: // Public functions
     const SensorReadings& getReadings() { return readings; }
     float getAlt() { return altitude; }
     int getCurrentState() { return currentState; }
-    float getConfigValue(std::string key) { return config[key]; }
+    float getConfigValue(const char* key) { return config[key]; }
 
 
     bool cleanupLogs() {

@@ -6,6 +6,7 @@ public:
 
     Parachute(int pin) {
         parachuteChannel = PyroChannel(pin, 1000, false, false);
+        parachuteChannel.begin();
     }
 
     void config(Config config) {
@@ -13,7 +14,7 @@ public:
         parachuteChannel.oneShot = config["PARACHUTE_ONE_SHOT"] > 0;
 
         delayMs = (long)round(config["PARACHUTE_BURNOUT_DELAY"]);
-
+        parachuteChannel.begin();
     }
 
     void arm() {

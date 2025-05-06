@@ -11,7 +11,21 @@
 
 const int chipSelect = 10; // Adjust pin according to your SD card module
 
-typedef std::unordered_map<std::string, float> Config;
+struct cstr_hash {
+    size_t operator()(const char* s) const {
+        size_t h = 0;
+        while (*s) h = (h * 131) + *s++;
+        return h;
+    }
+};
+
+struct cstr_equal {
+    bool operator()(const char* a, const char* b) const {
+        return strcmp(a, b) == 0;
+    }
+};
+
+typedef std::unordered_map<const char*, float, cstr_hash, cstr_equal> Config;
 
 void toLowercase(char* str) {
     for (int i = 0; str[i] != '\0'; i++) {
@@ -59,13 +73,13 @@ Config readConfig() {
     SDConfig cfg;
     // Open the configuration file.
     if (!cfg.begin("config.cfg", maxLineLength)) {
-        Serial.println("Failed to open configuration file: ");
+        Serial.println("Failed to open configuration file!");
         return defaultConfig;
     }
     // Read each setting from the file.
     while (cfg.readNextSetting()) {
 
-        std::string name = std::string(cfg.getName());
+        const char* name = cfg.getName();
         const char* value = cfg.getValue();
 
         if (strcmp(value, "true") == 0) {
@@ -76,7 +90,7 @@ Config readConfig() {
             config[name] = 0.0;
         }
         else {
-            Serial.println(name.c_str());
+            Serial.println(name);
             config[name] = atof(value);
         }
 
@@ -92,7 +106,7 @@ Config readConfig() {
 
 void printConfig(Config& config) {
     for (auto& entry : config) {
-        Serial.print(entry.first.c_str());
+        Serial.print(entry.first);
         Serial.print(": ");
         Serial.println(entry.second);
     }
