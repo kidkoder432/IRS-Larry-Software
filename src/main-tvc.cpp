@@ -379,4 +379,6 @@ void loop() {
 
     // Update logging
     rocket.updateDataLog();
+
+    rocket.updateStateLeds();
 }
