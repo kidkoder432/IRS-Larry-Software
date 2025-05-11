@@ -351,6 +351,7 @@ void loop() {
 
     if (onGroundSteps >= 20) {
         rocket.setState(4);
+        rocket.parachute.cancel();
         rocket.logMessage("Touchdown confirmed. We are safe on Earth!");
         rocket.finish();
     }

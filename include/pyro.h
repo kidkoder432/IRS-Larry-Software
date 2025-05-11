@@ -22,8 +22,13 @@ public:
     bool activeLow = false;
     bool oneShot = false;
 
+
     PyroChannel() {
-        this->pin = LEDG;
+    #if USE_RP2040
+        this->pin = 27;
+    #else
+        this->pin = LEDR;
+    #endif
         this->fireTime = 0;
         this->activeLow = false;
         this->oneShot = false;

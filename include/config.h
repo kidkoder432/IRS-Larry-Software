@@ -58,12 +58,60 @@ String strip(const String& str) {
 }
 
 Config defaultConfig = {
+    // PID Gains
+    {"Kp", 4.09469141},
+    {"Ki", 0.000847052453},
+    {"Kd", 0.484600093},
+    {"N", 70.0},
+
+    // Altitude Pressure Reference (kPa)
     {"PRESSURE_REF", 100.816},
-    {"Kp", 1.0},
-    {"Ki", 0.4},
-    {"Kd", 0.1},
-    {"N", 50},
-    {"FILTER_KALMAN", true}
+
+    // TVC Limits/Centers (degrees)
+    {"XMIN", 76.0},
+    {"XDEF", 100.0},
+    {"XMAX", 124.0},
+    {"YMIN", 73.0},
+    {"YDEF", 97.0},
+    {"YMAX", 121.0},
+
+    // TVC Output Flip
+    {"FLIP_X", false},
+    {"FLIP_Y", false},
+
+    // TVC Roll compensation
+    {"ROLL_COMP", true},
+
+    // Angle Output Flip
+    {"FLIP_DIR_X", false},
+    {"FLIP_DIR_Y", false},
+    {"FLIP_DIR_Z", false},
+
+    // Calibration Routines
+    {"DO_CRT", true},
+    {"DO_ACCEL_FOC", true},
+    {"DO_GYRO_FOC", false},
+
+    // Use accelerometer for initial angle estimates
+    {"INIT_ACCEL", true},
+
+    // Datalog buffer
+    {"DATA_LOG_BATCH", true},
+
+    // Complementary filter parameter
+    {"COMP_FILTER_ALPHA_GYRO", 0.95},
+
+    // Altitude filter parameter
+    {"ALT_FILTER_ALPHA_ACCEL", 0.95},
+
+    // Pyro channel parameters
+    {"PYRO_1_ONE_SHOT", false},
+    {"PYRO_2_ONE_SHOT", false},
+    {"PYRO_1_FIRE_TIME", 2500.0},
+    {"PYRO_2_FIRE_TIME", 2500.0},
+    {"PARACHUTE_FIRE_TIME", 2500.0},
+    {"PARACHUTE_ONE_SHOT", false},
+    {"PARACHUTE_BURNOUT_DELAY", 3000.0},
 };
 
 Config readConfig() {
