@@ -57,8 +57,8 @@ void readSensors(SensorReadings& r, GyroBiases biases) {
     r.ax = -accel.acceleration.y;
     r.az = accel.acceleration.z;
 
-    r.gy = gyro.gyro.x * 180.0 / PI - biases.bx;
-    r.gx = -gyro.gyro.y * 180.0 / PI - biases.by;
+    r.gy = gyro.gyro.x * 180.0 / PI - biases.by;
+    r.gx = -gyro.gyro.y * 180.0 / PI - biases.bx;
     r.gz = gyro.gyro.z * 180.0 / PI - biases.bz;
 
 }
@@ -93,6 +93,12 @@ GyroBiases calibrateSensors(Config& config) {
     float bx = ((x_angle_c) / (float)(micros() - now)) * 1000000;
     float by = ((y_angle_c) / (float)(micros() - now)) * 1000000;
     float bz = ((z_angle_c) / (float)(micros() - now)) * 1000000;
+    Serial.print("Gyro Biases: bx=");
+    Serial.print(bx);
+    Serial.print(", by=");
+    Serial.print(by);
+    Serial.print(", bz=");
+    Serial.println(bz);
 
     return GyroBiases(bx, by, bz);
 }

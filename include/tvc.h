@@ -57,7 +57,7 @@ public:
             // Serial.println(dir.y);
         #if ACTUAL_PID
             x_out = pid_x.update(0, dir.z, dt);
-            y_out = pid_y.update(0, dir.y, dt);
+            y_out = pid_y.update(0, dir.x, dt);
 
         #else
             x_out = -dir.z;

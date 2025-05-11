@@ -51,10 +51,7 @@ Quaternion& Quaternion::normalize() {
 // This method takes an euler rotation in rad and converts it to an equivilent 
 // Quaternion rotation.
 // 800B
-const Quaternion Quaternion::from_euler_rotation(float yaw, float pitch, float roll) {
-     
-    // Switch axes (PRY -> RPY)
-    std::swap(pitch, roll);
+const Quaternion Quaternion::from_euler_rotation(float roll, float pitch, float yaw) {
 
     float cy = cos(yaw / 2);
     float cp = cos(pitch / 2);

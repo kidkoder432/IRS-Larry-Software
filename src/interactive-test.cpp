@@ -69,12 +69,12 @@ void setup() {
     rocket.initLeds();
     rocket.printMessage("LEDs initialized!");
 
-    // Setup SD card, config and data logging
-    rocket.initSD();
-    rocket.printMessage("SD card initialized!");
-    rocket.getSdInfo();
-    rocket.initLogs();
-#if USE_RP2040
+    // // Setup SD card, config and data logging
+    // rocket.initSD();
+    // rocket.printMessage("SD card initialized!");
+    // rocket.getSdInfo();
+    // rocket.initLogs();
+#if USE_FLASH
     rocket.initFlash();
 #endif
     rocket.printMessage("Data logging initialized!");
@@ -310,14 +310,12 @@ void loop() {
 
     if (!sensorOutLock) {
         SensorReadings readings = rocket.getReadings();
-        rocket.printMessage("Accelerometer: ", false);
         rocket.printMessage(readings.ax, false);
         rocket.printMessage(" ", false);
         rocket.printMessage(readings.ay, false);
         rocket.printMessage(" ", false);
-        rocket.printMessage(readings.az);
+        rocket.printMessage(readings.az, false);
 
-        rocket.printMessage("Gyroscope: ", false);
         rocket.printMessage(readings.gx, false);
         rocket.printMessage(" ", false);
         rocket.printMessage(readings.gy, false);
@@ -327,9 +325,9 @@ void loop() {
 
     if (!dirOutLock) {
         Vec3D dir = rocket.getDir();
+        float pitch = dir.x;
         float yaw = dir.z;
-        float pitch = dir.y;
-        float roll = dir.x;
+        float roll = dir.y;
         rocket.printMessage(yaw, false);
         rocket.printMessage(" ", false);
         rocket.printMessage(pitch, false);

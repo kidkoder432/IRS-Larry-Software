@@ -1,4 +1,4 @@
-from re import X
+from re import match
 from vpython import *
 import serial
 import math
@@ -60,9 +60,28 @@ rocket = compound([tube, nose])
 # rocket = compound([bBoard, bn, nano])
 
 # Initialize serial port
-# ser = serial.Serial("COM9", 115200)  # Replace '/dev/ttyUSB0' with your serial port
+ser = serial.Serial("COM5", 115200)  # Replace '/dev/ttyUSB0' with your serial port
 
 roll, pitch, yaw = 0, 0, 0
+import threading
+import queue
+
+q = queue.Queue()
+
+
+def input_thread(q):
+    while True:
+        q.put(input())
+
+
+threading.Thread(target=input_thread, args=(q,), daemon=True).start()
+
+
+# In your main loop:
+def non_blocking_input():
+    if not q.empty():
+        return q.get()
+    return None
 
 
 def quaternion_to_euler(qw, qx, qy, qz):
@@ -104,14 +123,22 @@ pidy = PIDController(1, 0.4, 0.1, 0)
 
 
 t = 0
-
+print("start")
 # Main lop to continuously read serial data and update rocket's orientation
 while True:
 
-    line = "e e e"
+    inp = non_blocking_input()
+
+    if inp:
+        ser.write(inp.encode("utf-8"))
+
     # Read roll, pitch, and yaw values from serial port
     try:
-        # line = ser.readline().decode("utf-8").strip()
+        if ser.in_waiting > 0:
+            line = ser.readline().decode("utf-8").strip()
+            print(line)
+        else:
+            line = None
         pass
     except serial.SerialException:
         line = None
@@ -122,28 +149,24 @@ while True:
         )  # Replace '/dev/ttyUSB0' with your serial port
         continue
 
-    if line and len(line.split(" ")) == 3:
+    if line and match(
+        r"\s*([-+]?[0-9]*\.?[0-9]+)\s+([-+]?[0-9]*\.?[0-9]+)\s+([-+]?[0-9]*\.?[0-9]+)\s*", 
+        line
+    ):
 
         # Uncomment to convert quaternions on Python side
         # q0, q1, q2, q3 = map(double, line.split()[:4])
         # yaw, pitch, roll = quaternion_to_euler(q0, q1, q2, q3)
 
         # Uncomment to use Arduino-reported angles
-        # roll, pitch, yaw = map(float, line.split())
-
-        roll = (t * 20) % 360
-        pitch = 20
-        yaw = 0
+        yaw, pitch, roll = map(float, line.split())
 
         rocket.pos = vector(0, 0, 0)
 
-        tvcx = pidx.compute(yaw, 0.01)
-        tvcy = pidy.compute(pitch, 0.01)
-
         # pitch += 90
         yaw *= -pi / 180
-        pitch *= -pi / 180
-        roll *= -pi / 180
+        pitch *= pi / 180
+        roll *= pi / 180
 
         # print(
         #     round(roll * 180 / pi, 2),
@@ -160,29 +183,25 @@ while True:
         xrot = vrot
         yrot = cross(k, vrot)
 
-        print("r", tvcx, tvcy)
+        # print("r", tvcx, tvcy)
 
-        tvcx_a = cos(roll) * tvcx + sin(roll) * tvcy
-        tvcy_a = cos(roll) * tvcy - sin(roll) * tvcx
+        # tvcx_a = cos(roll) * tvcx + sin(roll) * tvcy
+        # tvcy_a = cos(roll) * tvcy - sin(roll) * tvcx
 
-        tvcx, tvcy = tvcx_a, tvcy_a
+        # tvcx, tvcy = tvcx_a, tvcy_a
 
-        print("a", roll * 180 / pi, tvcx, tvcy)
+        # print("a", roll * 180 / pi, tvcx, tvcy)
 
-        tvc.axis = -k
-        tvc.up = vrot
-        tvc.rotate(angle=tvcx * pi / 180, axis=xrot)
-        tvc.rotate(angle=tvcy * pi / 180, axis=yrot)
-    else:
-        print("Invalid line, skipping...")
+        # tvc.axis = -k
+        # tvc.up = vrot
+        # tvc.rotate(angle=tvcx * pi / 180, axis=xrot)
+        # tvc.rotate(angle=tvcy * pi / 180, axis=yrot)
+
+        frontArrow.axis = k
+        upArrow.axis = vrot
+        rocket.axis = k
+        rocket.up = vrot
+ 
+        rate(120)  # Update scene at 60 frames per second
 
     
-
-    rate(120)  # Update scene at 60 frames per second
-    t += 0.01
-
-    frontArrow.axis = k
-    upArrow.axis = vrot
-    rocket.axis = k
-    rocket.up = vrot
-

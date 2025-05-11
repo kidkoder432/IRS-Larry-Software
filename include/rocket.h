@@ -1,5 +1,6 @@
 #include <Arduino.h>
 
+#define USE_FLASH 0
 
 #if USE_RP2040
 #include <WiFiNINA.h>
@@ -191,7 +192,7 @@ public: // Public functions
         return true;
     }
 
-#if USE_RP2040
+#if USE_FLASH
     bool initFlash() {
         if (!fs->init()) {
             printMessage("Failed to initialize LittleFS!");
@@ -258,14 +259,24 @@ public: // Public functions
 
             for (int i = 0; i < 20; ++i) {
                 readSensors(readings, biases);
-                totalYaw += -atan2(readings.ax, sqrt(readings.az * readings.az + readings.ay * readings.ay));
+                totalYaw += atan2(readings.ax, sqrt(readings.az * readings.az + readings.ay * readings.ay));
                 totalPitch += -atan2(readings.az, readings.ay);
             }
 
-            yaw = -totalYaw / 20;
+            yaw = totalYaw / 20;
             pitch = totalPitch / 20;
-            dir = Vec3D(0, pitch * 180 / PI, yaw * 180 / PI);
-            attitude = Quaternion::from_euler_rotation(yaw, pitch, 0);
+            dir = Vec3D(pitch * 180 / PI, 0, yaw * 180 / PI);
+
+
+            // --- Initialize the attitude quaternion ---
+            // We use the calculated average User Pitch, User Roll, and User Yaw (all in RADIANS).
+            // It's understood that your `Quaternion::from_euler_rotation(arg1, arg2, arg3)` function
+            // expects its arguments to directly correspond to rotations around the body's own X, Y, and Z axes,
+            // respectively, based on your rocket's coordinate system.
+            //   arg1 (function's "roll" param)  -> Rotation around Body X-axis -> Our avgUserPitchRad
+            //   arg2 (function's "pitch" param) -> Rotation around Body Y-axis -> Our avgUserRollRad
+            //   arg3 (function's "yaw" param)   -> Rotation around Body Z-axis -> Our avgUserYawRad
+            attitude = Quaternion::from_euler_rotation(pitch, 0, yaw);
         }
         else {
             printMessage("Using default angles");
@@ -364,20 +375,22 @@ public: // Public functions
     void updateAngles() {
 
         if (useCompl) {
+            digitalWrite(LED_BUILTIN, HIGH);
             attitude = get_angles_compl_quat(config["COMP_FILTER_ALPHA_GYRO"], deltaTime, readings, attitude);
         }
         else {
+            digitalWrite(LED_BUILTIN, LOW);
             attitude = get_angles_quat(readings, attitude, deltaTime);
         }
 
-        dir = quaternion_to_euler(attitude);
+        dir = quaternion_to_user_euler(attitude);
 
         if (config["FLIP_DIR_X"] > 0) dir.x = -dir.x;
         if (config["FLIP_DIR_Y"] > 0) dir.y = -dir.y;
         if (config["FLIP_DIR_Z"] > 0) dir.z = -dir.z;
 
-        roll = dir.x;
-        pitch = dir.y;
+        pitch = dir.x;
+        roll = dir.y;
         yaw = dir.z;
 
 
@@ -396,7 +409,7 @@ public: // Public functions
         altitude = 0;
     #endif
         vertVel -= (readings.ay - 1) * 9.80665 * deltaTime;
-    }
+}
 
     // Play buzzer heartbeat tone
     void updateBuzzer() {
@@ -516,7 +529,7 @@ public: // Public functions
         return p;
     }
 
-#if USE_RP2040
+#if USE_FLASH
     bool saveFlashFile(FILE* flashFile, ExFile& dataFile) {
         uint8_t buffer[88];
         // char header[] = "Time,Dt,ax,ay,az,gx,gy,gz,roll,pitch,yaw,x_out,y_out,x_act,y_act,alt,state,vel,px,ix,dx,py,iy,dy\n";
@@ -603,18 +616,18 @@ public: // Public functions
             if (dataArr[i].isEmpty) {
                 continue;
             }
-        #if USE_RP2040
+        #if USE_FLASH
             logDataPointBin(dataArr[i], flashFile);
         #else
             logDataPointBin(dataArr[i], dataFile);
         #endif
         }
-    #if USE_RP2040
+    #if USE_FLASH
         fflush(flashFile);
     #else
         dataFile.sync();
     #endif
-    }
+            }
 
 
     void logDataBatchOneShot(const DataPoint dataArr[], int bufferSize) {
@@ -627,17 +640,17 @@ public: // Public functions
             pBin.p = dataArr[i];
             memcpy(&bytes[i * (sizeof(DataPoint) - 4)], pBin.dataBytes, sizeof(DataPoint) - 4);
         }
-    #if USE_RP2040
+    #if USE_FLASH
         printFilesystemInfo();
 
         if (getFreeSpace() < 30 * 1024) {
             printMessage("Out of space on flash");
             saveFlashFile(flashFile, dataFile);
-    }
+        }
     #endif
 
 
-    #if USE_RP2040
+    #if USE_FLASH
         logDataRaw(bytes, (bufferCount + 1) * (sizeof(DataPoint) - 4), flashFile);
     #else
         logDataRaw(bytes, (bufferCount) * (sizeof(DataPoint) - 4), dataFile);
@@ -646,12 +659,12 @@ public: // Public functions
 
     // Log a single data point
     void logPoint(DataPoint p) {
-    #if USE_RP2040
+    #if USE_FLASH
         logDataPointBin(p, flashFile);
     #else
         logDataPointBin(p, dataFile);
     #endif
-    }
+        }
 
     // Update loop timing
     void updateTime(bool inc = true) {
@@ -689,7 +702,7 @@ public: // Public functions
                 logPoint(getDataPoint());
             }
 
-        #if USE_RP2040
+        #if USE_FLASH
             if (fflush(flashFile)) {
                 printMessage("Error syncing flash file");
             }
@@ -706,7 +719,7 @@ public: // Public functions
             cleanupSD();
             printMessage("Logs saved successfully");
 
-        }
+    }
     }
 
     void toggleDataLog() {
@@ -801,7 +814,7 @@ public: // Public functions
 
     bool cleanupLogs() {
         logMessage("Cleaning up logs...");
-    #if USE_RP2040 
+    #if USE_FLASH 
         printMessage("Closing flash file...");
         if (fclose(flashFile)) {
             printMessage("Error closing flash file");
