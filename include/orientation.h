@@ -294,7 +294,6 @@ Vec3D quaternion_to_euler(Quaternion attitude) { ... } // OLD
 */
 
 // GYRO-BASED QUATERNION UPDATE
-// (Formerly get_angles_quat)
 // This function updates 'attitude' (the current orientation) by the rotation measured by the gyroscope.
 Quaternion get_angles_quat(SensorReadings readings, Quaternion& current_attitude, float deltaTime) {
     // User's Gyro Definitions:
@@ -310,9 +309,11 @@ Quaternion get_angles_quat(SensorReadings readings, Quaternion& current_attitude
     float yaw_rate_rad_s = readings.gz * (PI / 180.0f); // User's Yaw Rate
 
     // Calculate rotation vector components for this time step
+    // Use NED coordinate system for rotations
+    // Arduino uses ENU coordinate system
     float rot_vec_x = pitch_rate_rad_s * deltaTime; // Rotation around body X
     float rot_vec_y = roll_rate_rad_s * deltaTime; // Rotation around body Y
-    float rot_vec_z = yaw_rate_rad_s * deltaTime; // Rotation around body Z
+    float rot_vec_z = -yaw_rate_rad_s * deltaTime; // Rotation around body Z
 
     float angle_magnitude = sqrtf(rot_vec_x * rot_vec_x + rot_vec_y * rot_vec_y + rot_vec_z * rot_vec_z);
 
@@ -393,7 +394,7 @@ Quaternion get_angles_compl_quat(
         accel_user_pitch_rad = -atan2(r.az, sqrt(r.ax * r.ax + r.ay * r.ay));
 
         // Calculate user's yaw from accelerometer (rotation around body Z-axis)
-        accel_user_yaw_rad = atan2(r.ax, sqrt(r.az * r.az + r.ay * r.ay));
+        accel_user_yaw_rad = -atan2(r.ax, sqrt(r.az * r.az + r.ay * r.ay));
     }
 
     // 3. Extract User's Roll from the gyro-predicted quaternion

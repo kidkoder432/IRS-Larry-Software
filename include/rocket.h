@@ -259,8 +259,8 @@ public: // Public functions
 
             for (int i = 0; i < 20; ++i) {
                 readSensors(readings, biases);
-                totalYaw += atan2(readings.ax, sqrt(readings.az * readings.az + readings.ay * readings.ay));
-                totalPitch += -atan2(readings.az, readings.ay);
+                totalYaw -= atan2(readings.ax, sqrt(readings.az * readings.az + readings.ay * readings.ay));
+                totalPitch -= atan2(readings.az, readings.ay);
             }
 
             yaw = totalYaw / 20;
