@@ -60,7 +60,7 @@ rocket = compound([tube, nose])
 # rocket = compound([bBoard, bn, nano])
 
 # Initialize serial port
-ser = serial.Serial("COM5", 115200)  # Replace '/dev/ttyUSB0' with your serial port
+ser = serial.Serial("COM9", 115200)  # Replace '/dev/ttyUSB0' with your serial port
 
 roll, pitch, yaw = 0, 0, 0
 import threading

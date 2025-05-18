@@ -39,7 +39,7 @@ void loop() {
             showColor(color);
             Serial.print(millis());
             Serial.print(" ");
-            Serial.println(colorNames[i - 1]);
+            Serial.println(colorNames[i]);
             delay(1);
         }
         i++;

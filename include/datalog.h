@@ -46,7 +46,7 @@ union DataPointBin {
 
 bool logStatus(const char* msg, ExFile& logFile) {
     if (!logFile.isOpen()) {
-        Serial.println("Couldn't open log file");
+        // Serial.println("Couldn't open log file");
         return false;
     }
     long long t = micros();
@@ -79,7 +79,7 @@ bool logStatus(const char* msg, ExFile& logFile) {
 bool logDataPointBin(DataPoint p, ExFile& dataFile) {
 
     if (!dataFile.isOpen()) {
-        Serial.println("Couldn't open data file");
+        // Serial.println("Couldn't open data file");
         return false;
     }
 

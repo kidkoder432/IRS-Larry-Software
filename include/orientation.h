@@ -264,7 +264,7 @@ float get_user_yaw_from_quaternion(Quaternion q) { // User's Yaw: Rotation aroun
     float sin_user_yaw_cosp_user_roll = 2.0f * (q.a * q.d + q.b * q.c);
     float cos_user_yaw_cosp_user_roll = 1.0f - 2.0f * (q.c * q.c + q.d * q.d);
     float user_yaw = atan2f(sin_user_yaw_cosp_user_roll, cos_user_yaw_cosp_user_roll);
-    return user_yaw; // Radians
+    return -user_yaw; // Radians
 }
 
 Vec3D quaternion_to_user_euler(Quaternion attitude) {
@@ -301,33 +301,23 @@ Quaternion get_angles_quat(SensorReadings readings, Quaternion& current_attitude
     // readings.gy: angular rate around body Y-axis (User's Roll Rate)
     // readings.gz: angular rate around body Z-axis (User's Yaw Rate)
 
-    // IMPORTANT: Confirm units of readings.g{x,y,z}.
-    // If ALREADY in radians/second, REMOVE the *(PI/180) conversion.
-    // If in degrees/second, the conversion is correct.
     float pitch_rate_rad_s = readings.gx * (PI / 180.0f); // User's Pitch Rate
     float roll_rate_rad_s = readings.gy * (PI / 180.0f); // User's Roll Rate
     float yaw_rate_rad_s = readings.gz * (PI / 180.0f); // User's Yaw Rate
 
-    // Calculate rotation vector components for this time step
-    // Use NED coordinate system for rotations
-    // Arduino uses ENU coordinate system
-    float rot_vec_x = pitch_rate_rad_s * deltaTime; // Rotation around body X
-    float rot_vec_y = roll_rate_rad_s * deltaTime; // Rotation around body Y
-    float rot_vec_z = -yaw_rate_rad_s * deltaTime; // Rotation around body Z
-
-    float angle_magnitude = sqrtf(rot_vec_x * rot_vec_x + rot_vec_y * rot_vec_y + rot_vec_z * rot_vec_z);
+    float angle_magnitude = sqrt(pitch_rate_rad_s * pitch_rate_rad_s + roll_rate_rad_s * roll_rate_rad_s + yaw_rate_rad_s * yaw_rate_rad_s);
 
     Quaternion delta_q_gyro; // Will be identity if no rotation
 
     if (angle_magnitude > 1e-9f) { // Check for non-zero rotation
-        float half_angle = angle_magnitude / 2.0f;
+        float half_angle = angle_magnitude * deltaTime / 2.0f;
         float sin_half_angle = sinf(half_angle);
         float cos_half_angle = cosf(half_angle);
 
         // Normalized axis of rotation (these are already body axes)
-        float axis_x_norm = rot_vec_x / angle_magnitude;
-        float axis_y_norm = rot_vec_y / angle_magnitude;
-        float axis_z_norm = rot_vec_z / angle_magnitude;
+        float axis_x_norm = pitch_rate_rad_s / angle_magnitude;
+        float axis_y_norm = roll_rate_rad_s / angle_magnitude;
+        float axis_z_norm = yaw_rate_rad_s / angle_magnitude;
 
         delta_q_gyro.a = cos_half_angle;       // w
         delta_q_gyro.b = axis_x_norm * sin_half_angle; // x_body component
@@ -394,7 +384,7 @@ Quaternion get_angles_compl_quat(
         accel_user_pitch_rad = -atan2(r.az, sqrt(r.ax * r.ax + r.ay * r.ay));
 
         // Calculate user's yaw from accelerometer (rotation around body Z-axis)
-        accel_user_yaw_rad = -atan2(r.ax, sqrt(r.az * r.az + r.ay * r.ay));
+        accel_user_yaw_rad = atan2(r.ax, sqrt(r.az * r.az + r.ay * r.ay));
     }
 
     // 3. Extract User's Roll from the gyro-predicted quaternion

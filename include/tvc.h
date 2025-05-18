@@ -3,7 +3,7 @@
 #include <config.h>
 
 #define ACTUAL_PID 1
-#define PRINT_OUTPUT 1
+#define PRINT_OUTPUT 0
 
 float clamp(float x, float min, float max) { return (x < min) ? min : (x > max) ? max : x; }
 
