@@ -11,6 +11,8 @@
 
 double sign(double x) { return (x > 0) - (x < 0); }
 
+float GIMBAL_LOCK_THRESHOLD = 0.99999f;
+
 // ========= Vectors ========= //
 
 // For TVC:
@@ -238,47 +240,43 @@ Vec2D get_angles_complementary(float A, float dt, SensorReadings r, float yaw, f
 // vector_z_body corresponds to user's yaw axis (body Z)
 // These functions return angles in RADIANS.
 
-float get_user_pitch_from_quaternion(Quaternion q) { // User's Pitch: Rotation around Body X-axis
-    // This is equivalent to standard roll from a ZYX Tait-Bryan sequence
-    // where q.b is the x-component of the quaternion vector part.
-    float sin_user_pitch_cosp_user_roll = 2.0f * (q.a * q.b + q.c * q.d);
-    float cos_user_pitch_cosp_user_roll = 1.0f - 2.0f * (q.b * q.b + q.c * q.c);
-    float user_pitch = atan2f(sin_user_pitch_cosp_user_roll, cos_user_pitch_cosp_user_roll);
-    return user_pitch; // Radians
+// USER ROLL: rotation around +Y
+float get_user_roll_from_quaternion(Quaternion q) {
+    float w = q.a, x = q.b, y = q.c, z = q.d;
+    float sin_roll = 2.0f * (w * y + x * z);
+    float cos_roll = 1.0f - 2.0f * (x * x + y * y);
+    return atan2f(sin_roll, cos_roll);
 }
 
-float get_user_roll_from_quaternion(Quaternion q) { // User's Roll: Rotation around Body Y-axis
-    // This is equivalent to standard pitch from a ZYX Tait-Bryan sequence
-    // where q.c is the y-component of the quaternion vector part.
-    float sin_user_roll = 2.0f * (q.a * q.c - q.b * q.d);
-    // Clamp sin_user_roll to [-1, 1] to avoid domain errors with asinf
-    if (sin_user_roll > 1.0f) sin_user_roll = 1.0f;
-    if (sin_user_roll < -1.0f) sin_user_roll = -1.0f;
-
-    return asinf(sin_user_roll); // Radians
+// USER PITCH: rotation around +X
+float get_user_pitch_from_quaternion(Quaternion q) {
+    float w = q.a, x = q.b, y = q.c, z = q.d;
+    float sin_pitch = 2.0f * (w * x - y * z);
+    if (sin_pitch >= 1.0f) sin_pitch = 1.0f;
+    if (sin_pitch <= -1.0f) sin_pitch = -1.0f;
+    return asinf(sin_pitch);
 }
 
-float get_user_yaw_from_quaternion(Quaternion q) { // User's Yaw: Rotation around Body Z-axis
-    // This is equivalent to standard yaw from a ZYX Tait-Bryan sequence
-    // where q.d is the z-component of the quaternion vector part.
-    float sin_user_yaw_cosp_user_roll = 2.0f * (q.a * q.d + q.b * q.c);
-    float cos_user_yaw_cosp_user_roll = 1.0f - 2.0f * (q.c * q.c + q.d * q.d);
-    float user_yaw = atan2f(sin_user_yaw_cosp_user_roll, cos_user_yaw_cosp_user_roll);
-    return -user_yaw; // Radians
+// USER YAW: rotation around +Z
+float get_user_yaw_from_quaternion(Quaternion q) {
+    float w = q.a, x = q.b, y = q.c, z = q.d;
+    float sin_yaw = 2.0f * (w * z + x * y);
+    float cos_yaw = 1.0f - 2.0f * (x * x + z * z);
+    return -atan2f(sin_yaw, cos_yaw);
 }
 
-Vec3D quaternion_to_user_euler(Quaternion attitude) {
-    // Returns user-defined pitch, roll, yaw in the Vec3D
-    // Assuming Vec3D x=user_pitch, y=user_roll, z=user_yaw based on your gyro comments
-    // The original Vec3D comment said: x=roll, y=pitch, z=yaw. Clarify which Vec3D field is which user angle.
-    // For now, I'll assume Vec3D.x = User Pitch, Vec3D.y = User Roll, Vec3D.z = User Yaw to match gyro inputs.
-    float user_pitch_rad = get_user_pitch_from_quaternion(attitude);
-    float user_roll_rad = get_user_roll_from_quaternion(attitude);
-    float user_yaw_rad = get_user_yaw_from_quaternion(attitude);
-    // Convert to degrees if Vec3D is expected to store degrees
-    return Vec3D(user_pitch_rad * 180.0f / PI,
-        user_roll_rad * 180.0f / PI,
-        user_yaw_rad * 180.0f / PI);
+/**
+ * @brief Converts a quaternion to User Euler angles (Pitch, Roll, Yaw).
+ * Returns a Vec3D with angles in degrees:
+ *   x = User Pitch (body X-axis),
+ *   y = User Roll  (body Y-axis),
+ *   z = User Yaw   (body Z-axis).
+ */
+Vec3D quaternion_to_user_euler(Quaternion q) {
+    float pitch_deg = get_user_pitch_from_quaternion(q) * 180.0f / PI;
+    float roll_deg = get_user_roll_from_quaternion(q) * 180.0f / PI;
+    float yaw_deg = get_user_yaw_from_quaternion(q) * 180.0f / PI;
+    return Vec3D(pitch_deg, roll_deg, yaw_deg);
 }
 
 
