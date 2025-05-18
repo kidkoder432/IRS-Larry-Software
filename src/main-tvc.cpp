@@ -9,7 +9,9 @@ Rocket rocket;
 char receivedChar;
 bool newCommand = false;
 
+#if USE_BLE 
 HardwareBLESerial& bleSerial = rocket.getBle();
+#endif
 
 void recvOneChar() {
     if (Serial.available() > 0) {
@@ -18,12 +20,14 @@ void recvOneChar() {
         // rocket.printMessage(receivedChar);
         newCommand = true;
     }
+#if USE_BLE
     if (bleSerial.available() > 0) {
         receivedChar = bleSerial.read();
         receivedChar = toupper(receivedChar);
         // rocket.printMessage(receivedChar);
         newCommand = true;
     }
+#endif
     if (receivedChar == '\n' || receivedChar == '\r') {
         newCommand = false;
     }
@@ -43,6 +47,7 @@ int launchTimer = SEC_TO_LAUNCH;
 unsigned long stage1BurnoutTime = 0;
 
 int onGroundSteps = 0;
+unsigned long lastStepMs = 0;
 
 bool dirOutLock = true;
 
@@ -76,11 +81,11 @@ void setup() {
     rocket.printMessage("LEDs initialized!");
 
     // Setup SD card, config and data logging
-    rocket.initSD();
-    rocket.printMessage("SD card initialized!");
-    rocket.getSdInfo();
-    rocket.initLogs();
-    rocket.printMessage("Data logging initialized!");
+    // rocket.initSD();
+    // rocket.printMessage("SD card initialized!");
+    // rocket.getSdInfo();
+    // rocket.initLogs();
+    // rocket.printMessage("Data logging initialized!");
 
     rocket.initConfig();
     rocket.printMessage("Config initialized!");
@@ -112,7 +117,7 @@ void setup() {
         if (millis() % 1000 < 40) {
             rocket.printMessage("BLE not connected, waiting...");
             waits++;
-            delay(50);
+            delay(41);
             showColor(COLOR_OFF);
 
         }
@@ -219,6 +224,13 @@ void loop() {
                         rocket.printMessage(HELP_STR);
                         break;
 
+                    case 'P':
+                        rocket.printMessage("Time per loop: ", false);
+                        rocket.printMessage(rocket.deltaTime);
+
+                        rocket.printMessage("Loop rate: ", false);
+                        rocket.printMessage(1 / rocket.deltaTime);
+                        break;
                     default:
                         rocket.printMessage("Invalid command!");
                         break;
@@ -243,7 +255,7 @@ void loop() {
                 break;
             }
 
-            if (launchTimer < SEC_TO_LAUNCH) {
+            if (launchTimer > 0) {
 
                 if (launchTimer > 12) {
                     flash(COLOR_YELLOW, 500);
@@ -255,7 +267,7 @@ void loop() {
                     beepTone(400, 250);
                 }
                 else {
-                    flash(COLOR_RED, 500);
+                    flash(COLOR_RED, 250);
                     playToneForever(400);
                 }
                 recvOneChar();
@@ -270,7 +282,7 @@ void loop() {
 
                 if (millis() % 1000 < 40) {
                     rocket.printMessage("Launching in T - ", false);
-                    rocket.printMessage((int64_t) launchTimer, false);
+                    rocket.printMessage((int64_t)launchTimer, false);
                     rocket.printMessage(" seconds! Press any key + ENTER to abort the launch.");
 
                     launchTimer--;
@@ -307,7 +319,7 @@ void loop() {
             rocket.firePyro2();  // Launch parachute
             rocket.abort();
 
-        
+
     }
 
     int currentState = rocket.getCurrentState();
@@ -333,19 +345,20 @@ void loop() {
 
     // ABORT
     Vec3D dir = rocket.getDir();
-    if (abs(dir.x) >= 45 || abs(dir.y) >= 45) {
+    if ((abs(dir.x) >= 45 || abs(dir.z) >= 45) && launchState != IDLE) {
         launchState = ABORT;
     }
 
     // TOUCHDOWN: State 2 -> 4
     if (currentState == 2 && isBetween(mag3(readings.ax, readings.ay, readings.az), 0.9, 1.1)) {
-        if (millis() % 50 < 5) {
+        if (millis() - lastStepMs > 100) {
             onGroundSteps++;
             rocket.printMessage("On ground for ", false);
-            rocket.printMessage((int64_t) onGroundSteps, false);
+            rocket.printMessage((int64_t)onGroundSteps, false);
             rocket.printMessage(" /20 steps (", false);
-            rocket.printMessage((float) onGroundSteps / 50.0f, false);
+            rocket.printMessage((float)onGroundSteps * 0.1f, false);
             rocket.printMessage(") sec.");
+            lastStepMs = millis();
         }
     }
 
@@ -357,12 +370,12 @@ void loop() {
     }
 
     // STAGE 1 BURNOUT: State 1 -> 2
-    if (currentState == 1 && isBetween(mag3(readings.ax, readings.ay, readings.az), 0, 1.2)) {
+    if (currentState == 1 && isBetween(mag3(readings.ax, readings.ay, readings.az), 0, 0.9)) {
         rocket.logMessage("Stage 1 burnout");
         rocket.logMessage("Coasting");
         rocket.logMessage("Deploying parachute");
         rocket.fireChutes();
-        currentState = 2;
+        rocket.setState(2);
     }
 
     // constrain to 100hz

@@ -769,6 +769,9 @@ public: // Public functions
     }
 
     void logMessage(const char* message) {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "LOG: %s", message);
+        Serial.println(buf);
         logStatus(message, logFile);
     }
 
