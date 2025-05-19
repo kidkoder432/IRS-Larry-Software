@@ -366,7 +366,19 @@ void loop() {
         rocket.setState(4);
         rocket.parachute.cancel();
         rocket.logMessage("Touchdown confirmed. We are safe on Earth!");
-        rocket.finish();
+        rocket.printMessage("Disarming pyros...");
+        rocket.logMessage("Disarming pyros...");
+        rocket.pyro1_motor.disarm();
+        rocket.pyro2_land.disarm();
+
+        stopTone();
+
+        rocket.printMessage("Shutting down TVC...");
+        rocket.logMessage("Shutting down TVC...");
+        rocket.tvc.abort();
+
+        rocket.setLogSpeed(MEDIUM);
+        playLocatorSound();
     }
 
     // STAGE 1 BURNOUT: State 1 -> 2
