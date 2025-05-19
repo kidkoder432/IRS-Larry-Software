@@ -37,6 +37,7 @@ enum LaunchStates {
     IDLE,
     LAUNCHING,
     LAUNCHED,
+    TOUCHDOWN,
     ABORT
 };
 
@@ -313,6 +314,19 @@ void loop() {
             // no special operations here
             break;
 
+        case TOUCHDOWN:
+            showColor(COLOR_BLUE);
+            recvOneChar();
+            playLocatorSound();
+            if (millis() % 5000 < 40) {
+                rocket.printMessage("Press any key to shut down the rocket and all systems. ");
+                delay(41);
+            }
+            if (newCommand) {
+                rocket.finish();
+            }
+            break;
+
         case ABORT:
             rocket.printMessage("Flight or launch sequence aborted!");
             rocket.logMessage("Flight or launch sequence aborted!");
@@ -335,8 +349,6 @@ void loop() {
             rocket.tvc.lock();
             break;
         case 4:     // Touchdown
-            rocket.logMessage("Touchdown confirmed. We are safe on Earth!");
-            rocket.finish();
             break;
     }
 
@@ -345,7 +357,7 @@ void loop() {
 
     // ABORT
     Vec3D dir = rocket.getDir();
-    if ((abs(dir.x) >= 45 || abs(dir.z) >= 45) && launchState != IDLE) {
+    if ((abs(dir.x) >= 45 || abs(dir.z) >= 45) && launchState != IDLE && launchState != TOUCHDOWN) {
         launchState = ABORT;
     }
 
@@ -362,7 +374,7 @@ void loop() {
         }
     }
 
-    if (onGroundSteps >= 20) {
+    if (onGroundSteps >= 20 && currentState == 2) {
         rocket.setState(4);
         rocket.parachute.cancel();
         rocket.logMessage("Touchdown confirmed. We are safe on Earth!");
@@ -371,14 +383,14 @@ void loop() {
         rocket.pyro1_motor.disarm();
         rocket.pyro2_land.disarm();
 
-        stopTone();
+        rocket.bleOn = true;
+        launchState = TOUCHDOWN;
 
         rocket.printMessage("Shutting down TVC...");
         rocket.logMessage("Shutting down TVC...");
         rocket.tvc.abort();
 
         rocket.setLogSpeed(MEDIUM);
-        playLocatorSound();
     }
 
     // STAGE 1 BURNOUT: State 1 -> 2
