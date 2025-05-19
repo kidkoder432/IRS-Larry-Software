@@ -69,11 +69,11 @@ void setup() {
     rocket.initLeds();
     rocket.printMessage("LEDs initialized!");
 
-    // // Setup SD card, config and data logging
-    // rocket.initSD();
-    // rocket.printMessage("SD card initialized!");
-    // rocket.getSdInfo();
-    // rocket.initLogs();
+    // Setup SD card, config and data logging
+    rocket.initSD();
+    rocket.printMessage("SD card initialized!");
+    rocket.getSdInfo();
+    rocket.initLogs();
 #if USE_FLASH
     rocket.initFlash();
 #endif

@@ -82,11 +82,11 @@ void setup() {
     rocket.printMessage("LEDs initialized!");
 
     // Setup SD card, config and data logging
-    // rocket.initSD();
-    // rocket.printMessage("SD card initialized!");
-    // rocket.getSdInfo();
-    // rocket.initLogs();
-    // rocket.printMessage("Data logging initialized!");
+    rocket.initSD();
+    rocket.printMessage("SD card initialized!");
+    rocket.getSdInfo();
+    rocket.initLogs();
+    rocket.printMessage("Data logging initialized!");
 
     rocket.initConfig();
     rocket.printMessage("Config initialized!");
