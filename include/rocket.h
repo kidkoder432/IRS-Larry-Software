@@ -227,6 +227,7 @@ public: // Public functions
         config = readConfig();
         logStatus("Config read successfully", logFile);
         doBatchLog = config["DATA_LOG_BATCH"] > 0;
+        printConfig(config);
         return true;
     }
 

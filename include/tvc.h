@@ -23,13 +23,13 @@ public:
         D = config["Kd"];
         N = config["N"];
 
-        XMIN = config["XMIN"];
-        XMAX = config["XMAX"];
-        YMIN = config["YMIN"];
-        YMAX = config["YMAX"];
+        XMIN = config["XMIN"] ? config["XMIN"] : XMIN;
+        XMAX = config["XMAX"] ? config["XMAX"] : XMAX;
+        YMIN = config["YMIN"] ? config["YMIN"] : YMIN;
+        YMAX = config["YMAX"] ? config["YMAX"] : YMAX;
 
-        XDEF = config["XDEF"];
-        YDEF = config["YDEF"];
+        XDEF = config["XDEF"] ? config["XDEF"] : XDEF;
+        YDEF = config["YDEF"] ? config["YDEF"] : YDEF;
 
         pid_x.begin(P, I, D, XDEF, deltaTime, XMIN, XMAX);
         pid_y.begin(P, I, D, YDEF, deltaTime, YMIN, YMAX);
@@ -238,12 +238,12 @@ public:
 private:
     Servo tvcx, tvcy;
 
-    float XMIN = 83;  // TVC X Min
-    float XMAX = 105; // TVC X Max
+    float XMIN = 76;  // TVC X Min
+    float XMAX = 124; // TVC X Max
     float YMIN = 73;  // TVC Y Min
-    float YMAX = 95; // TVC Y Max
-    float XDEF = 94;  // TVC X Default (zero position)
-    float YDEF = 84;  // TVC Y Default (zero position)
+    float YMAX = 121; // TVC Y Max
+    float XDEF = 100;  // TVC X Default (zero position)
+    float YDEF = 97;  // TVC Y Default (zero position)
 
     // --------- TVC Control --------- //
 
