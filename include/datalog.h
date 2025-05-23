@@ -15,6 +15,8 @@
 
 #define DEBUG 0
 
+const char* DATA_HEADER = "Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Pitch,Roll,Yaw,TvcX,TvcY,State,Alt,Vel,Px,Ix,Dx,Py,Iy,Dy";
+
 // <l12fh2x8f
 struct DataPoint {
     int timestamp;          // Milliseconds

@@ -185,9 +185,8 @@ public: // Public functions
         }
     #endif
         dataFile.truncate(0);
-        dataFile.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Roll,Pitch,Yaw,TvcX,TvcY,State,Alt,Vel,Px,Ix,Dx,Py,Iy,Dy");
+        dataFile.println(DATA_HEADER);
         dataFile.sync();
-        // dataFile.close();
         setLogSpeed(SLOW);
         return true;
     }
@@ -410,7 +409,7 @@ public: // Public functions
         altitude = 0;
     #endif
         vertVel -= (readings.ay - 1) * 9.80665 * deltaTime;
-}
+    }
 
     // Play buzzer heartbeat tone
     void updateBuzzer() {
@@ -575,7 +574,7 @@ public: // Public functions
         dataFile.sync();
         return true;
 
-}
+    }
 #endif
 
     void updateDataLog() {
@@ -628,7 +627,7 @@ public: // Public functions
     #else
         dataFile.sync();
     #endif
-            }
+    }
 
 
     void logDataBatchOneShot(const DataPoint dataArr[], int bufferSize) {
@@ -665,7 +664,7 @@ public: // Public functions
     #else
         logDataPointBin(p, dataFile);
     #endif
-        }
+    }
 
     // Update loop timing
     void updateTime(bool inc = true) {
@@ -709,7 +708,7 @@ public: // Public functions
             }
             if (!saveFlashFile(flashFile, dataFile)) {
                 printMessage("Failed to save flash file to SD card");
-        }
+            }
         #endif
 
             if (!cleanupLogs()) {
@@ -720,7 +719,7 @@ public: // Public functions
             cleanupSD();
             printMessage("Logs saved successfully");
 
-    }
+        }
     }
 
     void toggleDataLog() {
@@ -823,7 +822,7 @@ public: // Public functions
         if (fclose(flashFile)) {
             printMessage("Error closing flash file");
             return false;
-    }
+        }
     #endif
 
         printMessage("Closing data file...");

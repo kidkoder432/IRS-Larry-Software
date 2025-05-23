@@ -394,7 +394,7 @@ void loop() {
     }
 
     // STAGE 1 BURNOUT: State 1 -> 2
-    if (currentState == 1 && isBetween(mag3(readings.ax, readings.ay, readings.az), 0, 0.9)) {
+    if (currentState == 1 && isBetween(mag3(readings.ax, readings.ay, readings.az), 0, 0.5)) {
         rocket.logMessage("Stage 1 burnout");
         rocket.logMessage("Coasting");
         rocket.logMessage("Deploying parachute");
