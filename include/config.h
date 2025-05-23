@@ -25,7 +25,8 @@ struct cstr_equal {
     }
 };
 
-typedef std::unordered_map<const char*, float, cstr_hash, cstr_equal> Config;
+// typedef std::unordered_map<const char*, float, cstr_hash, cstr_equal> Config;
+typedef std::unordered_map<std::string, float> Config;
 
 void toLowercase(char* str) {
     for (int i = 0; str[i] != '\0'; i++) {
@@ -127,7 +128,7 @@ Config readConfig() {
     // Read each setting from the file.
     while (cfg.readNextSetting()) {
 
-        const char* name = cfg.getName();
+        std::string name = std::string(cfg.getName());
         const char* value = cfg.getValue();
 
         if (strcmp(value, "true") == 0) {
@@ -138,7 +139,7 @@ Config readConfig() {
             config[name] = 0.0;
         }
         else {
-            Serial.println(name);
+            Serial.println(name.c_str());
             config[name] = atof(value);
         }
 
@@ -154,7 +155,7 @@ Config readConfig() {
 
 void printConfig(Config& config) {
     for (auto& entry : config) {
-        Serial.print(entry.first);
+        Serial.print(entry.first.c_str());
         Serial.print(": ");
         Serial.println(entry.second);
     }
