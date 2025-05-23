@@ -236,8 +236,8 @@ void loop() {
             case 'E':
                 experimentMode = !experimentMode;
                 if (experimentMode) {
-                    rocket.setState(76);
-                    rocket.setLogSpeed(FAST);
+                    rocket.setState(FS_TEST);
+                    rocket.setLogSpeed(DLS_FAST);
                     rocket.printMessage("Experiment Mode ON");
                     rocket.logMessage("Experiment Mode ON - Running Test");
                     rocket.calibrateAndLog();
@@ -258,7 +258,7 @@ void loop() {
                     rocket.setDataLog(true);
                 }
                 else {
-                    rocket.setState(127);
+                    rocket.setState(FS_ABORT);
                     rocket.printMessage("Experiment Mode ABORTED");
                     rocket.logMessage("Experiment Mode ABORTED");
                     rocket.printMessage("Locking TVC");
@@ -291,8 +291,8 @@ void loop() {
 
     if (((millis() - currentMs) > 7000) && (experimentMode == true)) {
         experimentMode = false;
-        rocket.setState(42);
-        rocket.setLogSpeed(SLOW);
+        rocket.setState(FS_IDLE);
+        rocket.setLogSpeed(DLS_SLOW);
         rocket.printMessage("Experiment Mode OFF - Test Complete");
         rocket.logMessage("Experiment Mode OFF - Test Complete");
         rocket.printMessage("Locking TVC");
@@ -326,8 +326,8 @@ void loop() {
     if (!dirOutLock) {
         Vec3D dir = rocket.getDir();
         float pitch = dir.x;
-        float yaw = dir.z;
         float roll = dir.y;
+        float yaw = dir.z;
         rocket.printMessage(yaw, false);
         rocket.printMessage(" ", false);
         rocket.printMessage(pitch, false);

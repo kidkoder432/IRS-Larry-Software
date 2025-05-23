@@ -34,9 +34,25 @@ float mag3(float x, float y, float z) { return sqrt(x * x + y * y + z * z); }
 float absx(float x) { return x < 0 ? -x : x; }
 
 enum DataLogSpeed {
-    SLOW,
-    MEDIUM,
-    FAST
+    DLS_SLOW,
+    DLS_MEDIUM,
+    DLS_FAST
+};
+
+
+enum FlightStates {
+    FS_SETUP,
+    FS_READY,
+    FS_LAUNCHING,
+    FS_ARMED,
+    FS_THRUST,
+    FS_COASTING,
+    FS_LANDING,
+    FS_TOUCHDOWN,
+    FS_ABORT,
+    FS_TEST,
+    FS_IDLE,
+    FS_SHUTDOWN
 };
 
 class Rocket {
@@ -69,7 +85,7 @@ private:  // Member variables and internal functions
     ExFile dataFile;
     ExFile logFile;
     Config config;
-    DataLogSpeed logSpeed = SLOW;
+    DataLogSpeed logSpeed = DLS_SLOW;
     int bufferCount = 0;
 
 #if USE_RP2040
@@ -77,7 +93,7 @@ private:  // Member variables and internal functions
     FILE* flashFile;
 #endif
 
-    int currentState = 0;
+    FlightStates currentState = FS_SETUP;
     unsigned long lastLoopTime;
 
 public: // Public functions
@@ -187,7 +203,7 @@ public: // Public functions
         dataFile.truncate(0);
         dataFile.println(DATA_HEADER);
         dataFile.sync();
-        setLogSpeed(SLOW);
+        setLogSpeed(DLS_SLOW);
         return true;
     }
 
@@ -209,13 +225,13 @@ public: // Public functions
     void setLogSpeed(DataLogSpeed _logSpeed) {
         logSpeed = _logSpeed;
         switch (logSpeed) {
-            case SLOW:
+            case DLS_SLOW:
                 printMessage("Setting log speed to LOW (10 Hz)");
                 break;
-            case MEDIUM:
+            case DLS_MEDIUM:
                 printMessage("Setting log speed to MEDIUM (33 Hz)");
                 break;
-            case FAST:
+            case DLS_FAST:
                 printMessage("Setting log speed to FAST (100 Hz)");
                 break;
         }
@@ -346,6 +362,7 @@ public: // Public functions
     bool finishSetup() {
         lastLoopTime = millis();
         logStatus("Setup complete", logFile);
+        setState(FS_READY);
         // playStartupSound();
         return true;
     }
@@ -418,34 +435,6 @@ public: // Public functions
         }
     }
 
-    // Update current state of the system
-    void updateState() {
-        // ABORT: State -> 127
-        if (absx(yaw) >= 35 || absx(pitch) >= 35) {
-            logMessage("ERR: ABORT - UNSTABLE");
-            currentState = 127;
-        }
-
-        // TOUCHDOWN: State 3 -> 5
-        if (currentState == 2 && mag3(readings.ax, readings.ay, readings.az) <= 1.5 && altitude <= 2) {
-            currentState = 4;
-            logMessage("Touchdown");
-        }
-
-        // STAGE 1 BURNOUT: State 1 -> 2
-        if (currentState == 1 && mag3(readings.ax, readings.ay, readings.az) <= 1.1) {
-            currentState = 2;
-            logMessage("Stage 1 burnout");
-            logMessage("Coasting");
-        }
-
-        // LAUNCH: State 0 -> 1
-        if (currentState == 0 && mag3(readings.ax, readings.ay, readings.az) >= 1.5) {
-            currentState = 1;
-            logMessage("Launch");
-        }
-    }
-
     // Update pyros
     void updatePyros() {
         pyro1_motor.update();
@@ -486,22 +475,22 @@ public: // Public functions
 
     void updateStateLeds() {
         switch (currentState) {
-            case 0:
+            case FS_READY:
                 flash(COLOR_BLUE, 1000);
                 break;
-            case 1:
+            case FS_THRUST:
                 showColor(COLOR_GREEN);
                 break;
-            case 2:
+            case FS_COASTING:
                 flash(COLOR_GREEN, 600);
                 break;
-            case 3:
+            case FS_LANDING:
                 showColor(COLOR_YELLOW);
                 break;
-            case 4:
+            case FS_TOUCHDOWN:
                 showColor(COLOR_BLUE);
                 break;
-            case 127:
+            case FS_ABORT:
                 showColor(COLOR_RED);
                 break;
         }
@@ -516,7 +505,7 @@ public: // Public functions
         p.x_out = x_out;
         p.y_out = y_out;
         p.alt = altitude; // getAltitude(config["PRESSURE_REF"], pressureOffset);
-        p.currentState = currentState;
+        p.currentState = static_cast<short>(currentState);
         p.vert_vel = vertVel;
         p.px = tvc.pid_x.p;
         p.ix = tvc.pid_x.i;
@@ -581,13 +570,13 @@ public: // Public functions
 
         if (!doLog) return;
 
-        if (logSpeed == SLOW) {
+        if (logSpeed == DLS_SLOW) {
             if (loopCount % 10 != 0) return;
         }
-        else if (logSpeed == MEDIUM) {
+        else if (logSpeed == DLS_MEDIUM) {
             if (loopCount % 3 != 0) return;
         }
-        else if (logSpeed == FAST) {
+        else if (logSpeed == DLS_FAST) {
             if (loopCount % 1 != 0) return;
         }
 
@@ -735,7 +724,7 @@ public: // Public functions
         setLeds(!ledsOn);
     }
 
-    void setState(int state) {
+    void setState(FlightStates state) {
         currentState = state;
     }
 
@@ -811,7 +800,7 @@ public: // Public functions
     Quaternion getAttitude() { return attitude; }
     const SensorReadings& getReadings() { return readings; }
     float getAlt() { return altitude; }
-    int getCurrentState() { return currentState; }
+    FlightStates getState() { return currentState; }
     float getConfigValue(const char* key) { return config[key]; }
 
 
@@ -891,15 +880,22 @@ public: // Public functions
     }
 
     void abort() {
-        setState(127);
         parachute.deploy();
-        fullCleanup();
-        HALT_AND_CATCH_FIRE();
+        printMessage("Disarming pyros...");
+        logMessage("Disarming pyros...");
+        pyro1_motor.disarm();
+        pyro2_land.disarm();
+
+        stopTone();
+
+        printMessage("Shutting down TVC...");
+        logMessage("Shutting down TVC...");
+        tvc.abort();
 
     }
 
     void finish() {
-        setState(42);
+        setState(FS_SHUTDOWN);
         fullCleanup();
         HALT_DONE();
     }

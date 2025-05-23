@@ -53,12 +53,12 @@ void readSensors(SensorReadings& r, GyroBiases biases) {
 
     rp_imu.getEvent(&accel, &gyro, nullptr);
 
-    r.ay = accel.acceleration.x;
     r.ax = -accel.acceleration.y;
+    r.ay = accel.acceleration.x;
     r.az = accel.acceleration.z;
 
-    r.gy = gyro.gyro.x * 180.0 / PI - biases.by;
     r.gx = -gyro.gyro.y * 180.0 / PI - biases.bx;
+    r.gy = gyro.gyro.x * 180.0 / PI - biases.by;
     r.gz = gyro.gyro.z * 180.0 / PI - biases.bz;
 
 }
@@ -79,8 +79,8 @@ GyroBiases calibrateSensors(Config& config) {
 
         rp_imu.getEvent(nullptr, &gyro, nullptr);
 
-        r.gy = gyro.gyro.x * 180.0 / PI;
         r.gx = -gyro.gyro.y * 180.0 / PI;
+        r.gy = gyro.gyro.x * 180.0 / PI;
         r.gz = gyro.gyro.z * 180.0 / PI;
 
         x_angle_c += dt * r.gx;

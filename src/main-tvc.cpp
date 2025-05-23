@@ -33,15 +33,6 @@ void recvOneChar() {
     }
 }
 
-enum LaunchStates {
-    IDLE,
-    LAUNCHING,
-    LAUNCHED,
-    TOUCHDOWN,
-    ABORT
-};
-
-LaunchStates launchState = IDLE;
 const int SEC_TO_LAUNCH = 21;
 int launchTimer = SEC_TO_LAUNCH;
 
@@ -82,11 +73,11 @@ void setup() {
     rocket.printMessage("LEDs initialized!");
 
     // Setup SD card, config and data logging
-    rocket.initSD();
-    rocket.printMessage("SD card initialized!");
-    rocket.getSdInfo();
-    rocket.initLogs();
-    rocket.printMessage("Data logging initialized!");
+    // rocket.initSD();
+    // rocket.printMessage("SD card initialized!");
+    // rocket.getSdInfo();
+    // rocket.initLogs();
+    // rocket.printMessage("Data logging initialized!");
 
     rocket.initConfig();
     rocket.printMessage("Config initialized!");
@@ -164,8 +155,9 @@ void loop() {
     if (rocket.bleOn) rocket.updateBle();
 #endif
 
-    switch (launchState) {
-        case IDLE:
+    switch (rocket.getState()) {
+
+        case FS_READY:
             showColor(COLOR_GREEN);
             recvOneChar();
             if (newCommand) {
@@ -183,13 +175,14 @@ void loop() {
                         rocket.printMessage("Calibrating Sensors");
                         rocket.calibrateAndLog();
 
-                        rocket.setLogSpeed(MEDIUM);
-                        rocket.setState(76);
-                        launchState = LAUNCHING;
+                        rocket.setLogSpeed(DLS_MEDIUM);
+                        rocket.setState(FS_LAUNCHING);
                         break;
                     case 'A':
-                        rocket.printMessage("Launch aborted!");
-                        launchState = ABORT;
+                        rocket.printMessage("Flight or launch sequence aborted!");
+                        rocket.logMessage("Flight or launch sequence aborted!");
+                        rocket.abort();
+                        rocket.setState(FS_ABORT);
                         break;
                     case 'C':
                         rocket.calibrateAndLog();
@@ -240,19 +233,24 @@ void loop() {
 
             if (!dirOutLock) {
                 Vec3D dir = rocket.getDir();
-                rocket.printMessage(dir.x, false);
-                rocket.printMessage(", ", false);
-                rocket.printMessage(dir.y, false);
-                rocket.printMessage(", ", false);
-                rocket.printMessage(dir.z);
+                float pitch = dir.x;
+                float roll = dir.y;
+                float yaw = dir.z;
+                rocket.printMessage(yaw, false);
+                rocket.printMessage(" ", false);
+                rocket.printMessage(pitch, false);
+                rocket.printMessage(" ", false);
+                rocket.printMessage(roll);
             }
             break;
-        case LAUNCHING:
+        case FS_LAUNCHING:
             recvOneChar();
             if (newCommand) {
 
-                // Abort with any key
-                launchState = ABORT;
+                rocket.setState(FS_ABORT);
+                rocket.printMessage("Flight or launch sequence aborted!");
+                rocket.logMessage("Flight or launch sequence aborted!");
+                rocket.abort();
                 break;
             }
 
@@ -271,15 +269,6 @@ void loop() {
                     flash(COLOR_RED, 250);
                     playToneForever(400);
                 }
-                recvOneChar();
-                if (newCommand) {
-                    rocket.printMessage("Launch aborted!");
-                    rocket.logMessage("Launch aborted!");
-                    newCommand = false;
-
-                    rocket.finish();
-
-                }
 
                 if (millis() % 1000 < 40) {
                     rocket.printMessage("Launching in T - ", false);
@@ -295,74 +284,68 @@ void loop() {
                 rocket.printMessage("Launch sequence complete!");
                 rocket.logMessage("Launch sequence complete!");
 
-                rocket.printMessage("BLE will be DISABLED for the launch!");
-
-                rocket.setLogSpeed(FAST);
-                rocket.firePyro1();
+                rocket.setLogSpeed(DLS_FAST);
                 rocket.initAngles();
-
                 rocket.disableCompl();
-                rocket.bleOn = false;
-
-                launchState = LAUNCHED;
-                rocket.setState(1);
+                rocket.firePyro1();
+                rocket.setState(FS_ARMED);
             }
 
             break;
 
-        case LAUNCHED:
+        case FS_THRUST:
+            // no special operations here
+            break;
+        case FS_COASTING:
             // no special operations here
             break;
 
-        case TOUCHDOWN:
-            showColor(COLOR_BLUE);
+        case FS_TOUCHDOWN:
             recvOneChar();
             playLocatorSound();
-            if (millis() % 5000 < 40) {
+            if (millis() % 2000 < 40) {
                 rocket.printMessage("Press any key to shut down the rocket and all systems. ");
                 delay(41);
             }
             if (newCommand) {
-                rocket.finish();
+                rocket.setState(FS_SHUTDOWN);
             }
             break;
 
-        case ABORT:
-            rocket.printMessage("Flight or launch sequence aborted!");
-            rocket.logMessage("Flight or launch sequence aborted!");
-            rocket.firePyro2();  // Launch parachute
-            rocket.abort();
+        case FS_ABORT:
+            playAbortSound();
+            if (millis() % 2000 < 40) {
+                rocket.printMessage("Press any key to shut down the rocket and all systems. ");
+                delay(41);
+            }
 
-
-    }
-
-    int currentState = rocket.getCurrentState();
-
-    switch (currentState) {
-        case 0:     // Pad-Idle
-            rocket.tvc.lock();
+            recvOneChar();
+            if (newCommand) {
+                rocket.setState(FS_SHUTDOWN);
+            }
             break;
-        case 1:     // Powered Ascent
-            rocket.tvc.unlock();
-            break;
-        case 2:     // Coast
-            rocket.tvc.lock();
-            break;
-        case 4:     // Touchdown
+
+        case FS_SHUTDOWN:
+            rocket.finish();
             break;
     }
+
+    int flightState = rocket.getState();
 
     SensorReadings readings = rocket.getReadings();
     // --- State Transitions --- //
 
     // ABORT
     Vec3D dir = rocket.getDir();
-    if ((abs(dir.x) >= 45 || abs(dir.z) >= 45) && launchState != IDLE && launchState != TOUCHDOWN) {
-        launchState = ABORT;
+    if ((abs(dir.x) >= 45 || abs(dir.z) >= 45) && flightState != FS_READY && flightState != FS_ABORT) {
+        rocket.setState(FS_ABORT);
+        rocket.printMessage("Flight or launch sequence aborted!");
+        rocket.logMessage("Flight or launch sequence aborted!");
+        rocket.abort();
     }
 
-    // TOUCHDOWN: State 2 -> 4
-    if (currentState == 2 && isBetween(mag3(readings.ax, readings.ay, readings.az), 0.9, 1.1)) {
+    // TOUCHDOWN: State COASTING -> TOUCHDOWN
+    if (flightState == FS_COASTING && isBetween(mag3(readings.ax, readings.ay, readings.az), 0.9, 1.1)) {
         if (millis() - lastStepMs > 100) {
             onGroundSteps++;
             rocket.printMessage("On ground for ", false);
@@ -374,8 +357,8 @@ void loop() {
         }
     }
 
-    if (onGroundSteps >= 20 && currentState == 2) {
-        rocket.setState(4);
+    if (onGroundSteps >= 20 && flightState == FS_COASTING) {
+        rocket.setState(FS_TOUCHDOWN);
         rocket.parachute.cancel();
         rocket.logMessage("Touchdown confirmed. We are safe on Earth!");
         rocket.printMessage("Disarming pyros...");
@@ -383,23 +366,26 @@ void loop() {
         rocket.pyro1_motor.disarm();
         rocket.pyro2_land.disarm();
 
-        rocket.bleOn = true;
-        launchState = TOUCHDOWN;
-
         rocket.printMessage("Shutting down TVC...");
         rocket.logMessage("Shutting down TVC...");
         rocket.tvc.abort();
 
-        rocket.setLogSpeed(MEDIUM);
+        rocket.setLogSpeed(DLS_MEDIUM);
     }
 
-    // STAGE 1 BURNOUT: State 1 -> 2
-    if (currentState == 1 && isBetween(mag3(readings.ax, readings.ay, readings.az), 0, 0.5)) {
+    // STAGE 1 BURNOUT: State THRUST -> COASTING
+    if (flightState == FS_THRUST && isBetween(mag3(readings.ax, readings.ay, readings.az), 0, 0.5)) {
         rocket.logMessage("Stage 1 burnout");
         rocket.logMessage("Coasting");
-        rocket.logMessage("Deploying parachute");
+        rocket.logMessage("Deploying parachute on timer");
         rocket.fireChutes();
-        rocket.setState(2);
+        rocket.setState(FS_COASTING);
+    }
+
+    // LIFTOFF: State ARMED -> THRUST
+    if (flightState == FS_ARMED && isBetween(mag3(readings.ax, readings.ay, readings.az), 1.2, 5)) {
+        rocket.logMessage("Liftoff");
+        rocket.setState(FS_THRUST);
     }
 
     // constrain to 100hz
