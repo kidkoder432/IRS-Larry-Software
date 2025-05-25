@@ -758,13 +758,19 @@ public: // Public functions
     }
 
     void logMessage(const char* message) {
-        char buf[256];
-        snprintf(buf, sizeof(buf), "LOG: %s", message);
-        Serial.println(buf);
         logStatus(message, logFile);
     }
 
-    template<typename T>
+    void printMessage(const char* message) {
+        #if USE_BLE 
+            msgPrintln(bleOn, bleSerial, message);
+        #else
+            Serial.println(message);
+        #endif
+        logStatus(message, logFile);
+    }
+
+    template <typename T>
     void printMessage(T message) {
     #if USE_BLE 
         msgPrintln(bleOn, bleSerial, message);
@@ -773,7 +779,7 @@ public: // Public functions
     #endif
     }
 
-    template<typename T>
+    template <typename T>
     void printMessage(T message, bool ln) {
         if (ln) {
         #if USE_BLE

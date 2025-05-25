@@ -271,10 +271,9 @@ void loop() {
                 }
 
                 if (millis() % 1000 < 40) {
-                    rocket.printMessage("Launching in T -", false);
-                    rocket.printMessage(launchTimer, false);
-                    rocket.printMessage("seconds! Press any key + ENTER to abort the launch.");
-
+                    char buf[128];
+                    snprintf(buf, sizeof(buf), "Launching in T - %02d seconds! Press any key + Enter to abort. ", launchTimer);
+                    rocket.printMessage(buf);
                     launchTimer--;
                     delay(41);
 
@@ -288,6 +287,10 @@ void loop() {
                 rocket.initAngles();
                 rocket.disableCompl();
                 rocket.firePyro1();
+                rocket.printMessage("Ignition!");
+                rocket.tvc.unlock();
+                rocket.printMessage("TVC unlocked!");
+                rocket.printMessage("Rocket armed!");
                 rocket.setState(FS_ARMED);
             }
 
@@ -348,11 +351,9 @@ void loop() {
     if (flightState == FS_COASTING && isBetween(mag3(readings.ax, readings.ay, readings.az), 0.9, 1.1)) {
         if (millis() - lastStepMs > 100) {
             onGroundSteps++;
-            rocket.printMessage("On ground for ", false);
-            rocket.printMessage(onGroundSteps, false);
-            rocket.printMessage(" /20 steps (", false);
-            rocket.printMessage((float)onGroundSteps * 0.1f, false);
-            rocket.printMessage(") sec.");
+            char buf[128];
+            snprintf(buf, sizeof(buf), "On ground for %d/%d steps (%.1f) sec.", onGroundSteps, 20, (float)onGroundSteps * 0.1f);
+            rocket.printMessage(buf);
             lastStepMs = millis();
         }
     }
