@@ -287,6 +287,7 @@ void loop() {
                 rocket.setLogSpeed(DLS_FAST);
                 rocket.initAngles();
                 rocket.disableCompl();
+                rocket.tvc.reset();
                 rocket.firePyro1();
                 rocket.printMessage("Ignition!");
                 

@@ -171,6 +171,13 @@ public:
         locked = true;
     }
 
+    void reset() {
+        tvcx.write(XDEF);
+        tvcy.write(YDEF);
+        pid_x.reset();
+        pid_y.reset();
+    }
+
     void nudge(int dir) {
         switch (dir) {
             case 0:

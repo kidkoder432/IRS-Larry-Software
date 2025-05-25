@@ -777,7 +777,7 @@ public: // Public functions
     #else
         Serial.println(message);
     #endif
-        if constexpr std::is_same<std::decay_t<T>, const char*>::value {
+        if constexpr (std::is_same<std::decay_t<T>, const char*>::value) {
             logStatus(message, logFile);
         }
     }
