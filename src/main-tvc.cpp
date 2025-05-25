@@ -169,9 +169,6 @@ void loop() {
                         rocket.printMessage("Performing pre-launch tasks.");
                         rocket.logMessage("Performing pre-launch tasks.");
 
-                        rocket.initAngles();
-                        rocket.tvc.lock();
-
                         rocket.printMessage("Calibrating Sensors");
                         rocket.calibrateAndLog();
 
