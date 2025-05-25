@@ -24,14 +24,14 @@ void msgPrintln(bool bleOn, HardwareBLESerial& bleSerial, char msg) {
     if (bleOn) bleSerial.println(msg);
 }
 
-void msgPrint(bool bleOn, HardwareBLESerial& bleSerial, int64_t msg) {
+void msgPrint(bool bleOn, HardwareBLESerial& bleSerial, int msg) {
     Serial.print(msg);
-    if (bleOn) bleSerial.print(msg);
+    if (bleOn) bleSerial.print(static_cast<int64_t>(msg));
 }
 
-void msgPrintln(bool bleOn, HardwareBLESerial& bleSerial, int64_t msg) {
+void msgPrintln(bool bleOn, HardwareBLESerial& bleSerial, int msg) {
     Serial.println(msg);
-    if (bleOn) bleSerial.println(msg);
+    if (bleOn) bleSerial.println(static_cast<int64_t>(msg));
 }
 
 void msgPrint(bool bleOn, HardwareBLESerial& bleSerial, float msg) {
