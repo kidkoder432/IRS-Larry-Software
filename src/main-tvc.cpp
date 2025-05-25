@@ -271,9 +271,9 @@ void loop() {
                 }
 
                 if (millis() % 1000 < 40) {
-                    rocket.printMessage("Launching in T - ", false);
+                    rocket.printMessage("Launching in T -", false);
                     rocket.printMessage((int64_t)launchTimer, false);
-                    rocket.printMessage(" seconds! Press any key + ENTER to abort the launch.");
+                    rocket.printMessage("seconds! Press any key + ENTER to abort the launch.");
 
                     launchTimer--;
                     delay(41);

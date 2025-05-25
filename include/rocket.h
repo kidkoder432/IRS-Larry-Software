@@ -764,7 +764,8 @@ public: // Public functions
         logStatus(message, logFile);
     }
 
-    void printMessage(auto message) {
+    template<typename T>
+    void printMessage(T message) {
     #if USE_BLE 
         msgPrintln(bleOn, bleSerial, message);
     #else
@@ -772,7 +773,8 @@ public: // Public functions
     #endif
     }
 
-    void printMessage(auto message, bool ln) {
+    template<typename T>
+    void printMessage(T message, bool ln) {
         if (ln) {
         #if USE_BLE
             msgPrintln(bleOn, bleSerial, message);
