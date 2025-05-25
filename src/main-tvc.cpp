@@ -173,6 +173,10 @@ void loop() {
                         rocket.calibrateAndLog();
 
                         rocket.setLogSpeed(DLS_MEDIUM);
+
+                        rocket.tvc.unlock();
+                        rocket.printMessage("TVC unlocked!");
+
                         rocket.setState(FS_LAUNCHING);
                         break;
                     case 'A':
@@ -285,8 +289,7 @@ void loop() {
                 rocket.disableCompl();
                 rocket.firePyro1();
                 rocket.printMessage("Ignition!");
-                rocket.tvc.unlock();
-                rocket.printMessage("TVC unlocked!");
+                
                 rocket.printMessage("Rocket armed!");
                 rocket.setState(FS_ARMED);
             }

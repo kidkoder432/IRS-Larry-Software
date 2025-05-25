@@ -762,11 +762,11 @@ public: // Public functions
     }
 
     void printMessage(const char* message) {
-        #if USE_BLE 
-            msgPrintln(bleOn, bleSerial, message);
-        #else
-            Serial.println(message);
-        #endif
+    #if USE_BLE 
+        msgPrintln(bleOn, bleSerial, message);
+    #else
+        Serial.println(message);
+    #endif
         logStatus(message, logFile);
     }
 
@@ -777,6 +777,9 @@ public: // Public functions
     #else
         Serial.println(message);
     #endif
+        if constexpr std::is_same<std::decay_t<T>, const char*>::value {
+            logStatus(message, logFile);
+        }
     }
 
     template <typename T>
@@ -819,7 +822,7 @@ public: // Public functions
         if (fclose(flashFile)) {
             printMessage("Error closing flash file");
             return false;
-        }
+    }
     #endif
 
         printMessage("Closing data file...");
@@ -843,7 +846,7 @@ public: // Public functions
         }
 
         return true;
-    }
+}
 
     void cleanupSD() {
         sd.end();
