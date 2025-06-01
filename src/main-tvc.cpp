@@ -288,15 +288,23 @@ void loop() {
                 rocket.initAngles();
                 rocket.disableCompl();
                 rocket.tvc.reset();
-                rocket.firePyro1();
-                rocket.printMessage("Ignition!");
                 
                 rocket.printMessage("Rocket armed!");
+                rocket.printMessage("Awaiting ignition...");
                 rocket.setState(FS_ARMED);
             }
 
             break;
 
+        case FS_ARMED:
+            recvOneChar();
+            if (newCommand) {
+                rocket.setState(FS_ABORT);
+                rocket.printMessage("Flight or launch sequence aborted!");
+                rocket.logMessage("Flight or launch sequence aborted!");
+                rocket.abort();
+            }
+            break;
         case FS_THRUST:
             // no special operations here
             break;
