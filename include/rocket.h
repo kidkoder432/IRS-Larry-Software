@@ -478,6 +478,8 @@ public: // Public functions
             case FS_READY:
                 flash(COLOR_BLUE, 1000);
                 break;
+            case FS_ARMED:
+                showColor(COLOR_WHITE);
             case FS_THRUST:
                 showColor(COLOR_GREEN);
                 break;

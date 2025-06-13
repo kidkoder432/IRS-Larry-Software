@@ -158,7 +158,6 @@ void loop() {
     switch (rocket.getState()) {
 
         case FS_READY:
-            showColor(COLOR_GREEN);
             recvOneChar();
             if (newCommand) {
                 switch (receivedChar) {
@@ -370,6 +369,7 @@ void loop() {
     if (onGroundSteps >= 20 && flightState == FS_COASTING) {
         rocket.setState(FS_TOUCHDOWN);
         rocket.parachute.cancel();
+        rocket.parachute.disarm();
         rocket.logMessage("Touchdown confirmed. We are safe on Earth!");
         rocket.printMessage("Disarming pyros...");
         rocket.logMessage("Disarming pyros...");
