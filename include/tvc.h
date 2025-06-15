@@ -18,10 +18,10 @@ public:
         tvcx.attach(TVC_X_PIN);
         tvcy.attach(TVC_Y_PIN);
 
-        P = config["Kp"];
-        I = config["Ki"];
-        D = config["Kd"];
-        N = config["N"];
+        P = config["Kp"] ? config["Kp"] : P; 
+        I = config["Ki"] ? config["Ki"] : I;
+        D = config["Kd"] ? config["Kd"] : D;
+        N = config["N"] ? config["N"] : N;
 
         XMIN = config["XMIN"] ? config["XMIN"] : XMIN;
         XMAX = config["XMAX"] ? config["XMAX"] : XMAX;
@@ -79,8 +79,8 @@ public:
                 float tvcXRaw = (x_out)*PI / 180;
                 float tvcYRaw = (y_out)*PI / 180;
 
-                float cr = cos(dir.x * PI / 180);
-                float sr = sin(dir.x * PI / 180);
+                float cr = cos(dir.y * PI / 180);
+                float sr = sin(dir.y * PI / 180);
 
                 x_out = tvcXRaw * cr + tvcYRaw * sr;
                 y_out = tvcYRaw * cr - tvcXRaw * sr;
@@ -101,14 +101,14 @@ public:
             Serial.println(y_out);
         #endif
 
-            // Scale values less than defaults so that they have the full range of motion
-            if (x_out < 0) {
-                x_out *= (XDEF - XMIN) / (XMAX - XDEF);
-            }
+            // // Scale values less than defaults so that they have the full range of motion
+            // if (x_out < 0) {
+            //     x_out *= (XDEF - XMIN) / (XMAX - XDEF);
+            // }
 
-            if (y_out < 0) {
-                y_out *= (YDEF - YMIN) / (YMAX - YDEF);
-            }
+            // if (y_out < 0) {
+            //     y_out *= (YDEF - YMIN) / (YMAX - YDEF);
+            // }
 
             x_out += XDEF;
             y_out += YDEF;
