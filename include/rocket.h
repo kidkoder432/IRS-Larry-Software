@@ -480,6 +480,7 @@ public: // Public functions
                 break;
             case FS_ARMED:
                 showColor(COLOR_WHITE);
+                break;
             case FS_THRUST:
                 showColor(COLOR_GREEN);
                 break;

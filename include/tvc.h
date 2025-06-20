@@ -53,20 +53,8 @@ public:
 
         if (!locked) {
             dir = o;
-            // Serial.println(dir.z);
-            // Serial.println(dir.y);
-        #if ACTUAL_PID
             x_out = pid_x.update(0, dir.z, dt);
             y_out = pid_y.update(0, dir.x, dt);
-
-        #else
-            x_out = -dir.z;
-            y_out = -dir.y;
-
-        #endif
-
-
-
 
         #if PRINT_OUTPUT 
             Serial.print("X/Y Raw: ");
@@ -75,19 +63,19 @@ public:
             Serial.print(y_out);
             Serial.print("\t");
         #endif
-            if (ROLL_COMP) {
-                float tvcXRaw = (x_out)*PI / 180;
-                float tvcYRaw = (y_out)*PI / 180;
+            // if (ROLL_COMP) {
+            //     float tvcXRaw = (x_out)*PI / 180;
+            //     float tvcYRaw = (y_out)*PI / 180;
 
-                float cr = cos(dir.y * PI / 180);
-                float sr = sin(dir.y * PI / 180);
+            //     float cr = cos(dir.y * PI / 180);
+            //     float sr = sin(dir.y * PI / 180);
 
-                x_out = tvcXRaw * cr + tvcYRaw * sr;
-                y_out = tvcYRaw * cr - tvcXRaw * sr;
+            //     x_out = tvcXRaw * cr + tvcYRaw * sr;
+            //     y_out = tvcYRaw * cr - tvcXRaw * sr;
 
-                x_out = (x_out * 180 / PI);
-                y_out = (y_out * 180 / PI);
-            }
+            //     x_out = (x_out * 180 / PI);
+            //     y_out = (y_out * 180 / PI);
+            // }
 
             if (FLIP_X) x_out = -x_out;
             if (FLIP_Y) y_out = -y_out;
