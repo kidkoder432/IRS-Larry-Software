@@ -33,6 +33,16 @@ void recvOneChar() {
     }
 }
 
+void printTvc() {
+    Vec2D tvcOut = rocket.tvc.getAngle();
+    rocket.printMessage("TVC X: ", false);
+    rocket.printMessage(tvcOut.x, false);
+    rocket.printMessage(" Y: ", false);
+    rocket.printMessage(tvcOut.y);
+
+
+
+}
 const int SEC_TO_LAUNCH = 21;
 int launchTimer = SEC_TO_LAUNCH;
 
@@ -51,12 +61,20 @@ Commands:
 L: Launch
 A: Abort
 C: Calibrate Sensors
+
 Y: Test TVC
 D: Unlock TVC
 F: Lock TVC
+
+V: Nudge X -
+B: Nudge X +
+N: Nudge Y -
+M: Nudge Y +
+
 Q: Reset Angles
 O: Print Orientation
 X: Cancel Printing
+
 H: Help
 )";
 
@@ -187,11 +205,11 @@ void loop() {
                     case 'C':
                         rocket.calibrateAndLog();
                         break;
+
                     case 'Y':
                         rocket.printMessage("Running TVC test");
                         rocket.tvc.testRoutine();
                         break;
-
                     case 'D':
                         rocket.printMessage("Unlocking TVC");
                         rocket.tvc.unlock();
@@ -200,24 +218,42 @@ void loop() {
                         rocket.printMessage("Locking TVC");
                         rocket.tvc.lock();
                         break;
+
+                    case 'V':
+                        rocket.printMessage("Nudging X -");
+                        rocket.tvc.nudge(1);
+                        printTvc();
+                        break;
+                    case 'B':
+                        rocket.printMessage("Nudging X +");
+                        rocket.tvc.nudge(0);
+                        printTvc();
+                        break;
+                    case 'N':
+                        rocket.printMessage("Nudging Y -");
+                        rocket.tvc.nudge(3);
+                        printTvc();
+                        break;
+                    case 'M':
+                        rocket.printMessage("Nudging Y +");
+                        rocket.tvc.nudge(2);
+                        printTvc();
+                        break;
+
                     case 'Q':
                         rocket.printMessage("Resetting Angles");
                         rocket.initAngles();
                         break;
-
                     case 'O':
                         rocket.printMessage("Orientation: ");
                         dirOutLock = false;
                         break;
-
                     case 'X':
                         dirOutLock = true;
                         break;
-
                     case 'H':
                         rocket.printMessage(HELP_STR);
                         break;
-
                     case 'P':
                         rocket.printMessage("Time per loop: ", false);
                         rocket.printMessage(rocket.deltaTime);
@@ -274,6 +310,7 @@ void loop() {
                     char buf[128];
                     snprintf(buf, sizeof(buf), "Launching in T - %02d seconds! Press any key + Enter to abort. ", launchTimer);
                     rocket.printMessage(buf);
+                    rocket.logMessage(buf);
                     launchTimer--;
                     delay(41);
 
