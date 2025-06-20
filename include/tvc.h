@@ -38,8 +38,8 @@ public:
         FLIP_Y = config["FLIP_Y"] > 0;
         ROLL_COMP = config["ROLL_COMP"] > 0;
 
-        tvcx.write(XDEF);
-        tvcy.write(YDEF);
+        locked = true;
+        reset();
 
     }
 
@@ -104,26 +104,19 @@ public:
             x_out = clamp(x_out, XMIN, XMAX);
             y_out = clamp(y_out, YMIN, YMAX);
 
-            write(x_out, y_out);
-
+            move(x_out, y_out);
             return Vec2D(x_out, y_out);
 
         }
         else {
-            x_out = XDEF;
-            y_out = YDEF;
-            write(x_out, y_out);
-            pid_x.reset();
-            pid_y.reset();
-
-
+            move(x_out, y_out);
             return Vec2D(XDEF, YDEF);
         }
 
     }
 
     // Writes angles to TVC
-    void write(float x, float y) {
+    void move(float x, float y) {
         if (x > XMAX) x = XMAX;
         if (x < XMIN) x = XMIN;
         if (y > YMAX) y = YMAX;
@@ -145,23 +138,20 @@ public:
 
     void lock() {
         locked = true;
-        write(XDEF, YDEF);
+        move(XDEF, YDEF);
     }
 
     void unlock() {
         locked = false;
-        write(XDEF, YDEF);
+        reset();
     }
 
     void abort() {
-        tvcx.write(XDEF);
-        tvcy.write(YDEF);
-        locked = true;
+        lock();
     }
 
     void reset() {
-        tvcx.write(XDEF);
-        tvcy.write(YDEF);
+        move(XDEF, YDEF);
         pid_x.reset();
         pid_y.reset();
     }
@@ -170,19 +160,19 @@ public:
         switch (dir) {
             case 0:
                 x_out += 1;
-                write(x_out, y_out);
+                move(x_out, y_out);
                 break;
             case 1:
                 x_out -= 1;
-                write(x_out, y_out);
+                move(x_out, y_out);
                 break;
             case 2:
                 y_out += 1;
-                write(x_out, y_out);
+                move(x_out, y_out);
                 break;
             case 3:
                 y_out -= 1;
-                write(x_out, y_out);
+                move(x_out, y_out);
                 break;
         }
     }
@@ -190,27 +180,27 @@ public:
     void testRoutine() {
         // Move to limits
         for (float x = XDEF; x <= XMAX; x += 0.1) {
-            write(x, YDEF);
+            move(x, YDEF);
             delay(50);
         }
         for (float y = YDEF; y <= YMAX; y += 0.1) {
-            write(XMAX, y);
+            move(XMAX, y);
             delay(50);
         }
         for (float x = XMAX; x >= XMIN; x -= 0.1) {
-            write(x, YMAX);
+            move(x, YMAX);
             delay(50);
         }
         for (float y = YMAX; y >= YMIN; y -= 0.1) {
-            write(XMIN, y);
+            move(XMIN, y);
             delay(50);
         }
         for (float x = XMIN; x <= XDEF; x += 0.1) {
-            write(x, YMIN);
+            move(x, YMIN);
             delay(50);
         }
         for (float y = YMIN; y <= YDEF; y += 0.1) {
-            write(XDEF, y);
+            move(XDEF, y);
             delay(50);
         }
         // Move in a spiral
@@ -219,7 +209,7 @@ public:
         while (radius < (XMAX - XMIN) / 2) {
             float x = XDEF + radius * cos(angle);
             float y = YDEF + radius * sin(angle);
-            write(x, y);
+            move(x, y);
             delay(5);
             angle += 0.1;
             if (angle > 2 * PI) {

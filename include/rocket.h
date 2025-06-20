@@ -790,7 +790,6 @@ public: // Public functions
         if (ln) {
         #if USE_BLE
             msgPrintln(bleOn, bleSerial, message);
-            logStatus(message, logFile);
         #else
             Serial.println(message);
         #endif
@@ -799,7 +798,6 @@ public: // Public functions
         #if USE_BLE
             msgPrint(bleOn, bleSerial, message);
             msgPrint(bleOn, bleSerial, " ");
-            logStatus(message, logFile);
         #else
             Serial.print(message);
             Serial.print(" ");
