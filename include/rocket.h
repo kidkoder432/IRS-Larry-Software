@@ -383,6 +383,22 @@ public: // Public functions
         y_out = tvc_out.y;
     }
 
+    void updateTvc_SITL(float x) {
+
+        if (x < 66) {
+            x = 66;
+        }
+        else if (x > 114) {
+            x = 114;
+        }
+
+        Vec2D tvc_out = tvc.getAngle();
+        float y = tvc_out.y;
+        tvc.move(x, y);
+        x_out = x;
+        y_out = y;
+    }
+
     // Update sensor readings
     void updateSensors() {
         readSensors(readings, biases);
@@ -416,6 +432,23 @@ public: // Public functions
         if (yaw < -180) yaw += 360;
         if (pitch > 180) pitch -= 360;
         if (pitch < -180) pitch += 360;
+    }
+
+    void updateAngles_SITL(float angle) {
+        yaw = angle;
+        pitch = 0;
+        roll = 0;
+        dir = Vec3D(pitch, roll, yaw);
+
+        if (yaw <= -5) {
+            showColor(COLOR_RED);
+        }
+        else if (yaw >= 5) {
+            showColor(COLOR_LIGHTBLUE);
+        }
+        else {
+            showColor(COLOR_GREEN);
+        }
     }
 
     // Update altitude and vertical velocity

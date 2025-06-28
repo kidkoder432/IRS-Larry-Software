@@ -179,30 +179,42 @@ public:
 
     void testRoutine() {
         // Move to limits
+
+        move(XDEF, YDEF);
+        Serial.println("Starting TVC test routine...");
+        Serial.println("Moving to XMAX...");
         for (float x = XDEF; x <= XMAX; x += 0.1) {
             move(x, YDEF);
-            delay(50);
+            delay(10);
         }
+        Serial.println("Moving to YMAX...");
         for (float y = YDEF; y <= YMAX; y += 0.1) {
             move(XMAX, y);
-            delay(50);
+            delay(10);
         }
+        Serial.println("Moving to XMIN...");
         for (float x = XMAX; x >= XMIN; x -= 0.1) {
             move(x, YMAX);
-            delay(50);
+            delay(10);
         }
+        Serial.println("Moving to YMIN...");
         for (float y = YMAX; y >= YMIN; y -= 0.1) {
             move(XMIN, y);
-            delay(50);
+            delay(10);
         }
+        Serial.println("Moving to XDEF...");
         for (float x = XMIN; x <= XDEF; x += 0.1) {
             move(x, YMIN);
-            delay(50);
+            delay(10);
         }
+        Serial.println("Moving to YDEF...");
         for (float y = YMIN; y <= YDEF; y += 0.1) {
             move(XDEF, y);
-            delay(50);
+            delay(10);
         }
+        Serial.println("Returning to default position...");
+        move(XDEF, YDEF);
+        Serial.println("Moving in a spiral...");
         // Move in a spiral
         float angle = 0;
         float radius = 3;
@@ -210,11 +222,13 @@ public:
             float x = XDEF + radius * cos(angle);
             float y = YDEF + radius * sin(angle);
             move(x, y);
-            delay(5);
+            delay(10);
             angle += 0.1;
             if (angle > 2 * PI) {
                 angle = 0;
                 radius += 1;
+                Serial.print("Radius: ");
+                Serial.println(radius);
             }
         }
     }
@@ -223,11 +237,11 @@ public:
 private:
     Servo tvcx, tvcy;
 
-    float XMIN = 76;  // TVC X Min
-    float XMAX = 124; // TVC X Max
+    float XMIN = 66;  // TVC X Min
+    float XMAX = 114; // TVC X Max
     float YMIN = 73;  // TVC Y Min
     float YMAX = 121; // TVC Y Max
-    float XDEF = 100;  // TVC X Default (zero position)
+    float XDEF = 90;  // TVC X Default (zero position)
     float YDEF = 97;  // TVC Y Default (zero position)
 
     // --------- TVC Control --------- //
