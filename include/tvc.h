@@ -52,7 +52,6 @@ public:
         Quaternion b = Quaternion(a);
 
         if (!locked) {
-            dir = o;
 
         #if PRINT_OUTPUT 
             Serial.print("X/Y Raw: ");
@@ -63,7 +62,7 @@ public:
         #endif
 
             if (ROLL_COMP) {
-                Quaternion unroll = Quaternion::from_euler_rotation(0, 0, -o.x);
+                Quaternion unroll = Quaternion::from_euler_rotation(-o.x, 0, 0);
                 b = a * unroll;
             }
 
@@ -71,7 +70,7 @@ public:
             dir = Vec3D(adj_dir);
 
             x_out = pid_x.update(0, adj_dir.z, dt);
-            y_out = pid_y.update(90, adj_dir.y, dt);
+            y_out = pid_y.update(0, adj_dir.y, dt);
 
             if (FLIP_X) x_out = -x_out;
             if (FLIP_Y) y_out = -y_out;

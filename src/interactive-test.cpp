@@ -325,14 +325,14 @@ void loop() {
 
     if (!dirOutLock) {
         Vec3D dir = rocket.getDir();
-        float pitch = dir.x;
-        float roll = dir.y;
+        float roll = dir.x;
+        float pitch = dir.y;
         float yaw = dir.z;
-        rocket.printMessage(yaw, false);
+        rocket.printMessage(roll, false);
         rocket.printMessage(" ", false);
         rocket.printMessage(pitch, false);
         rocket.printMessage(" ", false);
-        rocket.printMessage(roll);
+        rocket.printMessage(yaw);
     }
 
 #if USE_BLE

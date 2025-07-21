@@ -299,7 +299,7 @@ Quaternion get_angles_compl_quat(
     // We need to map our user-defined angles to these standard slots:
     
     Quaternion accel_derived_q = Quaternion::from_euler_rotation(
-        user_roll_from_gyro_rad, accel_user_yaw_rad, accel_user_pitch_rad
+        user_roll_from_gyro_rad, accel_user_pitch_rad, accel_user_yaw_rad
     );
     // accel_derived_q.normalize(); // from_euler_rotation should ideally produce a normalized quaternion
 
