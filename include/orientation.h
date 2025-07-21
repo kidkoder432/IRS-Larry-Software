@@ -122,9 +122,9 @@ Vec2D get_angles_complementary(float A, float dt, SensorReadings r, float yaw, f
 // RADIANS
 Vec3D get_angles_accel(SensorReadings r) {
     float yaw = atan2(r.ay, r.ax);
-    float pitch = sign(r.ax) * (PI / 2 - atan2(r.az, sqrt(r.ax * r.ax + r.ay * r.ay)));
+    float pitch = atan2(-r.az, sqrt(r.ax * r.ax + r.ay * r.ay));
 
-    return Vec3D(yaw, pitch, 0);
+    return Vec3D(0, pitch, yaw);
 }
 
 // --- NEW Euler Angle Extraction Functions ---
@@ -186,9 +186,9 @@ Vec3D quaternion_to_euler(Quaternion q) {
     float pitch_rad = get_pitch_from_quaternion(q);
     float yaw_rad = get_yaw_from_quaternion(q);
 
-    float roll_deg = roll_rad * 180.0f / M_PI;
-    float pitch_deg = pitch_rad * 180.0f / M_PI;
-    float yaw_deg = yaw_rad * 180.0f / M_PI;
+    float roll_deg = roll_rad * 180.0f / PI;
+    float pitch_deg = pitch_rad * 180.0f / PI;
+    float yaw_deg = yaw_rad * 180.0f / PI;
 
     return Vec3D(roll_deg, pitch_deg, yaw_deg);
 }
@@ -259,7 +259,7 @@ Quaternion get_angles_compl_quat(
     // Your Coordinate System:
     //   X-axis: Up-Down (+ up, - down)
     //      Longitudinal, tail to nose, rocket initially pointing straight up 
-    //      Gravity acts along -Y world, so accelerometer Y-axis sees +g when upright.
+    //      Gravity acts along -Z world, so accelerometer X-axis sees +g when upright.
     //   
     //   Y - axis: Left-Right (+right, -left)
     //
@@ -273,10 +273,9 @@ Quaternion get_angles_compl_quat(
 
     // Safety check for r.ay to prevent instability when rocket is nearly horizontal.
     // Define g_approx based on your sensor scale or expected values.
-    const float g_approx = 9.81f; // Approximate gravity
-    const float min_ay_for_accel_trust = 0.01; // Trust accel if ay is at least 0.2g
+    const float min_ax_for_accel_trust = 0.01; // Trust accel if ay is at least 0.2g
 
-    if (fabsf(r.ay) < min_ay_for_accel_trust) {
+    if (fabsf(r.ax) < min_ax_for_accel_trust) {
         // Accelerometer data is unreliable for determining user's pitch and yaw.
         // For this step, use pitch/yaw from gyro prediction to avoid bad correction.
         // This means the SLERP will effectively do nothing for pitch/yaw correction.
@@ -285,8 +284,8 @@ Quaternion get_angles_compl_quat(
     }
     else {
         Vec3D accel_angles = get_angles_accel(r);
-        accel_user_pitch_rad = accel_angles.x;
-        accel_user_yaw_rad = accel_angles.y;
+        accel_user_pitch_rad = accel_angles.y;
+        accel_user_yaw_rad = accel_angles.z;
     }
 
     // 3. Extract User's Roll from the gyro-predicted quaternion

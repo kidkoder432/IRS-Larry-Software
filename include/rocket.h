@@ -276,7 +276,7 @@ public: // Public functions
             for (int i = 0; i < 20; ++i) {
                 readSensors(readings, biases);
                 Vec3D accelAngles = get_angles_accel(readings);
-                totalYaw += accelAngles.x;
+                totalYaw += accelAngles.z;
                 totalPitch += accelAngles.y;
             }
 
