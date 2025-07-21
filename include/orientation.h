@@ -9,7 +9,8 @@
 #include <Kalman.h>
 #include <Quaternion.h>
 
-double sign(double x) { return (x > 0) - (x < 0); }
+float sign(float x) { return (x > 0) - (x < 0); }
+float clamp(float x, float min, float max) { return (x < min) ? min : (x > max) ? max : x; }
 
 float GIMBAL_LOCK_THRESHOLD = 0.99999f;
 
@@ -22,12 +23,13 @@ struct Vec2D {
 
     Vec2D() { x = 0; y = 0; }
     Vec2D(float x, float y) : x(x), y(y) {}
+    Vec2D(const Vec2D& v) : x(v.x), y(v.y) {}
 
 };
 
 // 3D Vector
 // For Orientation:
-// x = pitch, y = roll, z = yaw
+// x = roll, y = pitch, z = yaw
 // For Accelerometer:
 // x = +up -down, y = +left -right, z = +forward -backward
 struct Vec3D {
@@ -35,6 +37,7 @@ struct Vec3D {
 
     Vec3D() { x = 0; y = 0; z = 0; }
     Vec3D(float x, float y, float z) : x(x), y(y), z(z) {}
+    Vec3D(const Vec3D& v) : x(v.x), y(v.y), z(v.z) {}
 };
 
 // ========= Angles & Orientation ========= //
@@ -84,81 +87,6 @@ Quaternion slerp(Quaternion q1, Quaternion q2, float t) {
     return result_q;
 }
 
-// float quaternion_to_roll(Quaternion attitude) {
-//     // --- Convert to Euler Angles --- //    
-//     // https://www.euclideanspace.com/maths/standards/index.htm#:~:text=Euler%20angles
-//     // Switch axes (X pitch, Y roll, Z yaw --> Z pitch, X roll, Y yaw)
-//     float qw = attitude.a;
-//     float qz = attitude.b;
-//     float qx = attitude.c;
-//     float qy = attitude.d;
-
-//     // from https://www.euclideanspace.com/maths/standards/index.htm
-//     if (qx * qy + qz * qw >= 0.5) {  // North pole
-//         return 0;
-//     }
-//     else if (qx * qy + qz * qw <= -0.5) {  // South pole
-//         return 0;
-//     }
-//     else {
-//         float roll = atan2(2 * qx * qw - 2 * qy * qz, 1 - 2 * qx * qx - 2 * qz * qz);
-//         return roll * -180 / PI;
-//     }
-// }
-
-// float quaternion_to_pitch(Quaternion attitude) {
-//     // --- Convert to Euler Angles --- //    
-//     // https://www.euclideanspace.com/maths/standards/index.htm#:~:text=Euler%20angles
-//     // Switch axes (X pitch, Y roll, Z yaw --> Z pitch, X roll, Y yaw)
-//     float qw = attitude.a;
-//     float qz = attitude.b;
-//     float qx = attitude.c;
-//     float qy = attitude.d;
-
-//     // from https://www.euclideanspace.com/maths/standards/index.htm
-//     if (qx * qy + qz * qw >= 0.5) {  // North pole
-//         return 90;
-//     }
-//     else if (qx * qy + qz * qw <= -0.5) {  // South pole
-//         return -90;
-//     }
-//     else {
-//         float pitch = asin(2 * qx * qy + 2 * qz * qw);
-//         return pitch * 180 / PI;
-//     }
-// }
-
-// float quaternion_to_yaw(Quaternion attitude) {
-//     // --- Convert to Euler Angles --- //    
-//     // https://www.euclideanspace.com/maths/standards/index.htm#:~:text=Euler%20angles
-//     // Switch axes (X pitch, Y roll, Z yaw --> Z pitch, X roll, Y yaw)
-//     float qw = attitude.a;
-//     float qz = attitude.b;
-//     float qx = attitude.c;
-//     float qy = attitude.d;
-
-//     // from https://www.euclideanspace.com/maths/standards/index.htm
-//     if (qx * qy + qz * qw >= 0.5) {  // North pole
-//         return 2 * atan2(qx, qw) * 180 / PI;
-//     }
-//     else if (qx * qy + qz * qw <= -0.5) {  // South pole
-//         return -2 * atan2(qx, qw) * 180 / PI;
-//     }
-//     else {
-//         float yaw = atan2(2 * qy * qw - 2 * qx * qz, 1 - 2 * qy * qy - 2 * qz * qz);
-//         return yaw * 180 / PI;
-//     }
-// // }
-
-// Vec3D quaternion_to_euler(Quaternion attitude) {
-//     float roll = quaternion_to_roll(attitude);
-//     float pitch = quaternion_to_pitch(attitude);
-//     float yaw = quaternion_to_yaw(attitude);
-//     return Vec3D(roll, pitch, yaw);
-// }
-
-
-
 // GYRO-BASED ANGLE CALCULATION
 Vec3D get_angles(SensorReadings r, SensorReadings pr = SensorReadings(), Vec3D dir = Vec3D(0, 0, 0), float dt = 0.02) {
     float x = dir.x - ((r.gy + pr.gy) * dt / 2);
@@ -191,116 +119,99 @@ Vec2D get_angles_complementary(float A, float dt, SensorReadings r, float yaw, f
     return Vec2D(angle_x, angle_y);
 }
 
-// QUATERNION BASED ANGLE CALCULATION
-// Quaternion get_angles_quat(SensorReadings readings, Quaternion& attitude, float deltaTime) {
+// RADIANS
+Vec3D get_angles_accel(SensorReadings r) {
+    float yaw = atan2(r.ay, r.ax);
+    float pitch = sign(r.ax) * (PI / 2 - atan2(r.az, sqrt(r.ax * r.ax + r.ay * r.ay)));
 
-//     // wx = pitch  (rotation around x-axis)
-//     // wy = roll   (rotation around y-axis) 
-//     // wz = yaw    (rotation around z-axis)
-//     float wx = readings.gx * (PI / 180);
-//     float wy = readings.gy * (PI / 180);
-//     float wz = readings.gz * (PI / 180);
+    return Vec3D(yaw, pitch, 0);
+}
 
-//     // Update attitude quaternion
-//     float norm = sqrt(wx * wx + wy * wy + wz * wz);
-//     norm = copysignf(max(abs(norm), 1e-9f), norm); // NO DIVIDE BY 0
-
-//     wx /= norm;
-//     wy /= norm;
-//     wz /= norm;
-
-//     Quaternion QM = Quaternion::from_axis_angle(deltaTime * norm, wx, wy, wz);
-//     attitude = attitude * QM;
-
-//     return attitude;
-// }
-
-// // COMPLEMENTARY FILTERING WITH QUATERNIONS
-// Quaternion get_angles_compl_quat(float A, float dt, SensorReadings r, Quaternion& attitude) {
-
-//     float accelYaw = atan2(r.ax, sqrt(r.az * r.az + r.ay * r.ay));
-//     float accelPitch = -atan2(r.az, r.ay);
-
-//     Quaternion gyro_q = get_angles_quat(r, attitude, dt);
-//     float roll = quaternion_to_roll(gyro_q) * (PI / 180);
-
-//     Quaternion accel_q = Quaternion::from_euler_rotation(accelYaw, accelPitch, roll);
-
-//     attitude = slerp(gyro_q, accel_q, 1.0f - A);
-
-//     attitude.normalize();
-
-//     return attitude;
-// }   
-
-// --- NEW Euler Angle Extraction Functions (User's Definitions) ---
-// These assume Quaternion stores: a=w, b=vector_x_body, c=vector_y_body, d=vector_z_body
-// where vector_x_body corresponds to user's pitch axis (body X)
-// vector_y_body corresponds to user's roll axis (body Y)
-// vector_z_body corresponds to user's yaw axis (body Z)
+// --- NEW Euler Angle Extraction Functions ---
 // These functions return angles in RADIANS.
 
-// USER ROLL: rotation around +Y
-float get_user_roll_from_quaternion(Quaternion q) {
+/**
+ * @brief Calculates the Roll angle (rotation about the body X-axis) from a quaternion.
+ * Uses the ZYX intrinsic Euler angle convention.
+ * @param q The input quaternion.
+ * @return Roll angle in radians.
+ */
+float get_roll_from_quaternion(Quaternion q) {
     float w = q.a, x = q.b, y = q.c, z = q.d;
-    float sin_roll = 2.0f * (w * y + x * z);
-    float cos_roll = 1.0f - 2.0f * (x * x + y * y);
-    return atan2f(sin_roll, cos_roll);
-}
-
-// USER PITCH: rotation around +X
-float get_user_pitch_from_quaternion(Quaternion q) {
-    float w = q.a, x = q.b, y = q.c, z = q.d;
-    float sin_pitch = 2.0f * (w * x - y * z);
-    if (sin_pitch >= 1.0f) sin_pitch = 1.0f;
-    if (sin_pitch <= -1.0f) sin_pitch = -1.0f;
-    return asinf(sin_pitch);
-}
-
-// USER YAW: rotation around +Z
-float get_user_yaw_from_quaternion(Quaternion q) {
-    float w = q.a, x = q.b, y = q.c, z = q.d;
-    float sin_yaw = 2.0f * (w * z + x * y);
-    float cos_yaw = 1.0f - 2.0f * (x * x + z * z);
-    return -atan2f(sin_yaw, cos_yaw);
+    // Formula for Roll (phi) in ZYX intrinsic Euler angles
+    float sin_roll_2 = 2.0f * (w * x + y * z);
+    float cos_roll_2 = 1.0f - 2.0f * (x * x + y * y);
+    return atan2f(sin_roll_2, cos_roll_2);
 }
 
 /**
- * @brief Converts a quaternion to User Euler angles (Pitch, Roll, Yaw).
- * Returns a Vec3D with angles in degrees:
- *   x = User Pitch (body X-axis),
- *   y = User Roll  (body Y-axis),
- *   z = User Yaw   (body Z-axis).
+ * @brief Calculates the Pitch angle (rotation about the body Y-axis) from a quaternion.
+ * Uses the ZYX intrinsic Euler angle convention.
+ * @param q The input quaternion.
+ * @return Pitch angle in radians.
  */
-Vec3D quaternion_to_user_euler(Quaternion q) {
-    float pitch_deg = get_user_pitch_from_quaternion(q) * 180.0f / PI;
-    float roll_deg = get_user_roll_from_quaternion(q) * 180.0f / PI;
-    float yaw_deg = get_user_yaw_from_quaternion(q) * 180.0f / PI;
-    return Vec3D(pitch_deg, roll_deg, yaw_deg);
+float get_pitch_from_quaternion(Quaternion q) {
+    float w = q.a, x = q.b, y = q.c, z = q.d;
+    // Formula for Pitch (theta) in ZYX intrinsic Euler angles
+    float sin_pitch = 2.0f * (w * y - z * x);
+    // Clamp argument to asin to prevent NaN from floating point inaccuracies
+    // (due to floating point errors, sin_pitch might slightly exceed 1.0 or fall below -1.0)
+    sin_pitch = clamp(sin_pitch, -1.0f, 1.0f);
+    return asinf(sin_pitch);
 }
 
+/**
+ * @brief Calculates the Yaw angle (rotation about the body Z-axis) from a quaternion.
+ * Uses the ZYX intrinsic Euler angle convention.
+ * @param q The input quaternion.
+ * @return Yaw angle in radians.
+ */
+float get_yaw_from_quaternion(Quaternion q) {
+    float w = q.a, x = q.b, y = q.c, z = q.d;
+    // Formula for Yaw (psi) in ZYX intrinsic Euler angles
+    float sin_yaw_2 = 2.0f * (w * z + x * y);
+    float cos_yaw_2 = 1.0f - 2.0f * (y * y + z * z);
+    return atan2f(sin_yaw_2, cos_yaw_2);
+}
 
-// --- Deprecate or Remove Old Euler Functions ---
-// The following functions (quaternion_to_roll, quaternion_to_pitch, quaternion_to_yaw, quaternion_to_euler)
-// use a confusing remapping. It's better to use the new `get_user_...` functions.
-// If you keep them, ensure they are clearly documented for their specific behavior.
-/*
-float quaternion_to_roll(Quaternion attitude) { ... } // OLD - uses remapping
-float quaternion_to_pitch(Quaternion attitude) { ... } // OLD - uses remapping
-float quaternion_to_yaw(Quaternion attitude) { ... } // OLD - uses remapping
-Vec3D quaternion_to_euler(Quaternion attitude) { ... } // OLD
-*/
+/**
+ * @brief Converts a quaternion to Euler angles (Roll, Pitch, Yaw) in degrees.
+ * This conversion uses the ZYX (Yaw-Pitch-Roll) intrinsic rotation sequence,
+ * which is common in aerospace for vehicle attitude.
+ *
+ * @param q The input quaternion (w, x, y, z).
+ * @return A Vec3D where:
+ * x = Roll angle (rotation about body X-axis) in degrees.
+ * y = Pitch angle (rotation about body Y-axis) in degrees.
+ * z = Yaw angle (rotation about body Z-axis) in degrees.
+ *
+ * the structure of your previously provided `Vec3D` return.
+ * Standard Euler angle vectors are often (Roll, Pitch, Yaw) in x, y, z order.
+ */
+Vec3D quaternion_to_euler(Quaternion q) {
+    float roll_rad = get_roll_from_quaternion(q);
+    float pitch_rad = get_pitch_from_quaternion(q);
+    float yaw_rad = get_yaw_from_quaternion(q);
+
+    // Convert to degrees
+    float roll_deg = roll_rad * 180.0f / M_PI;
+    float pitch_deg = pitch_rad * 180.0f / M_PI;
+    float yaw_deg = yaw_rad * 180.0f / M_PI;
+
+    // Return as Vec3D (x = roll, y = pitch, z = yaw)
+    return Vec3D(roll_deg, pitch_deg, yaw_deg);
+}
 
 // GYRO-BASED QUATERNION UPDATE
 // This function updates 'attitude' (the current orientation) by the rotation measured by the gyroscope.
 Quaternion get_angles_quat(SensorReadings readings, Quaternion& current_attitude, float deltaTime) {
     // User's Gyro Definitions:
-    // readings.gx: angular rate around body X-axis (User's Pitch Rate)
-    // readings.gy: angular rate around body Y-axis (User's Roll Rate)
+    // readings.gx: angular rate around body X-axis (User's Roll Rate)
+    // readings.gy: angular rate around body Y-axis (User's Pitch Rate)
     // readings.gz: angular rate around body Z-axis (User's Yaw Rate)
 
-    float pitch_rate_rad_s = readings.gx * (PI / 180.0f); // User's Pitch Rate
-    float roll_rate_rad_s = readings.gy * (PI / 180.0f); // User's Roll Rate
+    float roll_rate_rad_s = readings.gx * (PI / 180.0f); // User's Roll Rate
+    float pitch_rate_rad_s = readings.gy * (PI / 180.0f); // User's Pitch Rate
     float yaw_rate_rad_s = readings.gz * (PI / 180.0f); // User's Yaw Rate
 
     float angle_magnitude = sqrt(pitch_rate_rad_s * pitch_rate_rad_s + roll_rate_rad_s * roll_rate_rad_s + yaw_rate_rad_s * yaw_rate_rad_s);
@@ -313,8 +224,8 @@ Quaternion get_angles_quat(SensorReadings readings, Quaternion& current_attitude
         float cos_half_angle = cosf(half_angle);
 
         // Normalized axis of rotation (these are already body axes)
-        float axis_x_norm = pitch_rate_rad_s / angle_magnitude;
-        float axis_y_norm = roll_rate_rad_s / angle_magnitude;
+        float axis_x_norm = roll_rate_rad_s / angle_magnitude;
+        float axis_y_norm = pitch_rate_rad_s / angle_magnitude;
         float axis_z_norm = yaw_rate_rad_s / angle_magnitude;
 
         delta_q_gyro.a = cos_half_angle;       // w
@@ -353,14 +264,18 @@ Quaternion get_angles_compl_quat(
     Quaternion gyro_predicted_q = get_angles_quat(r, current_attitude_estimate, dt);
     // current_attitude_estimate is now the gyro-predicted orientation.
 
-    // 2. Calculate Accelerometer-derived User Angles (User's Pitch and User's Yaw)
+    // 2. Calculate Accelerometer-derived Angles
     // Your Coordinate System:
-    //   X-axis: Left-Right
-    //   Y-axis: Up-Down (longitudinal, tail to nose, rocket initially pointing straight up)
-    //           Gravity acts along -Y world, so accelerometer Y-axis sees +g when upright.
-    //   Z-axis: Front-Back
-    // User's Pitch: Rotation around body X-axis (tilt in YZ plane of rocket)
-    // User's Yaw:   Rotation around body Z-axis (tilt in XY plane of rocket)
+    //   X-axis: Up-Down (+ up, - down)
+    //      Longitudinal, tail to nose, rocket initially pointing straight up 
+    //      Gravity acts along -Y world, so accelerometer Y-axis sees +g when upright.
+    //   
+    //   Y - axis: Left-Right (+right, -left)
+    //
+    //   Z - axis: Front-Back (+front, -back)
+    //
+    // Pitch:   Rotation around body Y-axis (tilt in YZ plane of rocket)
+    // Yaw:     Rotation around body Z-axis (tilt in XY plane of rocket)
 
     float accel_user_pitch_rad;
     float accel_user_yaw_rad;
@@ -374,20 +289,18 @@ Quaternion get_angles_compl_quat(
         // Accelerometer data is unreliable for determining user's pitch and yaw.
         // For this step, use pitch/yaw from gyro prediction to avoid bad correction.
         // This means the SLERP will effectively do nothing for pitch/yaw correction.
-        accel_user_pitch_rad = get_user_pitch_from_quaternion(gyro_predicted_q);
-        accel_user_yaw_rad = get_user_yaw_from_quaternion(gyro_predicted_q);
+        accel_user_pitch_rad = get_pitch_from_quaternion(gyro_predicted_q);
+        accel_user_yaw_rad = get_yaw_from_quaternion(gyro_predicted_q);
     }
     else {
-        // Calculate user's pitch from accelerometer (rotation around body X-axis)
-        accel_user_pitch_rad = -atan2(r.az, sqrt(r.ax * r.ax + r.ay * r.ay));
-
-        // Calculate user's yaw from accelerometer (rotation around body Z-axis)
-        accel_user_yaw_rad = atan2(r.ax, sqrt(r.az * r.az + r.ay * r.ay));
+        Vec3D accel_angles = get_angles_accel(r);
+        accel_user_pitch_rad = accel_angles.x;
+        accel_user_yaw_rad = accel_angles.y;
     }
 
     // 3. Extract User's Roll from the gyro-predicted quaternion
     // Accelerometer cannot measure user's roll (rotation around body Y-axis) in this configuration.
-    float user_roll_from_gyro_rad = get_user_roll_from_quaternion(gyro_predicted_q);
+    float user_roll_from_gyro_rad = get_roll_from_quaternion(gyro_predicted_q);
 
     // 4. Construct the "accelerometer target" quaternion (accel_derived_q)
     // This quaternion represents the orientation the accelerometer "sees" for pitch and yaw,
@@ -398,9 +311,7 @@ Quaternion get_angles_compl_quat(
     //   Standard Pitch (Y rot) input = User's Roll (body Y rot)
     //   Standard Yaw (Z rot) input = User's Yaw (body Z rot)
     Quaternion accel_derived_q = Quaternion::from_euler_rotation(
-        accel_user_pitch_rad,        // Argument for standard roll (X-axis)
-        user_roll_from_gyro_rad,     // Argument for standard pitch (Y-axis)
-        accel_user_yaw_rad           // Argument for standard yaw (Z-axis)
+        user_roll_from_gyro_rad, accel_user_pitch_rad, accel_user_yaw_rad
     );
     // accel_derived_q.normalize(); // from_euler_rotation should ideally produce a normalized quaternion
 

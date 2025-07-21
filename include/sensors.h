@@ -146,16 +146,37 @@ bool initSensors() {
 void readSensors(SensorReadings& r, GyroBiases biases) {
     imu.getSensorData();
 
-    r.ax = imu.data.accelX;
-    r.ay = imu.data.accelY;
-    r.az = imu.data.accelZ;
 
-    r.gx = imu.data.gyroX - biases.bx;
-    r.gy = imu.data.gyroY - biases.by;
-    r.gz = imu.data.gyroZ - biases.bz;
+    // Assume rocket is pointing up with the nose
+    // towards the sky.
+    // Arduino sensor frame is as follows:
+    //   +X Right
+    //   +Y Up
+    //   +Z Backward (towards you)
+
+    // The standard coordinate system which we will use
+    // for all calculations is as follows:
+    //   +X Up
+    //   +Y Right
+    //   +Z Forward (away from you)
+
+    // Transformations from sensor to standard:
+    //   x -> y
+    //   y -> x
+    //   z -> -z
+
+    r.ax = imu.data.accelY;
+    r.ay = imu.data.accelX;
+    r.az = -imu.data.accelZ;
+
+    r.gx = imu.data.gyroY - biases.by;
+    r.gy = imu.data.gyroX - biases.bx;
+    r.gz = -imu.data.gyroZ + biases.bz;
 }
 
 GyroBiases calibrateSensors(Config& config) {
+
+    // These SensorReadings DO NOT obey any coordinate system!
 
     Serial.println("Starting Sensor Calibration...");
     showColor(COLOR_ORANGE);

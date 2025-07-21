@@ -5,8 +5,6 @@
 #define ACTUAL_PID 1
 #define PRINT_OUTPUT 0
 
-float clamp(float x, float min, float max) { return (x < min) ? min : (x > max) ? max : x; }
-
 class TVC {
 public:
 
@@ -44,17 +42,17 @@ public:
     }
 
     // X axis = yaw correction, Y axis = pitch correctin
-    Vec2D update(Vec3D o, float dt) {
+    Vec2D update(Vec3D o, Quaternion a, float dt) {
 
         // Hack for when we just finished calibration and dt is absurd
         if (dt > 0.2) {
             dt = 0.015;
         }
 
+        Quaternion b = Quaternion(a);
+
         if (!locked) {
             dir = o;
-            x_out = pid_x.update(0, dir.z, dt);
-            y_out = pid_y.update(0, dir.x, dt);
 
         #if PRINT_OUTPUT 
             Serial.print("X/Y Raw: ");
@@ -63,40 +61,20 @@ public:
             Serial.print(y_out);
             Serial.print("\t");
         #endif
-            // if (ROLL_COMP) {
-            //     float tvcXRaw = (x_out)*PI / 180;
-            //     float tvcYRaw = (y_out)*PI / 180;
 
-            //     float cr = cos(dir.y * PI / 180);
-            //     float sr = sin(dir.y * PI / 180);
+            if (ROLL_COMP) {
+                Quaternion unroll = Quaternion::from_euler_rotation(0, 0, -o.x);
+                b = a * unroll;
+            }
 
-            //     x_out = tvcXRaw * cr + tvcYRaw * sr;
-            //     y_out = tvcYRaw * cr - tvcXRaw * sr;
+            Vec3D adj_dir = quaternion_to_euler(b);
+            dir = Vec3D(adj_dir);
 
-            //     x_out = (x_out * 180 / PI);
-            //     y_out = (y_out * 180 / PI);
-            // }
+            x_out = pid_x.update(0, adj_dir.z, dt);
+            y_out = pid_y.update(90, adj_dir.y, dt);
 
             if (FLIP_X) x_out = -x_out;
             if (FLIP_Y) y_out = -y_out;
-
-
-        #if PRINT_OUTPUT
-
-            Serial.print("X/Y Adjust: ");
-            Serial.print(x_out);
-            Serial.print(" ");
-            Serial.println(y_out);
-        #endif
-
-            // // Scale values less than defaults so that they have the full range of motion
-            // if (x_out < 0) {
-            //     x_out *= (XDEF - XMIN) / (XMAX - XDEF);
-            // }
-
-            // if (y_out < 0) {
-            //     y_out *= (YDEF - YMIN) / (YMAX - YDEF);
-            // }
 
             x_out += XDEF;
             y_out += YDEF;

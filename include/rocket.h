@@ -275,8 +275,9 @@ public: // Public functions
 
             for (int i = 0; i < 20; ++i) {
                 readSensors(readings, biases);
-                totalYaw -= atan2(readings.ax, sqrt(readings.az * readings.az + readings.ay * readings.ay));
-                totalPitch -= atan2(readings.az, readings.ay);
+                Vec3D accelAngles = get_angles_accel(readings);
+                totalYaw += accelAngles.x;
+                totalPitch += accelAngles.y;
             }
 
             yaw = totalYaw / 20;
@@ -416,7 +417,7 @@ public: // Public functions
             attitude = get_angles_quat(readings, attitude, deltaTime);
         }
 
-        dir = quaternion_to_user_euler(attitude);
+        dir = quaternion_to_euler(attitude);
 
         if (config["FLIP_DIR_X"] > 0) dir.x = -dir.x;
         if (config["FLIP_DIR_Y"] > 0) dir.y = -dir.y;
@@ -475,6 +476,7 @@ public: // Public functions
     }
 
     void updateChutes() {
+
         if (parachute.update()) {
             logMessage("Parachute deployed");
         }
@@ -858,7 +860,7 @@ public: // Public functions
         if (fclose(flashFile)) {
             printMessage("Error closing flash file");
             return false;
-    }
+        }
     #endif
 
         printMessage("Closing data file...");
@@ -882,7 +884,7 @@ public: // Public functions
         }
 
         return true;
-}
+    }
 
     void cleanupSD() {
         sd.end();
