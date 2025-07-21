@@ -307,9 +307,7 @@ Quaternion get_angles_compl_quat(
     // combined with the roll from the gyroscope.
     // Quaternion::from_euler_rotation expects standard roll (X), pitch (Y), yaw (Z) in RADIANS.
     // We need to map our user-defined angles to these standard slots:
-    //   Standard Roll (X rot) input = User's Pitch (body X rot)
-    //   Standard Pitch (Y rot) input = User's Roll (body Y rot)
-    //   Standard Yaw (Z rot) input = User's Yaw (body Z rot)
+    
     Quaternion accel_derived_q = Quaternion::from_euler_rotation(
         user_roll_from_gyro_rad, accel_user_pitch_rad, accel_user_yaw_rad
     );

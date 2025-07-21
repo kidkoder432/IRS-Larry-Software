@@ -282,7 +282,7 @@ public: // Public functions
 
             yaw = totalYaw / 20;
             pitch = totalPitch / 20;
-            dir = Vec3D(pitch * 180 / PI, 0, yaw * 180 / PI);
+            dir = Vec3D(0, pitch * 180 / PI, yaw * 180 / PI);
 
 
             // --- Initialize the attitude quaternion ---
