@@ -379,7 +379,7 @@ public: // Public functions
 
     // Update TVC control
     void updateTvc() {
-        Vec2D tvc_out = tvc.update(dir, deltaTime);
+        Vec2D tvc_out = tvc.update(dir, attitude, deltaTime);
         x_out = tvc_out.x;
         y_out = tvc_out.y;
     }
