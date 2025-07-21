@@ -62,7 +62,7 @@ public:
         #endif
 
             if (ROLL_COMP) {
-                Quaternion unroll = Quaternion::from_euler_rotation(-o.x, 0, 0);
+                Quaternion unroll = from_euler_xyz(-o.x, 0, 0);
                 b = a * unroll;
             }
 

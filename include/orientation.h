@@ -12,6 +12,32 @@
 float sign(float x) { return (x > 0) - (x < 0); }
 float clamp(float x, float min, float max) { return (x < min) ? min : (x > max) ? max : x; }
 
+Quaternion from_euler_xyz(float roll, float pitch, float yaw) {
+    // Half angles for convenience
+    float half_roll = roll * 0.5f;
+    float half_pitch = pitch * 0.5f;
+    float half_yaw = yaw * 0.5f;
+
+    // Compute cosines and sines of half angles
+    float cos_roll = cosf(half_roll);
+    float sin_roll = sinf(half_roll);
+
+    float cos_pitch = cosf(half_pitch);
+    float sin_pitch = sinf(half_pitch);
+
+    float cos_yaw = cosf(half_yaw);
+    float sin_yaw = sinf(half_yaw);
+
+    Quaternion q;
+    // According to XYZ intrinsic rotation (roll->pitch->yaw)
+    q.a = cos_roll * cos_pitch * cos_yaw - sin_roll * sin_pitch * sin_yaw; // w
+    q.b = sin_roll * cos_pitch * cos_yaw + cos_roll * sin_pitch * sin_yaw; // x
+    q.c = cos_roll * sin_pitch * cos_yaw - sin_roll * cos_pitch * sin_yaw; // y
+    q.d = cos_roll * cos_pitch * sin_yaw + sin_roll * sin_pitch * cos_yaw; // z
+
+    return q;
+}
+
 float GIMBAL_LOCK_THRESHOLD = 0.99999f;
 
 // ========= Vectors ========= //
@@ -298,7 +324,7 @@ Quaternion get_angles_compl_quat(
     // Quaternion::from_euler_rotation expects standard roll (X), pitch (Y), yaw (Z) in RADIANS.
     // We need to map our user-defined angles to these standard slots:
     
-    Quaternion accel_derived_q = Quaternion::from_euler_rotation(
+    Quaternion accel_derived_q = from_euler_xyz(
         user_roll_from_gyro_rad, accel_user_pitch_rad, accel_user_yaw_rad
     );
     // accel_derived_q.normalize(); // from_euler_rotation should ideally produce a normalized quaternion
