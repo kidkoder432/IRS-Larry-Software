@@ -132,72 +132,64 @@ Vec3D get_angles_accel(SensorReadings r) {
 
 /**
  * @brief Calculates the Roll angle (rotation about the body X-axis) from a quaternion.
- * Uses the ZYX intrinsic Euler angle convention.
+ * Uses the XYZ intrinsic Euler angle convention.
  * @param q The input quaternion.
  * @return Roll angle in radians.
  */
 float get_roll_from_quaternion(Quaternion q) {
     float w = q.a, x = q.b, y = q.c, z = q.d;
-    // Formula for Roll (phi) in ZYX intrinsic Euler angles
-    float sin_roll_2 = 2.0f * (w * x + y * z);
-    float cos_roll_2 = 1.0f - 2.0f * (x * x + y * y);
-    return atan2f(sin_roll_2, cos_roll_2);
+
+    // roll = atan2(2(w*x - y*z), 1 - 2(x^2 + y^2))
+    float sinr_cosp = 2.0f * (w * x - y * z);
+    float cosr_cosp = 1.0f - 2.0f * (x * x + y * y);
+    return atan2f(sinr_cosp, cosr_cosp);
 }
 
 /**
  * @brief Calculates the Pitch angle (rotation about the body Y-axis) from a quaternion.
- * Uses the ZYX intrinsic Euler angle convention.
+ * Uses the XYZ intrinsic Euler angle convention.
  * @param q The input quaternion.
  * @return Pitch angle in radians.
  */
 float get_pitch_from_quaternion(Quaternion q) {
     float w = q.a, x = q.b, y = q.c, z = q.d;
-    // Formula for Pitch (theta) in ZYX intrinsic Euler angles
-    float sin_pitch = 2.0f * (w * y - z * x);
-    // Clamp argument to asin to prevent NaN from floating point inaccuracies
-    // (due to floating point errors, sin_pitch might slightly exceed 1.0 or fall below -1.0)
-    sin_pitch = clamp(sin_pitch, -1.0f, 1.0f);
-    return asinf(sin_pitch);
+
+    // pitch = asin(clamp(2(w*y + z*x), -1, 1))
+    float sinp = 2.0f * (w * y + z * x);
+    sinp = clamp(sinp, -1.0f, 1.0f);
+    return asinf(sinp);
 }
 
 /**
  * @brief Calculates the Yaw angle (rotation about the body Z-axis) from a quaternion.
- * Uses the ZYX intrinsic Euler angle convention.
+ * Uses the XYZ intrinsic Euler angle convention.
  * @param q The input quaternion.
  * @return Yaw angle in radians.
  */
 float get_yaw_from_quaternion(Quaternion q) {
     float w = q.a, x = q.b, y = q.c, z = q.d;
-    // Formula for Yaw (psi) in ZYX intrinsic Euler angles
-    float sin_yaw_2 = 2.0f * (w * z + x * y);
-    float cos_yaw_2 = 1.0f - 2.0f * (y * y + z * z);
-    return atan2f(sin_yaw_2, cos_yaw_2);
+
+    // yaw = atan2(2(w*z - x*y), 1 - 2(y^2 + z^2))
+    float siny_cosp = 2.0f * (w * z - x * y);
+    float cosy_cosp = 1.0f - 2.0f * (y * y + z * z);
+    return atan2f(siny_cosp, cosy_cosp);
 }
 
 /**
- * @brief Converts a quaternion to Euler angles (Roll, Pitch, Yaw) in degrees.
- * This conversion uses the ZYX (Yaw-Pitch-Roll) intrinsic rotation sequence,
- * which is common in aerospace for vehicle attitude.
- *
- * @param q The input quaternion (w, x, y, z).
- * @return A Vec3D where:
- * x = Roll angle (rotation about body X-axis) in degrees.
- * y = Pitch angle (rotation about body Y-axis) in degrees.
- * z = Yaw angle (rotation about body Z-axis) in degrees.
- *
- * Standard Euler angle vectors are often (Roll, Pitch, Yaw) in x, y, z order.
+ * @brief Converts a quaternion to Euler angles (Roll, Pitch, Yaw) in degrees
+ * using the XYZ intrinsic rotation sequence.
+ * @param q The input quaternion.
+ * @return Vec3D containing Roll (x), Pitch (y), Yaw (z) angles in degrees.
  */
 Vec3D quaternion_to_euler(Quaternion q) {
     float roll_rad = get_roll_from_quaternion(q);
     float pitch_rad = get_pitch_from_quaternion(q);
     float yaw_rad = get_yaw_from_quaternion(q);
 
-    // Convert to degrees
-    float roll_deg = roll_rad * 180.0f / PI;
-    float pitch_deg = pitch_rad * 180.0f / PI;
-    float yaw_deg = yaw_rad * 180.0f / PI;
+    float roll_deg = roll_rad * 180.0f / M_PI;
+    float pitch_deg = pitch_rad * 180.0f / M_PI;
+    float yaw_deg = yaw_rad * 180.0f / M_PI;
 
-    // Return as Vec3D (x = roll, y = pitch, z = yaw)
     return Vec3D(roll_deg, pitch_deg, yaw_deg);
 }
 
