@@ -185,7 +185,6 @@ float get_yaw_from_quaternion(Quaternion q) {
  * y = Pitch angle (rotation about body Y-axis) in degrees.
  * z = Yaw angle (rotation about body Z-axis) in degrees.
  *
- * the structure of your previously provided `Vec3D` return.
  * Standard Euler angle vectors are often (Roll, Pitch, Yaw) in x, y, z order.
  */
 Vec3D quaternion_to_euler(Quaternion q) {
@@ -194,9 +193,9 @@ Vec3D quaternion_to_euler(Quaternion q) {
     float yaw_rad = get_yaw_from_quaternion(q);
 
     // Convert to degrees
-    float roll_deg = roll_rad * 180.0f / M_PI;
-    float pitch_deg = pitch_rad * 180.0f / M_PI;
-    float yaw_deg = yaw_rad * 180.0f / M_PI;
+    float roll_deg = roll_rad * 180.0f / PI;
+    float pitch_deg = pitch_rad * 180.0f / PI;
+    float yaw_deg = yaw_rad * 180.0f / PI;
 
     // Return as Vec3D (x = roll, y = pitch, z = yaw)
     return Vec3D(roll_deg, pitch_deg, yaw_deg);
@@ -309,7 +308,7 @@ Quaternion get_angles_compl_quat(
     // We need to map our user-defined angles to these standard slots:
     
     Quaternion accel_derived_q = Quaternion::from_euler_rotation(
-        accel_user_yaw_rad, accel_user_pitch_rad, user_roll_from_gyro_rad
+        user_roll_from_gyro_rad, accel_user_yaw_rad, accel_user_pitch_rad
     );
     // accel_derived_q.normalize(); // from_euler_rotation should ideally produce a normalized quaternion
 

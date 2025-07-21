@@ -283,17 +283,8 @@ public: // Public functions
             yaw = totalYaw / 20;
             pitch = totalPitch / 20;
             dir = Vec3D(0, pitch * 180 / PI, yaw * 180 / PI);
-
-
-            // --- Initialize the attitude quaternion ---
-            // We use the calculated average User Pitch, User Roll, and User Yaw (all in RADIANS).
-            // It's understood that your `Quaternion::from_euler_rotation(arg1, arg2, arg3)` function
-            // expects its arguments to directly correspond to rotations around the body's own X, Y, and Z axes,
-            // respectively, based on your rocket's coordinate system.
-            //   arg1 (function's "roll" param)  -> Rotation around Body X-axis -> Our avgUserPitchRad
-            //   arg2 (function's "pitch" param) -> Rotation around Body Y-axis -> Our avgUserRollRad
-            //   arg3 (function's "yaw" param)   -> Rotation around Body Z-axis -> Our avgUserYawRad
-            attitude = Quaternion::from_euler_rotation(pitch, 0, yaw);
+            
+            attitude = Quaternion::from_euler_rotation(0, pitch, yaw);
         }
         else {
             printMessage("Using default angles");
@@ -423,8 +414,8 @@ public: // Public functions
         if (config["FLIP_DIR_Y"] > 0) dir.y = -dir.y;
         if (config["FLIP_DIR_Z"] > 0) dir.z = -dir.z;
 
-        pitch = dir.x;
-        roll = dir.y;
+        roll = dir.x;
+        pitch = dir.y;
         yaw = dir.z;
 
 
