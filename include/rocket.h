@@ -530,7 +530,7 @@ public: // Public functions
         p.timestamp = millis();
         p.DELTA_T = deltaTime;
         p.r = readings;
-        p.o = Vec3D(roll, pitch, yaw);
+        p.o = dir;
         p.x_out = x_out;
         p.y_out = y_out;
         p.alt = altitude; // getAltitude(config["PRESSURE_REF"], pressureOffset);
