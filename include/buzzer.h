@@ -6,30 +6,19 @@ void playConstantTone(int freq, int duration) {
 }
 
 void playToneForever(int freq) {
-    noTone(BUZZER_PIN);
-    tone(BUZZER_PIN, freq);
+    digitalWrite(BUZZER_PIN, HIGH);
 }
 
 void stopTone() {
-    noTone(BUZZER_PIN);
-}
-
-void beepTone(int freq) {
-    if ((millis() / 500) == 1) {
-        tone(BUZZER_PIN, freq);
-    }
-    else {
-        noTone(BUZZER_PIN);
-    }
-
+    digitalWrite(BUZZER_PIN, LOW);
 }
 
 void beepTone(int freq, int delay) {
     if ((millis() / delay) == 1) {
-        tone(BUZZER_PIN, freq);
+        digitalWrite(BUZZER_PIN, HIGH);
     }
     else {
-        noTone(BUZZER_PIN);
+        digitalWrite(BUZZER_PIN, LOW);
     }
 }
 

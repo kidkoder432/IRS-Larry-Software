@@ -385,12 +385,12 @@ void loop() {
 
     // ABORT
     Vec3D dir = rocket.getDir();
-    if ((abs(dir.x) >= 45 || abs(dir.z) >= 45) && flightState != FS_READY && flightState != FS_ABORT && flightState != FS_SHUTDOWN) {
-        rocket.setState(FS_ABORT);
-        rocket.printMessage("Flight or launch sequence aborted!");
-        rocket.logMessage("Flight or launch sequence aborted!");
-        rocket.abort();
-    }
+    // if ((abs(dir.y) >= 45 || abs(dir.z) >= 45) && flightState != FS_READY && flightState != FS_ABORT && flightState != FS_TOUCHDOWN) {
+    //     rocket.setState(FS_ABORT);
+    //     rocket.printMessage("Flight or launch sequence aborted!");
+    //     rocket.logMessage("Flight or launch sequence aborted!");
+    //     rocket.abort();
+    // }
 
     // TOUCHDOWN: State COASTING -> TOUCHDOWN
     if (flightState == FS_COASTING && isBetween(mag3(readings.ax, readings.ay, readings.az), 0.9, 1.1)) {
