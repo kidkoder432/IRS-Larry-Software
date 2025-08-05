@@ -81,7 +81,7 @@ Config defaultConfig = {
     {"FLIP_Y", false},
 
     // TVC Roll compensation
-    {"ROLL_COMP", true},
+    {"ROLL_COMP", false},
 
     // Angle Output Flip
     {"FLIP_DIR_X", false},

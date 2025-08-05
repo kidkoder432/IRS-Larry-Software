@@ -165,13 +165,25 @@ void readSensors(SensorReadings& r, GyroBiases biases) {
     //   y -> x
     //   z -> -z
 
-    r.ax = imu.data.accelY;
-    r.ay = imu.data.accelX;
-    r.az = -imu.data.accelZ;
+    bool USE_RAW = false;
+    if (!USE_RAW) {
+        r.ax = imu.data.accelY;
+        r.ay = imu.data.accelX;
+        r.az = -imu.data.accelZ;
 
-    r.gx = imu.data.gyroY - biases.by;
-    r.gy = imu.data.gyroX - biases.bx;
-    r.gz = -imu.data.gyroZ + biases.bz;
+        r.gx = imu.data.gyroY - biases.by;
+        r.gy = imu.data.gyroX - biases.bx;
+        r.gz = -imu.data.gyroZ + biases.bz;
+    }
+    else {
+        r.ax = imu.data.accelX;
+        r.ay = imu.data.accelY;
+        r.az = imu.data.accelZ;
+
+        r.gx = imu.data.gyroX;
+        r.gy = imu.data.gyroY;
+        r.gz = imu.data.gyroZ;
+    }
 }
 
 GyroBiases calibrateSensors(Config& config) {

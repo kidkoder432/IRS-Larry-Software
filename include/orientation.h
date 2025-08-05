@@ -148,7 +148,7 @@ Vec2D get_angles_complementary(float A, float dt, SensorReadings r, float yaw, f
 // RADIANS
 Vec3D get_angles_accel(SensorReadings r) {
     float yaw = -atan2(r.ay, r.ax);
-    float pitch = -atan2(-r.az, sqrt(r.ax * r.ax + r.ay * r.ay));
+    float pitch = atan2(r.az, sqrt(r.ax * r.ax + r.ay * r.ay));
 
     return Vec3D(0, pitch, yaw);
 }
