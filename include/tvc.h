@@ -113,9 +113,10 @@ public:
         return Vec2D(tvcx.read(), tvcy.read());
     }
 
-    void lock() {
+    Vec2D lock() {
         locked = true;
         move(XDEF, YDEF);
+        return Vec2D(XDEF, YDEF);
     }
 
     void unlock() {

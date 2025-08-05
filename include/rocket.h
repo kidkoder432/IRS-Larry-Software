@@ -101,6 +101,7 @@ public: // Public functions
     bool bleOn = true;
     float deltaTime = 0;
     bool useCompl = true;
+    bool tvcPermaLocked = false;
 
 
     PyroChannel pyro1_motor = PyroChannel(PYRO_1_LANDING_MOTOR_PIN, 2000L, false, false);
@@ -242,6 +243,7 @@ public: // Public functions
         config = readConfig();
         logStatus("Config read successfully", logFile);
         doBatchLog = config["DATA_LOG_BATCH"] > 0;
+        tvcPermaLocked = config["TVC_PERMA_LOCKED"] > 0;
         printConfig(config);
         return true;
     }
@@ -370,7 +372,13 @@ public: // Public functions
 
     // Update TVC control
     void updateTvc() {
-        Vec2D tvc_out = tvc.update(dir, attitude, deltaTime);
+        Vec2D tvc_out;
+        if (tvcPermaLocked) {
+            tvc_out = tvc.lock();
+        }
+        else {
+            tvc_out = tvc.update(dir, attitude, deltaTime);
+        }
         x_out = tvc_out.x;
         y_out = tvc_out.y;
     }
