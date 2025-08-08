@@ -64,7 +64,6 @@ private:  // Member variables and internal functions
 
     SensorReadings readings;
     GyroBiases biases;
-    float pressureOffset = 0;
 
     Quaternion attitude;
     Vec3D dir;
@@ -74,7 +73,6 @@ private:  // Member variables and internal functions
     float x_out, y_out;
 
     bool doLog = true;
-    bool doBatchLog = true;
     static const int BUFFER_SIZE = 256;
     DataPoint dataArr[BUFFER_SIZE];
     int loopCount = 0;
@@ -102,6 +100,7 @@ public: // Public functions
     float deltaTime = 0;
     bool useCompl = true;
     bool tvcPermaLocked = false;
+    Altimeter altimeter;
 
 
     PyroChannel pyro1_motor = PyroChannel(PYRO_1_LANDING_MOTOR_PIN, 2000L, false, false);
@@ -242,7 +241,6 @@ public: // Public functions
     bool initConfig() {
         config = readConfig();
         logStatus("Config read successfully", logFile);
-        doBatchLog = config["DATA_LOG_BATCH"] > 0;
         tvcPermaLocked = config["TVC_PERMA_LOCKED"] > 0;
         printConfig(config);
         return true;
@@ -250,7 +248,14 @@ public: // Public functions
 
     // Initialize sensors
     bool setupSensors() {
-        return initSensors();
+        initIMU();
+        delay(1000);
+    #if USE_BLE_SENSE
+        if (!BARO.begin()) Serial.println("Failed to initialize BARO!");
+        BARO.setOutputRate(RATE_75_HZ);
+    #endif
+        delay(1000);
+        altimeter.configure(config);
     }
 
     // Calibrate sensors and log results
@@ -285,7 +290,7 @@ public: // Public functions
             yaw = totalYaw / 20;
             pitch = totalPitch / 20;
             dir = Vec3D(0, pitch * 180 / PI, yaw * 180 / PI);
-            
+
             attitude = Quaternion::from_euler_rotation(0, pitch, yaw);
         }
         else {
@@ -453,12 +458,9 @@ public: // Public functions
 
     // Update altitude and vertical velocity
     void updateAltVel() {
-    #if USE_BLE_SENSE
-        altitude = getAltitude(config["PRESSURE_REF"], pressureOffset);
-    #else
-        altitude = 0;
-    #endif
-        vertVel -= (readings.ay - 1) * 9.80665 * deltaTime;
+        altimeter.update(readings, attitude, deltaTime);
+        altitude = altimeter.getAltitude();
+        vertVel = altimeter.getVelocity();
     }
 
     // Play buzzer heartbeat tone
@@ -620,10 +622,9 @@ public: // Public functions
 
         DataPoint d = getDataPoint();
 
-        if (doBatchLog) {
-            dataArr[bufferCount] = d;
-            bufferCount++;
-        }
+        dataArr[bufferCount] = d;
+        bufferCount++;
+
 
 
         if (bufferCount >= BUFFER_SIZE) {
@@ -721,12 +722,8 @@ public: // Public functions
             printMessage("Data Logging Disabled, saving logs");
 
             // force log
-            if (doBatchLog) {
-                logDataBatchOneShot(dataArr, BUFFER_SIZE);
-            }
-            else {
-                logPoint(getDataPoint());
-            }
+            logDataBatchOneShot(dataArr, BUFFER_SIZE);
+
 
         #if USE_FLASH
             if (fflush(flashFile)) {
@@ -908,12 +905,7 @@ public: // Public functions
 
         printMessage("Cleaning up logs...");
         // force log
-        if (doBatchLog) {
-            logDataBatchOneShot(dataArr, BUFFER_SIZE);
-        }
-        else {
-            logPoint(getDataPoint());
-        }
+        logDataBatchOneShot(dataArr, BUFFER_SIZE);
 
         cleanupLogs();
         cleanupSD();

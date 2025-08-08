@@ -5,7 +5,7 @@
 #include <leds.h>
 
 #if USE_BLE_SENSE
-#include <alt.h>
+#include <Arduino_LPS22HB.h>
 #endif
 
 #if USE_RP2040
@@ -104,7 +104,7 @@ GyroBiases calibrateSensors(Config& config) {
 }
 
 #else
-bool initSensors() {
+bool initIMU() {
     Wire1.begin();
     if (!imu.beginI2C(0x68, Wire1)) return false;
 
@@ -133,11 +133,6 @@ bool initSensors() {
         Serial.println("Error setting sensor configuration.");
         return false;
     }
-
-#if USE_BLE_SENSE
-    if (!BARO.begin()) return false;
-    BARO.setOutputRate(RATE_75_HZ);
-#endif
 
     return true;
 
