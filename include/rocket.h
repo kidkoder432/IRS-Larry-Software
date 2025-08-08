@@ -100,8 +100,9 @@ public: // Public functions
     float deltaTime = 0;
     bool useCompl = true;
     bool tvcPermaLocked = false;
+#if USE_BLE_SENSE 
     Altimeter altimeter;
-
+#endif
 
     PyroChannel pyro1_motor = PyroChannel(PYRO_1_LANDING_MOTOR_PIN, 2000L, false, false);
     PyroChannel pyro2_land = PyroChannel(PYRO_2_LANDING_LEGS_PIN, 2000L, false, false);
@@ -253,9 +254,10 @@ public: // Public functions
     #if USE_BLE_SENSE
         if (!BARO.begin()) Serial.println("Failed to initialize BARO!");
         BARO.setOutputRate(RATE_75_HZ);
-    #endif
         delay(1000);
         altimeter.configure(config);
+    #endif
+
     }
 
     // Calibrate sensors and log results
@@ -457,11 +459,18 @@ public: // Public functions
     }
 
     // Update altitude and vertical velocity
+#if USE_BLE_SENSE
     void updateAltVel() {
         altimeter.update(readings, attitude, deltaTime);
         altitude = altimeter.getAltitude();
         vertVel = altimeter.getVelocity();
     }
+#else
+    void updateAltVel() {
+        altitude = 0; // No altitude sensor
+        vertVel = 0; // No vertical velocity sensor
+    }
+#endif
 
     // Play buzzer heartbeat tone
     void updateBuzzer() {
@@ -682,7 +691,7 @@ public: // Public functions
     #else
         logDataRaw(bytes, (bufferCount) * (sizeof(DataPoint) - 4), dataFile);
     #endif
-    }
+            }
 
     // Log a single data point
     void logPoint(DataPoint p) {
@@ -834,7 +843,7 @@ public: // Public functions
             Serial.print(" ");
         #endif
         }
-    }
+        }
 
     // --- Getters --- //
 
@@ -939,4 +948,4 @@ public: // Public functions
         fullCleanup();
         HALT_DONE();
     }
-};
+    };
