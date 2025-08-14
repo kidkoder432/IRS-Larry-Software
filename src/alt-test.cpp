@@ -2,13 +2,6 @@
 
 Rocket rocket;
 
-float alpha = 0.95;
-float alpha_alt = 0.95;
-
-float newAlt, vel;
-float prevBaroAlt_filtered = 0;
-float altAccel_raw = 0;
-
 float lerp(float a, float b, float t) { return a + (b - a) * t; }
 
 void setup() {
