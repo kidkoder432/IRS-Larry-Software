@@ -293,7 +293,7 @@ public: // Public functions
             pitch = totalPitch / 20;
             dir = Vec3D(0, pitch * 180 / PI, yaw * 180 / PI);
 
-            attitude = Quaternion::from_euler_rotation(0, pitch, yaw);
+            attitude = from_euler_xyz(0, pitch, yaw);
         }
         else {
             printMessage("Using default angles");
