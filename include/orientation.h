@@ -12,6 +12,18 @@
 float sign(float x) { return (x > 0) - (x < 0); }
 float clamp(float x, float min, float max) { return (x < min) ? min : (x > max) ? max : x; }
 
+
+/**
+ * @brief Converts XYZ Euler angles (roll, pitch, yaw) to a quaternion.
+ *
+ * This function applies intrinsic rotations in the order of X (roll), then Y (pitch), then Z (yaw).
+ * The resulting quaternion represents the multiplication Q_final = Q_roll * Q_pitch * Q_yaw.
+ *
+ * @param yaw The yaw angle in radians (rotation around the Z-axis).
+ * @param pitch The pitch angle in radians (rotation around the Y-axis).
+ * @param roll The roll angle in radians (rotation around the X-axis).
+ * @return The corresponding quaternion.
+ */
 Quaternion from_euler_xyz(float roll, float pitch, float yaw) {
     // Half angles for convenience
     float half_roll = roll * 0.5f;
@@ -34,6 +46,45 @@ Quaternion from_euler_xyz(float roll, float pitch, float yaw) {
     q.b = sin_roll * cos_pitch * cos_yaw + cos_roll * sin_pitch * sin_yaw; // x
     q.c = cos_roll * sin_pitch * cos_yaw - sin_roll * cos_pitch * sin_yaw; // y
     q.d = cos_roll * cos_pitch * sin_yaw + sin_roll * sin_pitch * cos_yaw; // z
+
+    return q;
+}
+
+
+/**
+ * @brief Converts ZYX Euler angles (yaw, pitch, roll) to a quaternion.
+ *
+ * This function applies intrinsic rotations in the order of Z (yaw), then Y (pitch), then X (roll).
+ * This is the standard Tait-Bryan angle convention used in aerospace.
+ * The resulting quaternion represents the multiplication Q_final = Q_yaw * Q_pitch * Q_roll.
+ *
+ * @param yaw The yaw angle in radians (rotation around the Z-axis).
+ * @param pitch The pitch angle in radians (rotation around the Y-axis).
+ * @param roll The roll angle in radians (rotation around the X-axis).
+ * @return The corresponding quaternion.
+ */
+Quaternion from_euler_zyx(float yaw, float pitch, float roll) {
+    // Half angles for convenience
+    float half_yaw = yaw * 0.5f;
+    float half_pitch = pitch * 0.5f;
+    float half_roll = roll * 0.5f;
+
+    // Compute cosines and sines of half angles
+    float cos_yaw = cosf(half_yaw);
+    float sin_yaw = sinf(half_yaw);
+
+    float cos_pitch = cosf(half_pitch);
+    float sin_pitch = sinf(half_pitch);
+
+    float cos_roll = cosf(half_roll);
+    float sin_roll = sinf(half_roll);
+
+    Quaternion q;
+    // According to ZYX intrinsic rotation (yaw->pitch->roll)
+    q.a = cos_yaw * cos_pitch * cos_roll + sin_yaw * sin_pitch * sin_roll; // w
+    q.b = cos_yaw * cos_pitch * sin_roll - sin_yaw * sin_pitch * cos_roll; // x
+    q.c = cos_yaw * sin_pitch * cos_roll + sin_yaw * cos_pitch * sin_roll; // y
+    q.d = sin_yaw * cos_pitch * cos_roll - cos_yaw * sin_pitch * sin_roll; // z
 
     return q;
 }
@@ -157,53 +208,69 @@ Vec3D get_angles_accel(SensorReadings r) {
 // These functions return angles in RADIANS.
 
 /**
- * @brief Calculates the Roll angle (rotation about the body X-axis) from a quaternion.
- * Uses the XYZ intrinsic Euler angle convention.
+ * @brief Calculates the Pitch angle (rotation about body Y-axis).
+ * (This function is unchanged)
+ */
+float get_pitch_from_quaternion(Quaternion q) {
+    float w = q.a, x = q.b, y = q.c, z = q.d;
+    float sinp = 2.0f * (w * y - z * x);
+    sinp = clamp(sinp, -1.0f, 1.0f);
+    return asinf(sinp);
+}
+
+/**
+ * @brief Calculates the Roll angle (rotation about body X-axis) with gimbal lock safety.
+ *
+ * If a gimbal lock is detected (pitch is +/- 90 deg), this function returns 0,
+ * as roll is conventionally set to zero in this state.
+ *
  * @param q The input quaternion.
  * @return Roll angle in radians.
  */
 float get_roll_from_quaternion(Quaternion q) {
     float w = q.a, x = q.b, y = q.c, z = q.d;
 
-    // roll = atan2(2(w*x - y*z), 1 - 2(x^2 + y^2))
-    float sinr_cosp = 2.0f * (w * x - y * z);
+    // First, check for the gimbal lock condition
+    float sinp = 2.0f * (w * y - z * x);
+    if (fabsf(sinp) >= 1.0f) {
+        // In gimbal lock, roll is conventionally set to 0
+        return 0.0f;
+    }
+
+    // If not in gimbal lock, calculate roll normally
+    float sinr_cosp = 2.0f * (w * x + y * z);
     float cosr_cosp = 1.0f - 2.0f * (x * x + y * y);
     return atan2f(sinr_cosp, cosr_cosp);
 }
 
 /**
- * @brief Calculates the Pitch angle (rotation about the body Y-axis) from a quaternion.
- * Uses the XYZ intrinsic Euler angle convention.
- * @param q The input quaternion.
- * @return Pitch angle in radians.
- */
-float get_pitch_from_quaternion(Quaternion q) {
-    float w = q.a, x = q.b, y = q.c, z = q.d;
-
-    // pitch = asin(clamp(2(w*y + z*x), -1, 1))
-    float sinp = 2.0f * (w * y + z * x);
-    sinp = clamp(sinp, -1.0f, 1.0f);
-    return asinf(sinp);
-}
-
-/**
- * @brief Calculates the Yaw angle (rotation about the body Z-axis) from a quaternion.
- * Uses the XYZ intrinsic Euler angle convention.
+ * @brief Calculates the Yaw angle (rotation about body Z-axis) with gimbal lock safety.
+ *
+ * If a gimbal lock is detected (pitch is +/- 90 deg), this function calculates
+ * the combined yaw/roll rotation on the yaw axis.
+ *
  * @param q The input quaternion.
  * @return Yaw angle in radians.
  */
 float get_yaw_from_quaternion(Quaternion q) {
     float w = q.a, x = q.b, y = q.c, z = q.d;
 
-    // yaw = atan2(2(w*z - x*y), 1 - 2(y^2 + z^2))
-    float siny_cosp = 2.0f * (w * z - x * y);
+    // First, check for the gimbal lock condition
+    float sinp = 2.0f * (w * y - z * x);
+    if (fabsf(sinp) >= 1.0f) {
+        // In gimbal lock, the yaw angle absorbs the roll rotation
+        return 2.0f * atan2f(x, w);
+    }
+
+    // If not in gimbal lock, calculate yaw normally
+    float siny_cosp = 2.0f * (w * z + x * y);
     float cosy_cosp = 1.0f - 2.0f * (y * y + z * z);
     return atan2f(siny_cosp, cosy_cosp);
 }
 
 /**
  * @brief Converts a quaternion to Euler angles (Roll, Pitch, Yaw) in degrees
- * using the XYZ intrinsic rotation sequence.
+ * by calling the individual ZYX component functions.
  * @param q The input quaternion.
  * @return Vec3D containing Roll (x), Pitch (y), Yaw (z) angles in degrees.
  */
