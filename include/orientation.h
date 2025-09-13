@@ -63,7 +63,7 @@ Quaternion from_euler_xyz(float roll, float pitch, float yaw) {
  * @param roll The roll angle in radians (rotation around the X-axis).
  * @return The corresponding quaternion.
  */
-Quaternion from_euler_zyx(float yaw, float pitch, float roll) {
+Quaternion from_euler_zyx(float roll, float pitch, float yaw) {
     // Half angles for convenience
     float half_yaw = yaw * 0.5f;
     float half_pitch = pitch * 0.5f;
@@ -391,7 +391,7 @@ Quaternion get_angles_compl_quat(
     // Quaternion::from_euler_rotation expects standard roll (X), pitch (Y), yaw (Z) in RADIANS.
     // We need to map our user-defined angles to these standard slots:
     
-    Quaternion accel_derived_q = from_euler_xyz(
+    Quaternion accel_derived_q = from_euler_zyx(
         user_roll_from_gyro_rad, accel_user_pitch_rad, accel_user_yaw_rad
     );
     // accel_derived_q.normalize(); // from_euler_rotation should ideally produce a normalized quaternion
