@@ -60,7 +60,7 @@ rocket = compound([tube, nose])
 # rocket = compound([bBoard, bn, nano])
 
 # Initialize serial port
-ser = serial.Serial("COM5", 115200)  # Replace '/dev/ttyUSB0' with your serial port
+ser = serial.Serial("COM9", 115200)  # Replace '/dev/ttyUSB0' with your serial port
 
 roll, pitch, yaw = 0, 0, 0
 import threading
@@ -159,7 +159,7 @@ while True:
         # yaw, pitch, roll = quaternion_to_euler(q0, q1, q2, q3)
 
         # Uncomment to use Arduino-reported angles
-        yaw, pitch, roll = map(float, line.split())
+        roll, pitch, yaw = map(float, line.split())
 
         rocket.pos = vector(0, 0, 0)
 
