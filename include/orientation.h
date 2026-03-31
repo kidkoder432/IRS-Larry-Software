@@ -329,13 +329,17 @@ Quaternion get_angles_compl_quat(
     );
     // accel_derived_q.normalize(); // from_euler_rotation should ideally produce a normalized quaternion
 
-    // 5. Fuse gyro_predicted_q and accel_derived_q using SLERP
-    // The interpolation factor 't' for slerp(q1, q2, t) goes from q1 (if t=0) to q2 (if t=1).
+    // 5. Fuse gyro_predicted_q and accel_derived_q using LERP
+    // The interpolation factor 't' for lerp(q1, q2, t) goes from q1 (if t=0) to q2 (if t=1).
     // We want to move from gyro_predicted_q towards accel_derived_q by a small amount (accel_weight).
+    // replace your slerp call with:
     float accel_weight = 1.0f - gyro_weight;
-    current_attitude_estimate = slerp(gyro_predicted_q, accel_derived_q, accel_weight);
 
-    current_attitude_estimate.normalize(); // Final normalization
+    current_attitude_estimate.a = gyro_predicted_q.a * gyro_weight + accel_derived_q.a * accel_weight;
+    current_attitude_estimate.b = gyro_predicted_q.b * gyro_weight + accel_derived_q.b * accel_weight;
+    current_attitude_estimate.c = gyro_predicted_q.c * gyro_weight + accel_derived_q.c * accel_weight;
+    current_attitude_estimate.d = gyro_predicted_q.d * gyro_weight + accel_derived_q.d * accel_weight;
+    current_attitude_estimate.normalize();
 
     return current_attitude_estimate;
 }
