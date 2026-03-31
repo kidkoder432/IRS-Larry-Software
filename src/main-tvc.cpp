@@ -1,6 +1,7 @@
 // Test all components and features
 
-#include <rocket.h>
+#include <rocket_dummy.h>
+#include <NRF52_MBED_TimerInterrupt.h>
 
 float isBetween(float x, float a, float b) { return a <= x && x <= b; }
 
@@ -12,6 +13,8 @@ bool newCommand = false;
 #if USE_BLE 
 HardwareBLESerial& bleSerial = rocket.getBle();
 #endif
+
+NRF52_MBED_Timer ITimer(NRF_TIMER_3);
 
 void recvOneChar() {
     if (Serial.available() > 0) {
@@ -40,9 +43,8 @@ void printTvc() {
     rocket.printMessage(" Y: ", false);
     rocket.printMessage(tvcOut.y);
 
-
-
 }
+
 const int SEC_TO_LAUNCH = 21;
 int launchTimer = SEC_TO_LAUNCH;
 
@@ -78,11 +80,34 @@ X: Cancel Printing
 H: Help
 )";
 
+// Global timing struct
+struct PerfStats {
+    unsigned long sensorUs;
+    unsigned long anglesUs;
+    unsigned long tvcUs;
+    unsigned long totalUs;
+    unsigned long sdUs;
+    unsigned long isr_to_run;  // how long between ISR firing and code actually running
+    unsigned long worstTotal;
+    unsigned long worstSensor;
+} perf;
+
+volatile unsigned long isrFiredAt = 0;
+
+volatile bool state = false;
+volatile bool sdFree = true;
+volatile unsigned long long lastLoopTime = 0;
+
+void loopHandler() {
+    sdFree = false;
+    isrFiredAt = micros();
+    state = rocket.heartbeat(state);
+}
+
 void setup() {
 
     // Setup basic interfaces
     rocket.initSerial();
-    delay(2000);
 
     rocket.initBuzzer();
     rocket.printMessage("Buzzer initialized!");
@@ -91,9 +116,9 @@ void setup() {
     rocket.printMessage("LEDs initialized!");
 
     // Setup SD card, config and data logging
-    rocket.initSD();
+    bool sdInit = rocket.initSD();
     rocket.printMessage("SD card initialized!");
-    rocket.getSdInfo();
+    if (sdInit) rocket.getSdInfo();
     rocket.initLogs();
     rocket.printMessage("Data logging initialized!");
 
@@ -160,6 +185,16 @@ void setup() {
 
     rocket.initChutes();
     rocket.printMessage("Chutes initialized!");
+
+    // IMPORTANT: You must call this for MBED timers to initialize
+    if (ITimer.attachInterruptInterval(10000, loopHandler)) {
+        rocket.printMessage("Starting ITimer OK, interval = 10ms");
+    }
+    else {
+        rocket.printMessage("Can't set ITimer. Select another timer or interval");
+        rocket.HALT_AND_CATCH_FIRE();
+    }
+
 
     rocket.finishSetup();
 
@@ -255,11 +290,18 @@ void loop() {
                         rocket.printMessage(HELP_STR);
                         break;
                     case 'P':
-                        rocket.printMessage("Time per loop: ", false);
-                        rocket.printMessage(rocket.deltaTime);
+                        char buf[256];
+                        snprintf(buf, sizeof(buf),
+                            "sensor=%lu  angles=%lu  tvc=%lu  total=%lu  sd=%lu  latency=%lu  worst=%lu (all us)",
+                            perf.sensorUs, perf.anglesUs, perf.tvcUs,
+                            perf.totalUs, perf.sdUs, perf.isr_to_run, perf.worstTotal);
+                        rocket.printMessage(buf);
 
-                        rocket.printMessage("Loop rate: ", false);
-                        rocket.printMessage(1 / rocket.deltaTime);
+                        snprintf(buf, sizeof(buf), "Loop rate: %0.2f Hz", 1000000.0 / (perf.totalUs + perf.sdUs));
+                        rocket.printMessage(buf);
+
+                        rocket.printMessage("Pending data points: ", false);
+                        rocket.printMessage(rocket.getPending());
                         break;
                     default:
                         rocket.printMessage("Invalid command!");
@@ -324,7 +366,7 @@ void loop() {
                 rocket.initAngles();
                 rocket.disableCompl();
                 rocket.tvc.reset();
-                
+
                 rocket.printMessage("Rocket armed!");
                 rocket.printMessage("Awaiting ignition...");
                 rocket.setState(FS_ARMED);
@@ -369,7 +411,7 @@ void loop() {
 
             recvOneChar();
             if (newCommand) {
-                rocket.setState(FS_SHUTDOWN);
+                rocket.finish();
             }
             break;
 
@@ -385,12 +427,12 @@ void loop() {
 
     // ABORT
     Vec3D dir = rocket.getDir();
-    // if ((abs(dir.y) >= 45 || abs(dir.z) >= 45) && flightState != FS_READY && flightState != FS_ABORT && flightState != FS_TOUCHDOWN) {
-    //     rocket.setState(FS_ABORT);
-    //     rocket.printMessage("Flight or launch sequence aborted!");
-    //     rocket.logMessage("Flight or launch sequence aborted!");
-    //     rocket.abort();
-    // }
+    if ((abs(dir.y) >= 45 || abs(dir.z) >= 45) && flightState != FS_READY && flightState != FS_ABORT && flightState != FS_TOUCHDOWN) {
+        rocket.setState(FS_ABORT);
+        rocket.printMessage("Flight or launch sequence aborted!");
+        rocket.logMessage("Flight or launch sequence aborted!");
+        rocket.abort();
+    }
 
     // TOUCHDOWN: State COASTING -> TOUCHDOWN
     if (flightState == FS_COASTING && isBetween(mag3(readings.ax, readings.ay, readings.az), 0.9, 1.1)) {
@@ -435,21 +477,45 @@ void loop() {
         rocket.setState(FS_THRUST);
     }
 
-    // constrain to 100hz
-    rocket.updateTime();
+    if (!sdFree) {
 
-    // Update spatial data
-    rocket.updateSensors();
-    rocket.updateAngles();
-    rocket.updateAltVel();
+        // constrain to 100hz
+        rocket.updateTime();
 
-    // Update hardware
-    rocket.updateTvc();
-    rocket.updatePyros();
-    rocket.updateChutes();
+        // Update spatial data
+        rocket.updateAltVel();
 
-    // Update logging
-    rocket.updateDataLog();
+        rocket.updateChutes();
 
-    rocket.updateStateLeds();
+        sdFree = true;
+
+        unsigned long t0 = micros();
+        perf.isr_to_run = t0 - isrFiredAt;  // ISR latency
+
+        rocket.updateSensors();
+        unsigned long t1 = micros();
+
+        rocket.updateAngles();
+        unsigned long t2 = micros();
+
+        rocket.updateTvc();
+        unsigned long t3 = micros();
+
+        rocket.updatePyros();
+        rocket.getNewData();
+        unsigned long t4 = micros();
+
+        perf.sensorUs = t1 - t0;
+        perf.anglesUs = t2 - t1;
+        perf.tvcUs = t3 - t2;
+        perf.totalUs = t4 - t0;
+
+        if (perf.totalUs > perf.worstTotal)  perf.worstTotal = perf.totalUs;
+        if (perf.sensorUs > perf.worstSensor) perf.worstSensor = perf.sensorUs;
+    }
+    else {
+        unsigned long tSD = micros();
+        rocket.logNextData();
+        perf.sdUs = micros() - tSD;
+    }
 }
