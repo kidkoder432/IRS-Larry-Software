@@ -111,12 +111,12 @@ public: // Public functions
 
     // Handle catastrophic failures
     void HALT_AND_CATCH_FIRE() {
-
-        while (true) {
-            flash(COLOR_RED, 400);
-            playAbortSound();
-            delay(2);
-        }
+        Serial.println("HALT_AND_CATCH_FIRE");
+        // while (true) {
+        //     flash(COLOR_RED, 400);
+        //     playAbortSound();
+        //     delay(2);
+        // }
     }
 
     void HALT_AND_CATCH_FIRE(Color color) {
@@ -177,7 +177,7 @@ public: // Public functions
         if (!logFile.open("log.txt", O_WRITE | O_CREAT)) {
             printMessage("Failed to open log file!");
             HALT_AND_CATCH_FIRE();
-            return false;
+            // return false;
         }
     #if CHECK_EMPTY_LOG
         if (logFile.size() > 0) {
@@ -191,7 +191,7 @@ public: // Public functions
         if (!dataFile.open("data.bin", O_WRITE | O_CREAT)) {
             printMessage("Failed to open data file!");
             HALT_AND_CATCH_FIRE();
-            return false;
+            // return false;
         }
     #if CHECK_EMPTY_LOG
         if (dataFile.size() > 0) {
@@ -202,7 +202,7 @@ public: // Public functions
         dataFile.truncate(0);
         dataFile.println(DATA_HEADER);
         dataFile.sync();
-        setLogSpeed(DLS_SLOW);
+        setLogSpeed(DLS_FAST);
         dataLogger.setTargetFile(&dataFile);
         return true;
     }
@@ -299,6 +299,7 @@ public: // Public functions
         pinMode(LEDR, OUTPUT);
         pinMode(LEDG, OUTPUT);
         pinMode(LEDB, OUTPUT);
+        pinMode(LED_BUILTIN, OUTPUT);
         showColor(COLOR_OFF);
         return true;
     }
@@ -389,7 +390,7 @@ public: // Public functions
         else {
             digitalWrite(LED_BUILTIN, LOW);
             attitude = get_angles_quat(readings, attitude, deltaTime);
-        }
+    }
 
         dir = quaternion_to_euler(attitude);
 
@@ -537,8 +538,9 @@ public: // Public functions
     void logNextData() {
 
         if (!doLog) return;
-
+        showColor(COLOR_RED);
         dataLogger.logNextPoint();
+        showColor(COLOR_GREEN);
 
     }
 
@@ -548,7 +550,7 @@ public: // Public functions
             if (dataArr[i].isEmpty) {
                 continue;
             }
-        
+
             logDataPointBin(dataArr[i], dataFile);
         }
         dataFile.sync();
