@@ -1,16 +1,6 @@
 // DATA LOGGING 
 #include <Arduino.h>
 #include <SPI.h>
-#if USE_RP2040
-#define RP2040_FS_SIZE_KB 1536
-#define MBED_LFS_BLOCK_SIZE  512
-#define MBED_LFS_CACHE_SIZE  512
-#define MBED_LFS_LOOKAHEAD_SIZE  128
-#define MBED_LFS_PROG_SIZE  256
-#define _LFS_LOGLEVEL_ 4
-
-#include <LittleFS_Mbed_RP2040.h>
-#endif
 #include <SdFat.h>
 
 #define DEBUG 0
@@ -41,9 +31,6 @@ union DataPointBin {
 
     DataPointBin() = default;
 };
-
-
-
 
 
 bool logStatus(const char* msg, ExFile& logFile) {
@@ -159,51 +146,6 @@ bool logDataPoint(DataPoint p, ExFile& dataFile) {
     dataFile.print(p.dy, 3);
     dataFile.println();
 
-#if DEBUG
-    Serial.println("Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Yaw,Pitch,Xout,Yout,Alt,State,Vel,Px,Ix,Dx,Py,Iy,Dy");
-    Serial.print(p.timestamp, 6);
-    Serial.print(",");
-    Serial.print(p.DELTA_T, 6);
-    Serial.print(",");
-    Serial.print(p.r.ay, 6);
-    Serial.print(",");
-    Serial.print(p.r.az, 6);
-    Serial.print(",");
-    Serial.print(p.r.gx, 6);
-    Serial.print(",");
-    Serial.print(p.r.gy, 6);
-    Serial.print(",");
-    Serial.print(p.r.gz, 6);
-    Serial.print(",");
-    Serial.print(p.o.x, 6);
-    Serial.print(",");
-    Serial.print(p.o.y, 6);
-    Serial.print(",");
-    Serial.print(p.o.z, 6);
-    Serial.print(",");
-    Serial.print(p.x_out, 6);
-    Serial.print(",");
-    Serial.print(p.y_out, 6);
-    Serial.print(",");
-    Serial.print(p.alt, 6);
-    Serial.print(",");
-    Serial.print(p.currentState);
-    Serial.print(",");
-    Serial.print(p.vert_vel, 6);
-    Serial.print(",");
-    Serial.print(p.px, 6);
-    Serial.print(",");
-    Serial.print(p.ix, 6);
-    Serial.print(",");
-    Serial.print(p.dx, 6);
-    Serial.print(",");
-    Serial.print(p.py, 6);
-    Serial.print(",");
-    Serial.print(p.iy, 6);
-    Serial.print(",");
-    Serial.println(p.dy, 6);
-    Serial.println();
-#endif
     return true;
 
 }
@@ -248,106 +190,52 @@ void sdCardInfo(SdExFat& sd) {
     sd.ls(LS_R | LS_DATE | LS_SIZE);
 }
 
-#if USE_RP2040
 
-unsigned long getFreeSpace() {
-    struct statvfs fs_info;
-    if (statvfs("/littlefs", &fs_info) == 0) {
-        return fs_info.f_bsize * fs_info.f_bfree;
-    }
-    else {
-        return 0;
-    }
-}
+class DataLogger {
+public:
+    DataLogger() : logFile(nullptr) {} // Start with no file
 
-void printFilesystemInfo() {
-    struct statvfs fs_info;
-
-    if (statvfs("/littlefs", &fs_info) == 0) {
-        unsigned long totalSize = fs_info.f_bsize * fs_info.f_blocks;
-        unsigned long freeSize = fs_info.f_bsize * fs_info.f_bfree;
-
-        Serial.print("Total ExFilesystem Size: ");
-        Serial.print(totalSize);
-        Serial.println(" bytes");
-
-        Serial.print("Free Space: ");
-        Serial.print(freeSize);
-        Serial.println(" bytes");
-
-        Serial.print("Used Space: ");
-        Serial.print(totalSize - freeSize);
-        Serial.println(" bytes");
-    }
-    else {
-        Serial.println("Failed to retrieve filesystem info.");
-    }
-}
-
-bool logDataRaw(uint8_t data[], int size, FILE* dataFile) {
-    if (!dataFile) {
-        Serial.println("Couldn't open flash file");
-        return false;
+    // Call this after your other class successfully opens the file
+    void setTargetFile(ExFile* file) {
+        this->logFile = file;
     }
 
-    int written = fwrite(data, 1, size, dataFile);
-    Serial.println(written);
-    Serial.println(size);
-    if (written != size) {
-        Serial.println("Failed to write to flash file");
-        return false;
-    }
-
-    fflush(dataFile);
-
-    return true;
-}
-
-bool logDataPointBin(DataPoint p, FILE* dataFile) {
-
-    DataPointBin pBin;
-    pBin.p = p;
-
-    if (!dataFile) {
-        Serial.println("Couldn't open flash file");
-        return false;
-    }
-
-    if (!fwrite(pBin.dataBytes, sizeof(DataPoint) - 4, 1, dataFile)) {
-        Serial.println("Failed to write to flash file");
-        return false;
-    }
-
-    fflush(dataFile);
-
-    return true;
-}
-
-bool writeSD(FILE* flashFile, ExFile& dataFile) {
-    if (!dataFile.isOpen()) {
-        Serial.println("Couldn't open data file");
-        return false;
-    }
-
-    if (!flashFile) {
-        Serial.println("Couldn't open flash file");
-        return false;
-    }
-
-    char buf[512];
-    while (!feof(flashFile)) {
-        int bytesRead = fread(buf, 1, sizeof(buf), flashFile);
-        if (bytesRead > 0) {
-            if (!dataFile.write(buf, bytesRead)) {
-                Serial.println("Failed to write to data file");
-                return false;
-            }
-            dataFile.sync();
+    void addPoint(DataPoint p) {
+        int nextHead = (producePtr + 1) % BUFFER_SIZE;
+        if (nextHead != consumePtr) {
+            ringBuffer[producePtr] = p;
+            producePtr = nextHead;
         }
     }
 
-    return true;
+    bool logNextPoint() {
+        // Only write if we have a valid file and data is ready
+        if (producePtr != consumePtr) {
+            // logDataPointBin expects a reference, so we dereference the pointer
+            // logDataPointBin(ringBuffer[consumePtr], *logFile);
+            delay(8);
+            consumePtr = (consumePtr + 1) % BUFFER_SIZE;
+            return true;
+        }
+        return false;
+    }
 
-}
+    int numPending() {
+        return (producePtr - consumePtr + BUFFER_SIZE) % BUFFER_SIZE;
+    }
 
-#endif
+    void logAllPoints() {
+        bool more = true;
+        while (more) {
+            more = logNextPoint();
+        }
+
+    }
+
+private:
+    ExFile* logFile; // Pointer allows the file to be "assigned" later
+    static const int BUFFER_SIZE = 512;
+    DataPoint ringBuffer[BUFFER_SIZE];
+    volatile int producePtr = 0;
+    volatile int consumePtr = 0;
+};
