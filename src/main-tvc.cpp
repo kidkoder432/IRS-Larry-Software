@@ -1,6 +1,6 @@
 // Test all components and features
 
-#include <rocket_dummy.h>
+#include <rocket.h>
 #include <NRF52_MBED_TimerInterrupt.h>
 
 float isBetween(float x, float a, float b) { return a <= x && x <= b; }
@@ -187,7 +187,7 @@ void setup() {
     rocket.printMessage("Chutes initialized!");
 
     // IMPORTANT: You must call this for MBED timers to initialize
-    if (ITimer.attachInterruptInterval(10000, loopHandler)) {
+    if (ITimer.attachInterruptInterval(20000, loopHandler)) {
         rocket.printMessage("Starting ITimer OK, interval = 10ms");
     }
     else {
@@ -483,7 +483,6 @@ void loop() {
         rocket.updateTime();
 
         // Update spatial data
-        rocket.updateAltVel();
 
         rocket.updateChutes();
 
@@ -493,6 +492,8 @@ void loop() {
         perf.isr_to_run = t0 - isrFiredAt;  // ISR latency
 
         rocket.updateSensors();
+        rocket.updateAltVel();
+
         unsigned long t1 = micros();
 
         rocket.updateAngles();

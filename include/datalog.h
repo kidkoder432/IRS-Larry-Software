@@ -3,6 +3,11 @@
 #include <SPI.h>
 #include <SdFat.h>
 
+#define SPI_DRIVER_SELECT 1
+#define USE_SPI_ARRAY_TRANSFER 1
+#define SD_MAX_INIT_RATE_KHZ 20000
+
+
 #define DEBUG 0
 
 const char* DATA_HEADER = "Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Roll,Pitch,Yaw,TvcX,TvcY,State,Alt,Vel,Px,Ix,Dx,Py,Iy,Dy";
