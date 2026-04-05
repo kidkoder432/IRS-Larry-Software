@@ -22,41 +22,41 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-/**
- * \file
- * \brief configuration definitions
- */
+ /**
+  * \file
+  * \brief configuration definitions
+  */
 #ifndef SdFatConfig_h
 #define SdFatConfig_h
 #include <stdint.h>
 #ifdef __AVR__
 #include <avr/io.h>
 #endif  // __AVR__
-//
-// To try UTF-8 encoded filenames.
-//  #define USE_UTF8_LONG_NAMES 1
-//
-// For minimum flash size use these settings:
-// #define USE_FAT_FILE_FLAG_CONTIGUOUS 0
-// #define ENABLE_DEDICATED_SPI 0
-// #define USE_LONG_FILE_NAMES 0
-// #define SDFAT_FILE_TYPE 1
-// #define CHECK_FLASH_PROGRAMMING 0  // May cause SD to sleep at high current.
-//
-// Options can be set in a makefile or an IDE like platformIO
-// if they are in a #ifndef/#endif block below.
-//------------------------------------------------------------------------------
-/*
- * Options for file class constructors, assignment operators and destructors.
- *
- * By default file copy constructors and copy assignment operators are
- * private to prevent multiple copies of a instance for a file.
- *
- * File move constructors and move assignment operators are public to permit
- * return of a file instance for compilers that aren't able to use copy elision. 
- *
- */
-/** File copy constructors and copy assignment operators are deleted */
+  //
+  // To try UTF-8 encoded filenames.
+  //  #define USE_UTF8_LONG_NAMES 1
+  //
+  // For minimum flash size use these settings:
+  // #define USE_FAT_FILE_FLAG_CONTIGUOUS 0
+  // #define ENABLE_DEDICATED_SPI 0
+  // #define USE_LONG_FILE_NAMES 0
+  // #define SDFAT_FILE_TYPE 1
+  // #define CHECK_FLASH_PROGRAMMING 0  // May cause SD to sleep at high current.
+  //
+  // Options can be set in a makefile or an IDE like platformIO
+  // if they are in a #ifndef/#endif block below.
+  //------------------------------------------------------------------------------
+  /*
+   * Options for file class constructors, assignment operators and destructors.
+   *
+   * By default file copy constructors and copy assignment operators are
+   * private to prevent multiple copies of a instance for a file.
+   *
+   * File move constructors and move assignment operators are public to permit
+   * return of a file instance for compilers that aren't able to use copy elision.
+   *
+   */
+   /** File copy constructors and copy assignment operators are deleted */
 #define FILE_COPY_CONSTRUCTOR_DELETED 0
 /** File copy constructors and copy assignment operators are private */
 #define FILE_COPY_CONSTRUCTOR_PRIVATE 1
@@ -86,9 +86,9 @@
 #ifndef DESTRUCTOR_CLOSES_FILE
 #define DESTRUCTOR_CLOSES_FILE 0
 #endif  // DESTRUCTOR_CLOSES_FILE
-//------------------------------------------------------------------------------
+ //------------------------------------------------------------------------------
 
-/** For Debug - must be one */
+ /** For Debug - must be one */
 #define ENABLE_ARDUINO_FEATURES 1
 /** For Debug - must be one */
 #define ENABLE_ARDUINO_SERIAL 1
@@ -113,10 +113,10 @@
  */
 #ifndef SDFAT_FILE_TYPE
 #if defined(__AVR__) && FLASHEND < 0X8000
-// 32K AVR boards.
+ // 32K AVR boards.
 #define SDFAT_FILE_TYPE 1
 #else  // defined(__AVR__) && FLASHEND < 0X8000
-// All other boards.
+ // All other boards.
 #define SDFAT_FILE_TYPE 3
 #endif  // defined(__AVR__) && FLASHEND < 0X8000
 #endif  // SDFAT_FILE_TYPE
@@ -128,21 +128,21 @@
 #ifndef USE_FAT_FILE_FLAG_CONTIGUOUS
 #define USE_FAT_FILE_FLAG_CONTIGUOUS 1
 #endif  // USE_FAT_FILE_FLAG_CONTIGUOUS
-//------------------------------------------------------------------------------
-/**
- * Set ENABLE_DEDICATED_SPI non-zero to enable dedicated use of the SPI bus.
- * Selecting dedicated SPI in SdSpiConfig() will produce better
- * performance by using very large multi-block transfers to and
- * from the SD card.
- *
- * Enabling dedicated SPI will cost extra flash and RAM.
- */
+ //------------------------------------------------------------------------------
+ /**
+  * Set ENABLE_DEDICATED_SPI non-zero to enable dedicated use of the SPI bus.
+  * Selecting dedicated SPI in SdSpiConfig() will produce better
+  * performance by using very large multi-block transfers to and
+  * from the SD card.
+  *
+  * Enabling dedicated SPI will cost extra flash and RAM.
+  */
 #ifndef ENABLE_DEDICATED_SPI
 #if defined(__AVR__) && FLASHEND < 0X8000
-// 32K AVR boards.
+  // 32K AVR boards.
 #define ENABLE_DEDICATED_SPI 1
 #else  // defined(__AVR__) && FLASHEND < 0X8000
-// All other boards.
+  // All other boards.
 #define ENABLE_DEDICATED_SPI 1
 #endif  // defined(__AVR__) && FLASHEND < 0X8000
 #endif  // ENABLE_DEDICATED_SPI
@@ -161,80 +161,80 @@
  * 3 - An external SPI driver derived from SdSpiBaseClass is always used.
  */
 #ifndef SPI_DRIVER_SELECT
-#define SPI_DRIVER_SELECT 0
+#define SPI_DRIVER_SELECT 1
 #endif  // SPI_DRIVER_SELECT
-/**
- * If USE_SPI_ARRAY_TRANSFER is one and the standard SPI library is
- * use, the array transfer function, transfer(buf, count), will be used.
- * This option will allocate a 512 byte temporary buffer for send.
- * This may be faster for some boards.  Do not use this with AVR boards.
- *
- * Warning: the next options are often fastest but only available for some
- * non-Arduino board packages.
- *
- * If USE_SPI_ARRAY_TRANSFER is two use transfer(nullptr, buf, count) for
- * receive and transfer(buf, nullptr, count) for send.
- *
- * If USE_SPI_ARRAY_TRANSFER is three use transfer(nullptr, buf, count) for
- * receive and transfer(buf, rxTmp, count) for send. Try this with Adafruit
- * SAMD51.
- *
- * If USE_SPI_ARRAY_TRANSFER is four use transfer(txTmp, buf, count) for
- * receive and transfer(buf, rxTmp, count) for send. Try this with STM32.
- */
+ /**
+  * If USE_SPI_ARRAY_TRANSFER is one and the standard SPI library is
+  * use, the array transfer function, transfer(buf, count), will be used.
+  * This option will allocate a 512 byte temporary buffer for send.
+  * This may be faster for some boards.  Do not use this with AVR boards.
+  *
+  * Warning: the next options are often fastest but only available for some
+  * non-Arduino board packages.
+  *
+  * If USE_SPI_ARRAY_TRANSFER is two use transfer(nullptr, buf, count) for
+  * receive and transfer(buf, nullptr, count) for send.
+  *
+  * If USE_SPI_ARRAY_TRANSFER is three use transfer(nullptr, buf, count) for
+  * receive and transfer(buf, rxTmp, count) for send. Try this with Adafruit
+  * SAMD51.
+  *
+  * If USE_SPI_ARRAY_TRANSFER is four use transfer(txTmp, buf, count) for
+  * receive and transfer(buf, rxTmp, count) for send. Try this with STM32.
+  */
 #ifndef USE_SPI_ARRAY_TRANSFER
-#define USE_SPI_ARRAY_TRANSFER 0
+#define USE_SPI_ARRAY_TRANSFER 1
 #endif  // USE_SPI_ARRAY_TRANSFER
-//------------------------------------------------------------------------------
-/**
- * SD maximum initialization clock rate.
- */
+  //------------------------------------------------------------------------------
+  /**
+   * SD maximum initialization clock rate.
+   */
 #ifndef SD_MAX_INIT_RATE_KHZ
-#define SD_MAX_INIT_RATE_KHZ 400
+#define SD_MAX_INIT_RATE_KHZ 10000
 #endif  // SD_MAX_INIT_RATE_KHZ
-/**
- * Set USE_BLOCK_DEVICE_INTERFACE nonzero to use a generic block device.
- * This allow use of an external FsBlockDevice driver that is derived from
- * the FsBlockDeviceInterface like this:
- *
- * class UsbMscDriver : public FsBlockDeviceInterface {
- *   ... code for USB mass storage class driver.
- * };
- *
- * UsbMscDriver usbMsc;
- * FsVolume key;
- * ...
- *
- *   // Init USB MSC driver.
- *   if (!usbMsc.begin()) {
- *     ... handle driver init failure.
- *   }
- *   // Init FAT/exFAT volume.
- *   if (!key.begin(&usbMsc)) {
- *     ... handle FAT/exFAT failure.
- *   }
- */
+   /**
+    * Set USE_BLOCK_DEVICE_INTERFACE nonzero to use a generic block device.
+    * This allow use of an external FsBlockDevice driver that is derived from
+    * the FsBlockDeviceInterface like this:
+    *
+    * class UsbMscDriver : public FsBlockDeviceInterface {
+    *   ... code for USB mass storage class driver.
+    * };
+    *
+    * UsbMscDriver usbMsc;
+    * FsVolume key;
+    * ...
+    *
+    *   // Init USB MSC driver.
+    *   if (!usbMsc.begin()) {
+    *     ... handle driver init failure.
+    *   }
+    *   // Init FAT/exFAT volume.
+    *   if (!key.begin(&usbMsc)) {
+    *     ... handle FAT/exFAT failure.
+    *   }
+    */
 #ifndef USE_BLOCK_DEVICE_INTERFACE
 #define USE_BLOCK_DEVICE_INTERFACE 0
 #endif  // USE_BLOCK_DEVICE_INTERFACE
-//------------------------------------------------------------------------------
-/**
- * SD_CHIP_SELECT_MODE defines how the functions
- * void sdCsInit(SdCsPin_t pin) {pinMode(pin, OUTPUT);}
- * and
- * void sdCsWrite(SdCsPin_t pin, bool level) {digitalWrite(pin, level);}
- * are defined.
- *
- * 0 - Internal definition is a strong symbol and can't be replaced.
- *
- * 1 - Internal definition is a weak symbol and can be replaced.
- *
- * 2 - No internal definition and must be defined in the application.
- */
+    //------------------------------------------------------------------------------
+    /**
+     * SD_CHIP_SELECT_MODE defines how the functions
+     * void sdCsInit(SdCsPin_t pin) {pinMode(pin, OUTPUT);}
+     * and
+     * void sdCsWrite(SdCsPin_t pin, bool level) {digitalWrite(pin, level);}
+     * are defined.
+     *
+     * 0 - Internal definition is a strong symbol and can't be replaced.
+     *
+     * 1 - Internal definition is a weak symbol and can be replaced.
+     *
+     * 2 - No internal definition and must be defined in the application.
+     */
 #ifndef SD_CHIP_SELECT_MODE
 #define SD_CHIP_SELECT_MODE 0
 #endif  // SD_CHIP_SELECT_MODE
-/** Type for card chip select pin. */
+     /** Type for card chip select pin. */
 typedef uint8_t SdCsPin_t;
 //------------------------------------------------------------------------------
 /**
@@ -260,18 +260,18 @@ typedef uint8_t SdCsPin_t;
 #ifndef USE_LONG_FILE_NAMES
 #define USE_LONG_FILE_NAMES 1
 #endif  // USE_LONG_FILE_NAMES
-/**
- * Set USE_UTF8_LONG_NAMES nonzero to use UTF-8 file names. Use of UTF-8 names
- * will require significantly more flash memory and a small amount of extra
- * RAM.
- *
- * UTF-8 filenames allow encoding of 1,112,064 code points in Unicode using
- * one to four one-byte (8-bit) code units.
- *
- * As of Version 13.0, the Unicode Standard defines 143,859 characters.
- *
- * getName() will return UTF-8 strings and printName() will write UTF-8 strings.
- */
+ /**
+  * Set USE_UTF8_LONG_NAMES nonzero to use UTF-8 file names. Use of UTF-8 names
+  * will require significantly more flash memory and a small amount of extra
+  * RAM.
+  *
+  * UTF-8 filenames allow encoding of 1,112,064 code points in Unicode using
+  * one to four one-byte (8-bit) code units.
+  *
+  * As of Version 13.0, the Unicode Standard defines 143,859 characters.
+  *
+  * getName() will return UTF-8 strings and printName() will write UTF-8 strings.
+  */
 #ifndef USE_UTF8_LONG_NAMES
 #define USE_UTF8_LONG_NAMES 0
 #endif  // USE_UTF8_LONG_NAMES
@@ -279,32 +279,32 @@ typedef uint8_t SdCsPin_t;
 #if USE_UTF8_LONG_NAMES && !USE_LONG_FILE_NAMES
 #error "USE_UTF8_LONG_NAMES requires USE_LONG_FILE_NAMES to be non-zero."
 #endif  // USE_UTF8_LONG_NAMES && !USE_LONG_FILE_NAMES
-//------------------------------------------------------------------------------
-/**
- * Set MAINTAIN_FREE_CLUSTER_COUNT nonzero to keep the count of free clusters
- * updated.  This will increase the speed of the freeClusterCount() call
- * after the first call.  Extra flash will be required.
- */
+  //------------------------------------------------------------------------------
+  /**
+   * Set MAINTAIN_FREE_CLUSTER_COUNT nonzero to keep the count of free clusters
+   * updated.  This will increase the speed of the freeClusterCount() call
+   * after the first call.  Extra flash will be required.
+   */
 #ifndef MAINTAIN_FREE_CLUSTER_COUNT
 #define MAINTAIN_FREE_CLUSTER_COUNT 0
 #endif  // MAINTAIN_FREE_CLUSTER_COUNT
-//------------------------------------------------------------------------------
-/**
- * Set the default file time stamp when a RTC callback is not used.
- * A valid date and time is required by the FAT/exFAT standard.
- *
- * The default below is YYYY-01-01 00:00:00 midnight where YYYY is
- * the compile year from the __DATE__ macro.  This is easy to recognize
- * as a placeholder for a correct date/time.
- *
- * The full compile date is:
- * FS_DATE(compileYear(), compileMonth(), compileDay())
- *
- * The full compile time is:
- * FS_TIME(compileHour(), compileMinute(), compileSecond())
- */
+   //------------------------------------------------------------------------------
+   /**
+    * Set the default file time stamp when a RTC callback is not used.
+    * A valid date and time is required by the FAT/exFAT standard.
+    *
+    * The default below is YYYY-01-01 00:00:00 midnight where YYYY is
+    * the compile year from the __DATE__ macro.  This is easy to recognize
+    * as a placeholder for a correct date/time.
+    *
+    * The full compile date is:
+    * FS_DATE(compileYear(), compileMonth(), compileDay())
+    *
+    * The full compile time is:
+    * FS_TIME(compileHour(), compileMinute(), compileSecond())
+    */
 #define FS_DEFAULT_DATE FS_DATE(compileYear(), 1, 1)
-/** 00:00:00 midnight */
+    /** 00:00:00 midnight */
 #define FS_DEFAULT_TIME FS_TIME(0, 0, 0)
 //------------------------------------------------------------------------------
 /**
@@ -318,33 +318,33 @@ typedef uint8_t SdCsPin_t;
 #ifndef CHECK_FLASH_PROGRAMMING
 #define CHECK_FLASH_PROGRAMMING 1
 #endif  // CHECK_FLASH_PROGRAMMING
-//------------------------------------------------------------------------------
-/**
- * To enable SD card CRC checking for SPI, set USE_SD_CRC nonzero.
- *
- * Set USE_SD_CRC to 1 to use a smaller CRC-CCITT function.  This function
- * is slower for AVR but may be fast for ARM and other processors.
- *
- * Set USE_SD_CRC to 2 to used a larger table driven CRC-CCITT function.  This
- * function is faster for AVR but may be slower for ARM and other processors.
- */
+ //------------------------------------------------------------------------------
+ /**
+  * To enable SD card CRC checking for SPI, set USE_SD_CRC nonzero.
+  *
+  * Set USE_SD_CRC to 1 to use a smaller CRC-CCITT function.  This function
+  * is slower for AVR but may be fast for ARM and other processors.
+  *
+  * Set USE_SD_CRC to 2 to used a larger table driven CRC-CCITT function.  This
+  * function is faster for AVR but may be slower for ARM and other processors.
+  */
 #ifndef USE_SD_CRC
 #define USE_SD_CRC 0
 #endif  // USE_SD_CRC
-//------------------------------------------------------------------------------
-/** If the symbol USE_FCNTL_H is nonzero, open flags for access modes O_RDONLY,
- * O_WRONLY, O_RDWR and the open modifiers O_APPEND, O_CREAT, O_EXCL, O_SYNC
- * will be defined by including the system file fcntl.h.
- */
+  //------------------------------------------------------------------------------
+  /** If the symbol USE_FCNTL_H is nonzero, open flags for access modes O_RDONLY,
+   * O_WRONLY, O_RDWR and the open modifiers O_APPEND, O_CREAT, O_EXCL, O_SYNC
+   * will be defined by including the system file fcntl.h.
+   */
 #ifndef USE_FCNTL_H
 #if defined(__AVR__)
-// AVR fcntl.h does not define open flags.
+   // AVR fcntl.h does not define open flags.
 #define USE_FCNTL_H 0
 #elif defined(PLATFORM_ID)
-// Particle boards - use fcntl.h.
+   // Particle boards - use fcntl.h.
 #define USE_FCNTL_H 1
 #elif defined(__arm__)
-// ARM gcc defines open flags.
+   // ARM gcc defines open flags.
 #define USE_FCNTL_H 1
 #elif defined(ESP32)
 #define USE_FCNTL_H 1
@@ -352,89 +352,89 @@ typedef uint8_t SdCsPin_t;
 #define USE_FCNTL_H 0
 #endif  // defined(__AVR__)
 #endif  // USE_FCNTL_H
-//------------------------------------------------------------------------------
-/**
- * Set INCLUDE_SDIOS nonzero to include sdios.h in SdFat.h.
- * sdios.h provides C++ style IO Streams.
- */
+   //------------------------------------------------------------------------------
+   /**
+    * Set INCLUDE_SDIOS nonzero to include sdios.h in SdFat.h.
+    * sdios.h provides C++ style IO Streams.
+    */
 #ifndef INCLUDE_SDIOS
 #define INCLUDE_SDIOS 0
 #endif  // INCLUDE_SDIOS
-//------------------------------------------------------------------------------
-/**
- * Set FAT12_SUPPORT nonzero to enable use if FAT12 volumes.
- * FAT12 has not been well tested and requires additional flash.
- */
+    //------------------------------------------------------------------------------
+    /**
+     * Set FAT12_SUPPORT nonzero to enable use if FAT12 volumes.
+     * FAT12 has not been well tested and requires additional flash.
+     */
 #ifndef FAT12_SUPPORT
 #define FAT12_SUPPORT 0
 #endif  // FAT12_SUPPORT
-//------------------------------------------------------------------------------
-/**
- * Call flush for endl if ENDL_CALLS_FLUSH is nonzero
- *
- * The standard for iostreams is to call flush.  This is very costly for
- * SdFat.  Each call to flush causes 2048 bytes of I/O to the SD.
- *
- * SdFat has a single 512 byte buffer for SD I/O so it must write the current
- * data sector to the SD, read the directory sector from the SD, update the
- * directory entry, write the directory sector to the SD and read the data
- * sector back into the buffer.
- *
- * The SD flash memory controller is not designed for this many rewrites
- * so performance may be reduced by more than a factor of 100.
- *
- * If ENDL_CALLS_FLUSH is zero, you must call flush and/or close to force
- * all data to be written to the SD.
- */
+     //------------------------------------------------------------------------------
+     /**
+      * Call flush for endl if ENDL_CALLS_FLUSH is nonzero
+      *
+      * The standard for iostreams is to call flush.  This is very costly for
+      * SdFat.  Each call to flush causes 2048 bytes of I/O to the SD.
+      *
+      * SdFat has a single 512 byte buffer for SD I/O so it must write the current
+      * data sector to the SD, read the directory sector from the SD, update the
+      * directory entry, write the directory sector to the SD and read the data
+      * sector back into the buffer.
+      *
+      * The SD flash memory controller is not designed for this many rewrites
+      * so performance may be reduced by more than a factor of 100.
+      *
+      * If ENDL_CALLS_FLUSH is zero, you must call flush and/or close to force
+      * all data to be written to the SD.
+      */
 #ifndef ENDL_CALLS_FLUSH
 #define ENDL_CALLS_FLUSH 0
 #endif  // ENDL_CALLS_FLUSH
-//------------------------------------------------------------------------------
-/**
- * Set USE_SIMPLE_LITTLE_ENDIAN nonzero for little endian processors
- * with no memory alignment restrictions.
- */
+      //------------------------------------------------------------------------------
+      /**
+       * Set USE_SIMPLE_LITTLE_ENDIAN nonzero for little endian processors
+       * with no memory alignment restrictions.
+       */
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__ && \
     (defined(__AVR__) || defined(__ARM_FEATURE_UNALIGNED))
 #define USE_SIMPLE_LITTLE_ENDIAN 1
 #else  // __BYTE_ORDER_
 #define USE_SIMPLE_LITTLE_ENDIAN 0
 #endif  // __BYTE_ORDER_
-//------------------------------------------------------------------------------
-/**
- * Set USE_SEPARATE_FAT_CACHE nonzero to use a second 512 byte cache
- * for FAT16/FAT32 table entries.  This improves performance for large
- * writes that are not a multiple of 512 bytes.
- */
+       //------------------------------------------------------------------------------
+       /**
+        * Set USE_SEPARATE_FAT_CACHE nonzero to use a second 512 byte cache
+        * for FAT16/FAT32 table entries.  This improves performance for large
+        * writes that are not a multiple of 512 bytes.
+        */
 #ifdef __arm__
 #define USE_SEPARATE_FAT_CACHE 1
 #else  // __arm__
 #define USE_SEPARATE_FAT_CACHE 0
 #endif  // __arm__
-//------------------------------------------------------------------------------
-/**
- * Set USE_EXFAT_BITMAP_CACHE nonzero to use a second 512 byte cache
- * for exFAT bitmap entries.  This improves performance for large
- * writes that are not a multiple of 512 bytes.
- */
+        //------------------------------------------------------------------------------
+        /**
+         * Set USE_EXFAT_BITMAP_CACHE nonzero to use a second 512 byte cache
+         * for exFAT bitmap entries.  This improves performance for large
+         * writes that are not a multiple of 512 bytes.
+         */
 #ifdef __arm__
 #define USE_EXFAT_BITMAP_CACHE 1
 #else  // __arm__
 #define USE_EXFAT_BITMAP_CACHE 0
 #endif  // __arm__
-//------------------------------------------------------------------------------
-/**
- * Set USE_MULTI_SECTOR_IO nonzero to use multi-sector SD read/write.
- *
- * Don't use mult-sector read/write on small AVR boards.
- */
+         //------------------------------------------------------------------------------
+         /**
+          * Set USE_MULTI_SECTOR_IO nonzero to use multi-sector SD read/write.
+          *
+          * Don't use mult-sector read/write on small AVR boards.
+          */
 #if defined(RAMEND) && RAMEND < 3000
 #define USE_MULTI_SECTOR_IO 0
 #else  // RAMEND
 #define USE_MULTI_SECTOR_IO 1
 #endif  // RAMEND
-//------------------------------------------------------------------------------
-/** Enable SDIO driver if available. */
+          //------------------------------------------------------------------------------
+          /** Enable SDIO driver if available. */
 #if defined(__MK64FX512__) || defined(__MK66FX1M0__)
 // Pseudo pin select for SDIO.
 #ifndef BUILTIN_SDCARD
@@ -466,7 +466,7 @@ typedef uint8_t SdCsPin_t;
     (defined(CORE_TEENSY) && defined(__arm__))
 #define SD_HAS_CUSTOM_SPI 1
 #else  // SD_HAS_CUSTOM_SPI
-// Use standard SPI library.
+ // Use standard SPI library.
 #define SD_HAS_CUSTOM_SPI 0
 #endif  // SD_HAS_CUSTOM_SPI
 //------------------------------------------------------------------------------
