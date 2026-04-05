@@ -538,7 +538,7 @@ public: // Public functions
 
         if (!doLog) return;
 
-        dataLogger.logNextPoint();
+        dataLogger.logNext();
 
     }
 
@@ -548,7 +548,7 @@ public: // Public functions
             if (dataArr[i].isEmpty) {
                 continue;
             }
-        
+
             logDataPointBin(dataArr[i], dataFile);
         }
         dataFile.sync();

@@ -390,7 +390,7 @@ public: // Public functions
         else {
             digitalWrite(LED_BUILTIN, LOW);
             attitude = get_angles_quat(readings, attitude, deltaTime);
-    }
+        }
 
         dir = quaternion_to_euler(attitude);
 
@@ -539,7 +539,7 @@ public: // Public functions
 
         if (!doLog) return;
         showColor(COLOR_RED);
-        dataLogger.logNextPoint();
+        dataLogger.logNext();
         showColor(COLOR_GREEN);
 
     }

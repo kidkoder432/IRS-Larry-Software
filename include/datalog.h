@@ -3,9 +3,15 @@
 #include <SPI.h>
 #include <SdFat.h>
 
+#undef SPI_DRIVER_SELECT
+#undef USE_SPI_ARRAY_TRANSFER
+#undef SD_MAX_INIT_RATE_KHZ
+
 #define SPI_DRIVER_SELECT 1
 #define USE_SPI_ARRAY_TRANSFER 1
 #define SD_MAX_INIT_RATE_KHZ 20000
+
+#define RING_BUFFER_SIZE 10
 
 
 #define DEBUG 0
@@ -213,12 +219,21 @@ public:
         }
     }
 
-    bool logNextPoint() {
+    bool logNext() {
         // Only write if we have a valid file and data is ready
-        if (producePtr != consumePtr) {
-            // logDataPointBin expects a reference, so we dereference the pointer
-            logDataPointBin(ringBuffer[consumePtr], *logFile);
-            consumePtr = (consumePtr + 1) % BUFFER_SIZE;
+        if (numPending() > RING_BUFFER_SIZE) {
+            DataPoint arr[RING_BUFFER_SIZE];
+            unsigned char bytes[(RING_BUFFER_SIZE) * (sizeof(DataPoint) - 4)];
+            for (int i = 0; i < RING_BUFFER_SIZE; i++) {
+                if (arr[i].isEmpty) {
+                    continue;
+                }
+                DataPointBin pBin;
+                pBin.p = arr[i];
+                memcpy(&bytes[i * (sizeof(DataPoint) - 4)], pBin.dataBytes, sizeof(DataPoint) - 4);
+            }
+
+            logDataRaw(bytes, (RING_BUFFER_SIZE) * (sizeof(DataPoint) - 4), *logFile);
             return true;
         }
         return false;
@@ -231,7 +246,7 @@ public:
     void logAllPoints() {
         bool more = true;
         while (more) {
-            more = logNextPoint();
+            more = logNext();
         }
 
     }
