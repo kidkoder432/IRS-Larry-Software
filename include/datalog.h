@@ -223,6 +223,12 @@ public:
         // Only write if we have a valid file and data is ready
         if (numPending() > RING_BUFFER_SIZE) {
             DataPoint arr[RING_BUFFER_SIZE];
+
+            for (int i = 0; i < RING_BUFFER_SIZE; i++) {
+                arr[i] = ringBuffer[consumePtr];
+                consumePtr = (consumePtr + 1) % BUFFER_SIZE;
+            }
+
             unsigned char bytes[(RING_BUFFER_SIZE) * (sizeof(DataPoint) - 4)];
             for (int i = 0; i < RING_BUFFER_SIZE; i++) {
                 if (arr[i].isEmpty) {
