@@ -217,8 +217,7 @@ public:
         // Only write if we have a valid file and data is ready
         if (producePtr != consumePtr) {
             // logDataPointBin expects a reference, so we dereference the pointer
-            // logDataPointBin(ringBuffer[consumePtr], *logFile);
-            delay(8);
+            logDataPointBin(ringBuffer[consumePtr], *logFile);
             consumePtr = (consumePtr + 1) % BUFFER_SIZE;
             return true;
         }
