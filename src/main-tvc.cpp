@@ -348,13 +348,12 @@ void loop() {
                     playToneForever(400);
                 }
 
-                if (millis() % 1000 < 40) {
+                if (millis() % 1000 < 10) {
                     char buf[128];
                     snprintf(buf, sizeof(buf), "Launching in T - %02d seconds! Press any key + Enter to abort. ", launchTimer);
                     rocket.printMessage(buf);
                     rocket.logMessage(buf);
                     launchTimer--;
-                    delay(41);
 
                 }
             }
@@ -393,9 +392,8 @@ void loop() {
         case FS_TOUCHDOWN:
             recvOneChar();
             playLocatorSound();
-            if (millis() % 2000 < 40) {
+            if (millis() % 2000 < 10) {
                 rocket.printMessage("Press any key to shut down the rocket and all systems. ");
-                delay(41);
             }
             if (newCommand) {
                 rocket.setState(FS_SHUTDOWN);
@@ -404,9 +402,8 @@ void loop() {
 
         case FS_ABORT:
             playAbortSound();
-            if (millis() % 2000 < 40) {
+            if (millis() % 2000 < 10) {
                 rocket.printMessage("Press any key to shut down the rocket and all systems. ");
-                delay(41);
             }
 
             recvOneChar();

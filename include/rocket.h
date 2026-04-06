@@ -159,7 +159,7 @@ public: // Public functions
 #endif
     // Initialize SD Card
     bool initSD() {
-        if (!sd.begin(10, SPI_FULL_SPEED)) {
+        if (!sd.begin(SdSpiConfig(10, DEDICATED_SPI, SPI_FULL_SPEED))) {
             printMessage("Failed to initialize SD card!");
             HALT_AND_CATCH_FIRE();
             return false;
@@ -186,6 +186,8 @@ public: // Public functions
         }
     #endif
         logFile.truncate(0);
+        logFile.preAllocate(65536);
+
         logMessage("Log file initialized");
         logFile.sync();
         if (!dataFile.open("data.bin", O_WRITE | O_CREAT)) {
@@ -200,9 +202,10 @@ public: // Public functions
         }
     #endif
         dataFile.truncate(0);
+        dataFile.preAllocate(8388608);
         dataFile.println(DATA_HEADER);
         dataFile.sync();
-        setLogSpeed(DLS_SLOW);
+        setLogSpeed(DLS_FAST);
         dataLogger.setTargetFile(&dataFile);
         return true;
     }
@@ -497,23 +500,28 @@ public: // Public functions
 
     DataPoint getDataPoint() {
         DataPoint p;
-        p.timestamp = millis();
-        p.DELTA_T = deltaTime;
+        p.timestamp = (uint32_t) millis();
+
         p.r = readings;
         p.o = dir;
-        p.x_out = x_out;
-        p.y_out = y_out;
-        p.alt = altitude; // getAltitude(config["PRESSURE_REF"], pressureOffset);
-        p.currentState = static_cast<short>(currentState);
-        p.vert_vel = vertVel;
-        p.px = tvc.pid_x.p;
-        p.ix = tvc.pid_x.i;
-        p.dx = tvc.pid_x.d;
-        p.py = tvc.pid_y.p;
-        p.iy = tvc.pid_y.i;
-        p.dy = tvc.pid_y.d;
-        p.isEmpty = false;
 
+        p.x_out = (int16_t) (x_out * 100.0f);
+        p.y_out = (int16_t) (y_out * 100.0f);
+
+        p.state = (int16_t) currentState;
+        p.alt = (int16_t) (altitude * 100.0f);
+        p.vert_vel = (int16_t) (vertVel * 100.0f);
+
+        p.px = (int16_t) (tvc.pid_x.p * 100.0f);
+        p.ix = (int16_t) (tvc.pid_x.i * 100.0f);
+        p.dx = (int16_t) (tvc.pid_x.d * 100.0f);
+
+        p.py = (int16_t) (tvc.pid_y.p * 100.0f);
+        p.iy = (int16_t) (tvc.pid_y.i * 100.0f);
+        p.dy = (int16_t) (tvc.pid_y.d * 100.0f);
+
+        p.dt = (int16_t)(deltaTime * 1000.0f);
+        p.isEmpty = (uint8_t) false;
         return p;
     }
 
@@ -632,6 +640,7 @@ public: // Public functions
         currentState = state;
     }
 
+
     void enableCompl() {
         useCompl = true;
     }
@@ -723,6 +732,7 @@ public: // Public functions
         logMessage("Cleaning up logs...");
 
         printMessage("Closing data file...");
+        dataFile.truncate();
         if (!dataFile.sync()) {
             printMessage("Error syncing data file");
             return false;
@@ -733,6 +743,7 @@ public: // Public functions
         }
 
         printMessage("Closing log file...");
+        logFile.truncate();
         if (!logFile.sync()) {
             printMessage("Error syncing log file");
             return false;

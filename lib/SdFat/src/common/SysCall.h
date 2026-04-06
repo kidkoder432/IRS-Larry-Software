@@ -50,7 +50,6 @@ typedef Stream stream_t;
 //------------------------------------------------------------------------------
 #ifndef F
 /** Define macro for strings stored in flash. */
-#define F(str) (str)
 #endif  // F
 //------------------------------------------------------------------------------
 #else  // ENABLE_ARDUINO_FEATURES

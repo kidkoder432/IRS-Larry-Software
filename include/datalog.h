@@ -3,37 +3,52 @@
 #include <SPI.h>
 #include <SdFat.h>
 
-#undef SPI_DRIVER_SELECT
-#undef USE_SPI_ARRAY_TRANSFER
-#undef SD_MAX_INIT_RATE_KHZ
+// #undef SPI_DRIVER_SELECT
+// #undef USE_SPI_ARRAY_TRANSFER
+// #undef SD_MAX_INIT_RATE_KHZ
 
-#define SPI_DRIVER_SELECT 1
-#define USE_SPI_ARRAY_TRANSFER 1
-#define SD_MAX_INIT_RATE_KHZ 20000
+// #define SPI_DRIVER_SELECT 1
+// #define USE_SPI_ARRAY_TRANSFER 1
+// #define SD_MAX_INIT_RATE_KHZ 20000
 
 #define RING_BUFFER_SIZE 10
 
 
 #define DEBUG 0
 
-const char* DATA_HEADER = "Time,Dt,Ax,Ay,Az,Gx,Gy,Gz,Roll,Pitch,Yaw,TvcX,TvcY,State,Alt,Vel,Px,Ix,Dx,Py,Iy,Dy";
+const char* DATA_HEADER = "time,ax,ay,az,gx,gy,gz,ox,oy,oz,x_out,y_out,state,alt,vert_vel,px,ix,dx,py,iy,dy,dt\n";
 
-// <l12fh2x8f
+// <L9f12H
 struct DataPoint {
-    int timestamp;          // Milliseconds
-    float DELTA_T;          // Delta Time
-    SensorReadings r;       // Sensor Readings
-    Vec3D o;                // Current Orientation
-    float x_out, y_out;     // TVC Outputs
-    short currentState;     // Current State
-    float alt;              // Altitude
-    float vert_vel;         // Vertical Velocity
-    float px, ix, dx;       // PID Values (X)
-    float py, iy, dy;       // PID Values (Y)
-    DataPoint() = default;
-    bool isEmpty = true;
+    uint32_t timestamp;     // 4
 
+    // IMU
+    SensorReadings r;       // 24
 
+    // Orientation
+    Vec3D o;                // 12
+
+    // Outputs
+    int16_t x_out, y_out;   // 4
+
+    // State
+    int16_t state;          // 2
+
+    // Altitude + velocity
+    int16_t alt;            // 2
+    int16_t vert_vel;       // 2
+
+    // PID X
+    int16_t px, ix, dx;     // 6
+
+    // PID Y
+    int16_t py, iy, dy;     // 6
+
+    // Optional: delta time (scaled)
+    int16_t dt;             // 2
+
+    uint8_t isEmpty;        // 1
+    // padding - 3 bytes, total 68
 };
 
 union DataPointBin {
@@ -72,7 +87,7 @@ bool logStatus(const char* msg, ExFile& logFile) {
     logFile.print(" - ");
     logFile.println(msg);
 
-    logFile.sync();
+    // logFile.sync();
     return true;
 };
 
@@ -100,65 +115,9 @@ bool logDataRaw(uint8_t data[], long size, ExFile& dataFile) {
     }
 
     dataFile.write(data, size);
-    dataFile.sync();
+    // dataFile.sync();
 
     return true;
-}
-
-bool logDataPoint(DataPoint p, ExFile& dataFile) {
-
-    if (!dataFile.isOpen()) {
-        Serial.println("Couldn't open data file");
-        return false;
-    }
-
-    dataFile.print(p.timestamp);
-    dataFile.print(",");
-    dataFile.print(p.DELTA_T, 3);
-    dataFile.print(",");
-    dataFile.print(p.r.ax, 3);
-    dataFile.print(",");
-    dataFile.print(p.r.ay, 3);
-    dataFile.print(",");
-    dataFile.print(p.r.az, 3);
-    dataFile.print(",");
-    dataFile.print(p.r.gx, 3);
-    dataFile.print(",");
-    dataFile.print(p.r.gy, 3);
-    dataFile.print(",");
-    dataFile.print(p.r.gz, 3);
-    dataFile.print(",");
-    dataFile.print(p.o.x, 3);
-    dataFile.print(",");
-    dataFile.print(p.o.y, 3);
-    dataFile.print(",");
-    dataFile.print(p.o.z, 3);
-    dataFile.print(",");
-    dataFile.print(p.x_out, 3);
-    dataFile.print(",");
-    dataFile.print(p.y_out, 3);
-    dataFile.print(",");
-    dataFile.print(p.alt, 3);
-    dataFile.print(",");
-    dataFile.print(p.currentState);
-    dataFile.print(",");
-    dataFile.print(p.vert_vel, 3);
-    dataFile.print(",");
-    dataFile.print(p.px, 3);
-    dataFile.print(",");
-    dataFile.print(p.ix, 3);
-    dataFile.print(",");
-    dataFile.print(p.dx, 3);
-    dataFile.print(",");
-    dataFile.print(p.py, 3);
-    dataFile.print(",");
-    dataFile.print(p.iy, 3);
-    dataFile.print(",");
-    dataFile.print(p.dy, 3);
-    dataFile.println();
-
-    return true;
-
 }
 
 void sdCardInfo(SdExFat& sd) {
