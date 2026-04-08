@@ -242,7 +242,7 @@ public: // Public functions
         if (!BARO.begin()) Serial.println("Failed to initialize BARO!");
         BARO.setOutputRate(RATE_75_HZ);
         delay(1000);
-        altimeter.configure(config);
+        altimeter.begin(config);
     #endif
         return true;
     }
@@ -500,28 +500,28 @@ public: // Public functions
 
     DataPoint getDataPoint() {
         DataPoint p;
-        p.timestamp = (uint32_t) millis();
+        p.timestamp = (uint32_t)millis();
 
         p.r = readings;
         p.o = dir;
 
-        p.x_out = (int16_t) (x_out * 100.0f);
-        p.y_out = (int16_t) (y_out * 100.0f);
+        p.x_out = (int16_t)(x_out * 100.0f);
+        p.y_out = (int16_t)(y_out * 100.0f);
 
-        p.state = (int16_t) currentState;
-        p.alt = (int16_t) (altitude * 100.0f);
-        p.vert_vel = (int16_t) (vertVel * 100.0f);
+        p.state = (int16_t)currentState;
+        p.alt = (int16_t)(altitude * 100.0f);
+        p.vert_vel = (int16_t)(vertVel * 100.0f);
 
-        p.px = (int16_t) (tvc.pid_x.p * 100.0f);
-        p.ix = (int16_t) (tvc.pid_x.i * 100.0f);
-        p.dx = (int16_t) (tvc.pid_x.d * 100.0f);
+        p.px = (int16_t)(tvc.pid_x.p * 100.0f);
+        p.ix = (int16_t)(tvc.pid_x.i * 100.0f);
+        p.dx = (int16_t)(tvc.pid_x.d * 100.0f);
 
-        p.py = (int16_t) (tvc.pid_y.p * 100.0f);
-        p.iy = (int16_t) (tvc.pid_y.i * 100.0f);
-        p.dy = (int16_t) (tvc.pid_y.d * 100.0f);
+        p.py = (int16_t)(tvc.pid_y.p * 100.0f);
+        p.iy = (int16_t)(tvc.pid_y.i * 100.0f);
+        p.dy = (int16_t)(tvc.pid_y.d * 100.0f);
 
         p.dt = (int16_t)(deltaTime * 1000.0f);
-        p.isEmpty = (uint8_t) false;
+        p.isEmpty = (uint8_t)false;
         return p;
     }
 

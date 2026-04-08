@@ -178,7 +178,7 @@ public:
         }
     }
 
-    bool logNext() {
+    bool logNext(bool dummy = false) {        
         // Only write if we have a valid file and data is ready
         if (numPending() > RING_BUFFER_SIZE) {
             DataPoint arr[RING_BUFFER_SIZE];
@@ -197,8 +197,12 @@ public:
                 pBin.p = arr[i];
                 memcpy(&bytes[i * (sizeof(DataPoint) - 4)], pBin.dataBytes, sizeof(DataPoint) - 4);
             }
-
-            logDataRaw(bytes, (RING_BUFFER_SIZE) * (sizeof(DataPoint) - 4), *logFile);
+            if (dummy) {
+                unsigned long long start = micros();
+                while (micros() - start < 2000) {}
+            } else {
+                logDataRaw(bytes, (RING_BUFFER_SIZE) * (sizeof(DataPoint) - 4), *logFile);
+            }
             return true;
         }
         return false;
