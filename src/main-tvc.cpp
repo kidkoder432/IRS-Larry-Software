@@ -3,6 +3,8 @@
 #include <rocket.h>
 #include <NRF52_MBED_TimerInterrupt.h>
 
+#define ITIMER_HZ 100
+
 float isBetween(float x, float a, float b) { return a <= x && x <= b; }
 
 Rocket rocket;
@@ -187,7 +189,7 @@ void setup() {
     rocket.printMessage("Chutes initialized!");
 
     // IMPORTANT: You must call this for MBED timers to initialize
-    if (ITimer.attachInterruptInterval(20000, loopHandler)) {
+    if (ITimer.attachInterruptInterval(1000000 / ITIMER_HZ, loopHandler)) {
         rocket.printMessage("Starting ITimer OK, interval = 10ms");
     }
     else {

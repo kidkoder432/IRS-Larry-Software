@@ -69,6 +69,10 @@ void loop() {
                 else {
                     rocket.enableCompl();
                 }
+            case 'C':
+                rocket.calibrateAndLog();
+                
+                break;
         }
     }
     rocket.updateSensors();

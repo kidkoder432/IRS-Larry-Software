@@ -4,10 +4,6 @@
 #include <config.h>
 #include <leds.h>
 
-#if USE_BLE_SENSE
-#include <Arduino_LPS22HB.h>
-#endif
-
 #if USE_RP2040
 #include <Adafruit_LSM6DSOX.h>
 #else
@@ -106,7 +102,6 @@ GyroBiases calibrateSensors(Config& config) {
 #else
 bool initIMU() {
     Wire1.begin();
-    Wire1.setClock(400000);
     if (!imu.beginI2C(0x68, Wire1)) return false;
 
     int err;

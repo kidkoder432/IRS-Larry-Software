@@ -1,124 +1,215 @@
-#ifndef ALT_H
-#define ALT_H
-
-#include <Arduino_LPS22HB.h>
-#include <math.h>
-#include <config.h>
+#include <Wire.h>
 #include <orientation.h>
+#include <sensors.h>
+#include <Arduino.h>
+#include <config.h>
 
-class Altimeter {
-private:
-    // Config
-    Config config;
 
-    // Reference pressure
-    float pressureRef;
+#define LPS22HB_ADDRESS  0x5C
 
-    // Filter params (tunable)
-    float baro_filter_alpha = 0.9;     // New: low-pass for baro altitude
-    float alt_filter_alpha_baro = 0.2; // Blend for altitude fusion (baro)
+#define LPS22HB_WHO_AM_I_REG        0x0f
+#define LPS22HB_CTRL1_REG           0x10
+#define LPS22HB_CTRL2_REG           0x11
+#define LPS22HB_STATUS_REG          0x27
+#define LPS22HB_PRESS_OUT_XL_REG    0x28
+#define LPS22HB_PRESS_OUT_L_REG     0x29
+#define LPS22HB_PRESS_OUT_H_REG     0x2a
+#define LPS22HB_TEMP_OUT_L_REG      0x2b
+#define LPS22HB_TEMP_OUT_H_REG      0x2c
 
-    // States
-    float alt = 0;    // Fused altitude
-    float vel = 0;    // Fused velocity
-
-    // Branch states
-    float baroAlt_raw = 0;
-    float baroAlt_filt = 0;
-    float baroVel_raw = 0;
-    float baroVel_filt = 0;
-
-    float accelVel = 0;
-    float accelAlt = 0;
-
-    float velAlt = 0;
-
-    // Prev states
-    float prevBaroAlt_filt = 0;
-    float prevAccelVel = 0;
-
-    Quaternion attitude;
-
-public:
-    Altimeter() {}
-
-    void configure(Config& cfg) {
-        config = cfg;
-
-        // Load from config if present
-        alt_filter_alpha_baro = config["FILTER_BARO_ALT_ALPHA"] ? config["FILTER_BARO_ALT_ALPHA"] : alt_filter_alpha_baro;
-        baro_filter_alpha = config["FILTER_BARO_EMA_ALPHA"] ? config["FILTER_BARO_EMA_ALPHA"] : baro_filter_alpha;
-
-        pressureRef = calculateBasePressure();
-    }
-
-    float calculateBasePressure() {
-        float avgPressure = 0;
-        for (int i = 0; i < 50; i++) {
-            avgPressure += BARO.readPressure(KILOPASCAL);
-            delay(10);
-        }
-        avgPressure /= 50.0f;
-        Serial.print("Base Pressure: ");
-        Serial.println(avgPressure);
-        return avgPressure;
-    }
-
-    float getBaroAltitudeRaw() {
-        return 44330 * (1.0 - pow(BARO.readPressure(KILOPASCAL) / pressureRef, 0.1903));
-    }
-
-    Vec3D accel_body_to_world(const SensorReadings& r, const Quaternion& attitude) {
-        Quaternion Qaccel = Quaternion(0, r.ax, r.ay, r.az);
-        Quaternion Qaccel_global = (attitude * Qaccel) * attitude.conj();
-        return Vec3D(Qaccel_global.b, Qaccel_global.c, Qaccel_global.d);
-    }
-
-    float getAccelVelocity(const Vec3D& accel_world, float prevVel, float dt) {
-        // Gravity subtraction assumes perfect alignment
-        return prevVel + (accel_world.x - 1.0f) * 9.81f * dt;
-    }
-
-    float getAccelAltitude(const Vec3D& accel_world, float prevAlt, float dt) {
-        // float newVel = getAccelVelocity(accel_world, prevVel, dt);
-        return prevAlt + (accel_world.x - 1.0f) * 9.81f * dt * dt;
-    }
-
-    void update(const SensorReadings& r, const Quaternion& attitude, float dt) {
-        // === 1. BARO BRANCH ===
-        baroAlt_raw = getBaroAltitudeRaw();
-
-        // EMA low-pass filter on baro altitude
-        baroAlt_filt = baro_filter_alpha * baroAlt_raw + (1.0f - baro_filter_alpha) * baroAlt_filt;
-
-        // === 2. ACCEL BRANCH ===
-        Vec3D accel_world = accel_body_to_world(r, attitude);
-
-        // accelVel = getAccelVelocity(accel_world, prevAccelVel, dt);
-        accelAlt = getAccelAltitude(accel_world, alt, dt);
-
-        // === 4. ALTITUDE FUSION ===
-        alt = (baroAlt_filt * alt_filter_alpha_baro)
-            + (accelAlt * (1.0f - alt_filter_alpha_baro));
-    }
-
-    float getAltitude() { return alt; }
-    float getVelocity() { return vel; }
-
-    void printData() {
-        Serial.print(baroAlt_filt);
-        Serial.print(" ");
-        Serial.print(accelAlt);
-        Serial.print(" ");
-        Serial.println(alt);
-    }
-
-    void reset() {
-        pressureRef = calculateBasePressure();
-        alt = vel = accelVel = accelAlt = velAlt = 0;
-        baroAlt_filt = baroVel_filt = prevBaroAlt_filt = 0;
-        prevAccelVel = 0;
-    }
+enum {
+    RATE_ONE_SHOT = 0,
+    RATE_1_HZ = 1,
+    RATE_10_HZ = 2,
+    RATE_25_HZ = 3,
+    RATE_50_HZ = 4,
+    RATE_75_HZ = 5,
 };
 
-#endif
+class LPSBaro {
+public:
+    LPSBaro(TwoWire& i2c) : i2c(i2c) {}
+
+    bool i2cWrite(uint8_t reg, uint8_t val) {
+        this->i2c.beginTransmission(LPS22HB_ADDRESS);
+        this->i2c.write(reg);
+        this->i2c.write(val);
+        if (i2c.endTransmission() != 0) {
+            return false;
+        }
+        return true;
+    }
+
+    int i2cRead(uint8_t reg) {
+        this->i2c.beginTransmission(LPS22HB_ADDRESS);
+        this->i2c.write(reg);
+        if (this->i2c.endTransmission(false) != 0) {
+            return -1;
+        }
+
+        if (this->i2c.requestFrom(LPS22HB_ADDRESS, 1) != 1) {
+            return -1;
+        }
+
+        return this->i2c.read();
+    }
+
+    bool begin() {
+        this->i2c.begin();
+
+        if (i2cRead(LPS22HB_WHO_AM_I_REG) != 0xb1) {
+            end();
+            return false;
+        }
+
+        initialized = true;
+        return true;
+    }
+
+    void end() {
+        this->i2c.end();
+        this->initialized = false;
+    }
+
+    bool config(int rate) {
+
+        int err = 0;
+        if (rate == RATE_ONE_SHOT) {
+            return false;
+        }
+
+        this->rate = rate;
+        int BDU = 1;
+        uint8_t val = ((rate & 0x07) << 4) | (BDU << 1);
+        err += i2cWrite(LPS22HB_CTRL1_REG, val);
+
+        return err;
+    }
+
+    bool dataReady() {
+        return (i2cRead(LPS22HB_STATUS_REG) & 0x01);
+    }
+
+    float readPressure() {
+
+        if (!this->initialized) {
+            return 0;
+        }
+
+        if (dataReady()) {
+
+            uint8_t reg_xl = i2cRead(LPS22HB_PRESS_OUT_XL_REG);
+            uint8_t reg_l = i2cRead(LPS22HB_PRESS_OUT_L_REG);
+            uint8_t reg_h = i2cRead(LPS22HB_PRESS_OUT_H_REG);
+
+            // 1. Shift up to copy the sign bit
+            int32_t currentReading = (reg_h << 24) | (reg_l << 16) | (reg_xl << 8);
+
+            // 2. Shift exactly 8 bits back down to fix the 24-bit alignment
+            currentReading = currentReading >> 8;
+
+            // 3. Store it as a FLOAT and use decimal division to keep the fractional hPa
+            currentPressure_hpa = currentReading / 4096.0f;
+
+        }
+
+        return currentPressure_hpa;
+    }
+
+private:
+    TwoWire& i2c;
+    bool initialized = false;
+    int rate = RATE_75_HZ;
+    float currentPressure_hpa = 0.0f;
+
+};
+
+class Altimeter {
+public:
+    Altimeter() : baro(Wire1) {
+        currentAlt = 0;
+        currentVel = 0;
+
+    }
+
+    bool begin() {
+        if (!baro.begin()) {
+            Serial.println("Failed to initalize Baro");
+            return false;
+        }
+        baro.config(RATE_75_HZ);
+        Serial.println("Calibrating baro...");
+        calibrate();
+        Serial.println("Calibration done!");
+        return true;
+    }
+
+    void update(const SensorReadings& r, Quaternion a, float dt) {
+        Vec3D accel = accel_body_to_world(r, a);
+        float accelX = (accel.x - 1.0f) * 9.81f;
+        accelVel = currentVel + accelX * dt;
+        accelAlt = currentAlt + accelVel * dt + 0.5f * accelX * dt * dt;
+
+
+        baroAlt = getBaroAltitude(baro.readPressure());
+
+        deviation = baroAlt - accelAlt;
+        currentAlt = accelAlt + deviation * alpha;
+        currentVel = accelVel + deviation * beta;
+    }
+
+    float getAltitude() { return currentAlt; }
+    float getVelocity() { return currentVel; }
+
+    void reset() {
+        currentAlt = 0;
+        currentVel = 0;
+    }
+
+    Vec3D accel_body_to_world(const SensorReadings& r, Quaternion a) {
+        Quaternion accel_q = Quaternion(0, r.ax, r.ay, r.az);
+        Quaternion accel_global = a * accel_q * a.conj();
+
+        return Vec3D(accel_global.b, accel_global.c, accel_global.d);
+    }
+
+    void printData() {
+        char buf[256];
+        snprintf(buf, sizeof(buf), ">alt:%.3f,vel:%.3f,accelAlt:%.3f,accelVel:%.3f,baroAlt:%.3f,deviation:%.3f;", currentAlt, currentVel, accelAlt, accelVel, baroAlt, deviation);
+        Serial.println(buf);
+    }
+
+    void calibrate() {
+        unsigned long long start = micros();
+
+        float totalPressure = 0.0f;
+        int count = 0;
+
+        while (micros() - start < 3000000) {
+            if (baro.dataReady()) {
+                totalPressure += baro.readPressure();
+                count++;
+            }
+        }
+
+        pressure_ref = totalPressure / count;
+
+    }
+
+private:
+
+    float getBaroAltitude(float currentPressure) {
+        return 44330.0f * (1.0f - pow(currentPressure / pressure_ref, 0.19026f));
+    }
+
+    LPSBaro baro;
+
+    float currentAlt = 0, currentVel = 0;
+
+    float pressure_ref = 1013.25;
+    float alpha = 0.05; // Trust the barometer this much
+    float beta = 0.1; // Nudge the accelerometer from the barometer by this much
+
+    float accelVel, accelAlt, baroAlt, deviation;
+
+};

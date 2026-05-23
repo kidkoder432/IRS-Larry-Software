@@ -239,10 +239,13 @@ public: // Public functions
         initIMU();
         delay(1000);
     #if USE_BLE_SENSE
-        if (!BARO.begin()) Serial.println("Failed to initialize BARO!");
-        BARO.setOutputRate(RATE_75_HZ);
-        delay(1000);
-        altimeter.begin(config);
+        if (!altimeter.begin()) {
+            printMessage("Failed to initialize baro!");
+            HALT_AND_CATCH_FIRE(COLOR_PINK);
+
+        }
+        Wire1.setClock(400000);
+
     #endif
         return true;
     }
@@ -255,6 +258,8 @@ public: // Public functions
         char buf[64];
         snprintf(buf, sizeof(buf), "bx = %f, by = %f, bz = %f", biases.bx, biases.by, biases.bz);
         logMessage(buf);
+
+        altimeter.calibrate();
 
         printMessage("Sensors calibrated");
         updateTime(false);

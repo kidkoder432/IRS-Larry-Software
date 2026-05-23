@@ -244,6 +244,8 @@ public: // Public functions
             HALT_AND_CATCH_FIRE(COLOR_PINK);
 
         }
+        Wire1.setClock(400000);
+
     #endif
         return true;
     }

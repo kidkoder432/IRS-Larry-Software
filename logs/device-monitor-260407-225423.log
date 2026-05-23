@@ -1,0 +1,527 @@
+22:54:23.261 > Setting log speed to FAST (100 Hz)
+22:54:23.264 > Data logging initialized!
+22:54:23.268 > Kp
+22:54:23.268 > Ki
+22:54:23.268 > Kd
+22:54:23.268 > N
+22:54:23.272 > PRESSURE_REF
+22:54:23.272 > XMIN
+22:54:23.273 > XDEF
+22:54:23.273 > XMAX
+22:54:23.273 > YMIN
+22:54:23.274 > YDEF
+22:54:23.274 > YMAX
+22:54:23.277 > COMP_FILTER_ALPHA_GYRO
+22:54:23.278 > ALT_FILTER_ALPHA_ACCEL
+22:54:23.278 > PYRO_1_FIRE_TIME
+22:54:23.278 > PYRO_2_FIRE_TIME
+22:54:23.281 > PARACHUTE_FIRE_TIME
+22:54:23.282 > PARACHUTE_BURNOUT_DELAY
+22:54:23.282 > PARACHUTE_ONE_SHOT: 0.00
+22:54:23.283 > PYRO_2_ONE_SHOT: 0.00
+22:54:23.284 > ALT_FILTER_ALPHA_ACCEL: 0.95
+22:54:23.284 > PYRO_2_FIRE_TIME: 2500.00
+22:54:23.284 > COMP_FILTER_ALPHA_GYRO: 0.95
+22:54:23.286 > INIT_ACCEL: 1.00
+22:54:23.286 > PYRO_1_ONE_SHOT: 0.00
+22:54:23.286 > DO_ACCEL_FOC: 1.00
+22:54:23.286 > DATA_LOG_BATCH: 1.00
+22:54:23.289 > DO_CRT: 1.00
+22:54:23.290 > FLIP_DIR_Z: 1.00
+22:54:23.290 > XMIN: 17.00
+22:54:23.291 > YMIN: 14.00
+22:54:23.291 > N: 70.00
+22:54:23.291 > PRESSURE_REF: 100.82
+22:54:23.292 > Kd: 0.15
+22:54:23.293 > DO_GYRO_FOC: 0.00
+22:54:23.294 > FLIP_DIR_Y: 1.00
+22:54:23.294 > FLIP_Y: 1.00
+22:54:23.295 > PARACHUTE_FIRE_TIME: 5000.00
+22:54:23.296 > ROLL_COMP: 0.00
+22:54:23.296 > FLIP_X: 0.00
+22:54:23.296 > Kp: 0.85
+22:54:23.296 > XDEF: 33.00
+22:54:23.299 > Ki: 0.30
+22:54:23.300 > TVC_PERMA_LOCKED: 0.00
+22:54:23.300 > YMAX: 46.00
+22:54:23.301 > PARACHUTE_BURNOUT_DELAY: 1000.00
+22:54:23.301 > XMAX: 49.00
+22:54:23.302 > YDEF: 30.00
+22:54:23.303 > PYRO_1_FIRE_TIME: 2500.00
+22:54:23.304 > FLIP_DIR_X: 0.00
+22:54:23.304 > Config initialized!
+22:54:25.374 > Calibrating baro...
+22:54:28.334 > Calibration done!
+22:54:28.334 > Calibrating sensors
+22:54:28.334 > Starting Sensor Calibration...
+22:54:28.334 > Performing component retrimming...
+22:54:28.787 > Performing acclerometer offset calibration...
+22:54:31.552 > 
+22:54:31.552 > Internal calibration complete!
+22:54:31.552 > Starting external gyroscope offset calibration...
+22:54:37.493 > Sensors calibrated
+22:54:37.670 > BLE not connected! Using USB serial...
+22:54:37.670 > Initializing angles using accelerometer
+22:54:37.724 > rpy init: 0.00, 0.31, -0.18
+22:54:37.724 > Sensors and angles initialized!
+22:54:37.724 > LEDs initialized!
+22:54:37.728 > TVC initialized!
+22:54:37.728 > Pyros initialized!
+22:54:37.728 > Chutes initialized!
+22:54:37.728 > Starting ITimer OK, interval = 10ms
+22:54:37.728 > Setup complete!
+22:54:37.740 > Welcome!
+22:54:37.740 > This is the LAUNCH CONTROL SOFTWARE for the TAX COLLECTOR
+22:54:37.740 > Use this software to control launch, run specific routines, or abort the launch.
+22:54:37.740 > Commands:
+22:54:37.740 > L: Launch
+22:54:37.740 > A: Abort
+22:54:37.740 > C: Calibrate Sensors
+22:54:37.740 > 
+22:54:37.740 > Y: Test TVC
+22:54:37.740 > D: Unlock TVC
+22:54:37.740 > F: Lock TVC
+22:54:37.740 > 
+22:54:37.740 > V: Nudge X -
+22:54:37.740 > B: Nudge X +
+22:54:37.740 > N: Nudge Y -
+22:54:37.740 > M: Nudge Y +
+22:54:37.740 > 
+22:54:37.740 > Q: Reset Angles
+22:54:37.740 > O: Print Orientation
+22:54:37.740 > X: Cancel Printing
+22:54:37.740 > 
+22:54:37.740 > H: Help
+22:54:37.740 > 
+22:54:43.378 > Welcome!
+22:54:43.378 > This is the LAUNCH CONTROL SOFTWARE for the TAX COLLECTOR
+22:54:43.378 > Use this software to control launch, run specific routines, or abort the launch.
+22:54:43.378 > Commands:
+22:54:43.378 > L: Launch
+22:54:43.378 > A: Abort
+22:54:43.378 > C: Calibrate Sensors
+22:54:43.378 > 
+22:54:43.378 > Y: Test TVC
+22:54:43.378 > D: Unlock TVC
+22:54:43.378 > F: Lock TVC
+22:54:43.378 > 
+22:54:43.378 > V: Nudge X -
+22:54:43.378 > B: Nudge X +
+22:54:43.378 > N: Nudge Y -
+22:54:43.378 > M: Nudge Y +
+22:54:43.378 > 
+22:54:43.378 > Q: Reset Angles
+22:54:43.378 > O: Print Orientation
+22:54:43.378 > X: Cancel Printing
+22:54:43.378 > 
+22:54:43.378 > H: Help
+22:54:43.378 > 
+22:54:45.629 > sensor=2076  angles=304  tvc=24  total=2465  sd=3117  latency=81  worst=7618 (all us)
+22:54:45.629 > Loop rate: 179.15 Hz
+22:54:45.629 > Pending data points:  7
+22:54:47.588 > sensor=1529  angles=350  tvc=24  total=1947  sd=10  latency=73  worst=7618 (all us)
+22:54:47.589 > Loop rate: 510.99 Hz
+22:54:47.589 > Pending data points:  2
+22:54:48.097 > sensor=1527  angles=358  tvc=24  total=1953  sd=9  latency=63  worst=7618 (all us)
+22:54:48.099 > Loop rate: 509.68 Hz
+22:54:48.099 > Pending data points:  3
+22:54:48.514 > sensor=2202  angles=357  tvc=24  total=2627  sd=10  latency=45  worst=7618 (all us)
+22:54:48.514 > Loop rate: 379.22 Hz
+22:54:48.514 > Pending data points:  5
+22:54:48.905 > sensor=2118  angles=312  tvc=24  total=2498  sd=10  latency=49  worst=7618 (all us)
+22:54:48.906 > Loop rate: 398.72 Hz
+22:54:48.906 > Pending data points:  4
+22:54:49.306 > sensor=2140  angles=319  tvc=24  total=2527  sd=10  latency=51  worst=7618 (all us)
+22:54:49.307 > Loop rate: 394.17 Hz
+22:54:49.307 > Pending data points:  4
+22:54:49.690 > sensor=3250  angles=350  tvc=24  total=3669  sd=10  latency=52  worst=7618 (all us)
+22:54:49.690 > Loop rate: 271.81 Hz
+22:54:49.690 > Pending data points:  3
+22:54:50.089 > sensor=1504  angles=357  tvc=24  total=1930  sd=10  latency=135  worst=7618 (all us)
+22:54:50.090 > Loop rate: 515.46 Hz
+22:54:50.090 > Pending data points:  2
+22:54:50.457 > sensor=2199  angles=365  tvc=23  total=2632  sd=24  latency=73  worst=7618 (all us)
+22:54:50.457 > Loop rate: 376.51 Hz
+22:54:50.457 > Pending data points:  10
+22:54:50.848 > sensor=2122  angles=304  tvc=24  total=2494  sd=10  latency=82  worst=7618 (all us)
+22:54:50.849 > Loop rate: 399.36 Hz
+22:54:50.849 > Pending data points:  8
+22:54:51.249 > sensor=3654  angles=304  tvc=24  total=4026  sd=10  latency=49  worst=7618 (all us)
+22:54:51.252 > Loop rate: 247.77 Hz
+22:54:51.253 > Pending data points:  8
+22:54:51.642 > sensor=1503  angles=332  tvc=24  total=1920  sd=10  latency=1782  worst=7618 (all us)
+22:54:51.642 > Loop rate: 518.13 Hz
+22:54:51.642 > Pending data points:  7
+22:54:52.050 > sensor=2241  angles=313  tvc=23  total=2622  sd=10  latency=75  worst=7618 (all us)
+22:54:52.050 > Loop rate: 379.94 Hz
+22:54:52.050 > Pending data points:  8
+22:54:52.388 > sensor=2069  angles=304  tvc=24  total=2441  sd=10  latency=2603  worst=7618 (all us)
+22:54:52.405 > Loop rate: 408.00 Hz
+22:54:52.405 > Pending data points:  3
+22:54:52.794 > sensor=1517  angles=304  tvc=24  total=1889  sd=78  latency=1931  worst=7618 (all us)
+22:54:52.795 > Loop rate: 508.39 Hz
+22:54:52.795 > Pending data points:  2
+22:54:53.155 > sensor=6238  angles=331  tvc=24  total=6637  sd=10  latency=51  worst=7618 (all us)
+22:54:53.156 > Loop rate: 150.44 Hz
+22:54:53.156 > Pending data points:  8
+22:54:54.056 > sensor=1503  angles=340  tvc=24  total=1911  sd=10  latency=992  worst=7618 (all us)
+22:54:54.056 > Loop rate: 520.56 Hz
+22:54:54.056 > Pending data points:  9
+22:55:40.054 > sensor=1584  angles=314  tvc=23  total=1966  sd=10  latency=63  worst=7679 (all us)
+22:55:40.054 > Loop rate: 506.07 Hz
+22:55:40.054 > Pending data points:  2
+22:55:40.054 > sensor=1584  angles=314  tvc=23  total=1966  sd=10  latency=63  worst=7679 (all us)
+22:55:40.054 > Loop rate: 506.07 Hz
+22:55:40.054 > Pending data points:  2
+22:55:40.065 > sensor=1584  angles=314  tvc=23  total=1966  sd=10  latency=63  worst=7679 (all us)
+22:55:40.070 > Loop rate: 506.07 Hz
+22:55:40.070 > Pending data points:  2
+22:55:40.073 > sensor=2082  angles=352  tvc=23  total=2502  sd=10  latency=4033  worst=7679 (all us)
+22:55:40.074 > Loop rate: 398.09 Hz
+22:55:40.074 > Pending data points:  3
+22:55:40.083 > sensor=2095  angles=321  tvc=23  total=2484  sd=10  latency=3551  worst=7679 (all us)
+22:55:40.086 > Loop rate: 400.96 Hz
+22:55:40.087 > Pending data points:  4
+22:55:40.089 > sensor=1560  angles=333  tvc=41  total=1979  sd=10  latency=453  worst=7679 (all us)
+22:55:40.094 > Loop rate: 502.77 Hz
+22:55:40.094 > Pending data points:  5
+22:55:40.095 > sensor=1560  angles=333  tvc=41  total=1979  sd=10  latency=453  worst=7679 (all us)
+22:55:40.095 > Loop rate: 502.77 Hz
+22:55:40.095 > Pending data points:  5
+22:55:40.099 > sensor=2185  angles=352  tvc=24  total=2605  sd=10  latency=970  worst=7679 (all us)
+22:55:40.103 > Loop rate: 382.41 Hz
+22:55:40.103 > Pending data points:  6
+22:55:40.104 > sensor=2185  angles=352  tvc=24  total=2605  sd=10  latency=970  worst=7679 (all us)
+22:55:40.105 > Loop rate: 382.41 Hz
+22:55:40.105 > Pending data points:  6
+22:55:40.105 > sensor=2185  angles=352  tvc=24  total=2605  sd=10  latency=970  worst=7679 (all us)
+22:55:40.108 > Loop rate: 382.41 Hz
+22:55:40.108 > Pending data points:  6
+22:55:40.112 > sensor=2100  angles=330  tvc=24  total=2498  sd=10  latency=3113  worst=7679 (all us)
+22:55:40.115 > Loop rate: 398.72 Hz
+22:55:40.115 > Pending data points:  7
+22:55:40.115 > sensor=2084  angles=351  tvc=23  total=2503  sd=10  latency=961  worst=7679 (all us)
+22:55:40.122 > Loop rate: 397.93 Hz
+22:55:40.122 > Pending data points:  8
+22:55:40.126 > sensor=2084  angles=351  tvc=23  total=2503  sd=10  latency=961  worst=7679 (all us)
+22:55:40.129 > Loop rate: 397.93 Hz
+22:55:40.129 > Pending data points:  8
+22:55:40.131 > sensor=2112  angles=331  tvc=24  total=2511  sd=10  latency=3077  worst=7679 (all us)
+22:55:40.131 > Loop rate: 396.67 Hz
+22:55:40.131 > Pending data points:  9
+22:55:40.131 > sensor=2112  angles=331  tvc=24  total=2511  sd=10  latency=3077  worst=7679 (all us)
+22:55:40.131 > Loop rate: 396.67 Hz
+22:55:40.131 > Pending data points:  9
+22:55:40.137 > sensor=2112  angles=331  tvc=24  total=2511  sd=10  latency=3077  worst=7679 (all us)
+22:55:40.138 > Loop rate: 396.67 Hz
+22:55:40.138 > Pending data points:  9
+22:55:40.140 > sensor=1546  angles=340  tvc=24  total=1954  sd=10  latency=1266  worst=7679 (all us)
+22:55:40.141 > Loop rate: 509.16 Hz
+22:55:40.141 > Pending data points:  10
+22:55:40.141 > sensor=1546  angles=340  tvc=24  total=1954  sd=10  latency=1266  worst=7679 (all us)
+22:55:40.141 > Loop rate: 509.16 Hz
+22:55:40.141 > Pending data points:  10
+22:55:40.141 > sensor=1546  angles=340  tvc=24  total=1954  sd=10  latency=1266  worst=7679 (all us)
+22:55:40.141 > Loop rate: 509.16 Hz
+22:55:40.141 > Pending data points:  10
+22:55:40.141 > sensor=1546  angles=340  tvc=24  total=1954  sd=10  latency=1266  worst=7679 (all us)
+22:55:40.141 > Loop rate: 509.16 Hz
+22:55:40.141 > Pending data points:  10
+22:55:41.578 > sensor=2071  angles=322  tvc=24  total=2461  sd=10  latency=1105  worst=7679 (all us)
+22:55:41.578 > Loop rate: 404.69 Hz
+22:55:41.578 > Pending data points:  3
+22:55:46.573 > sensor=2217  angles=304  tvc=4142  total=6708  sd=10  latency=63  worst=7679 (all us)
+22:55:46.573 > Loop rate: 148.85 Hz
+22:55:46.573 > Pending data points:  2
+22:55:46.579 > sensor=2114  angles=343  tvc=24  total=2525  sd=10  latency=1333  worst=7679 (all us)
+22:55:46.582 > Loop rate: 394.48 Hz
+22:55:46.583 > Pending data points:  3
+22:55:46.583 > sensor=2114  angles=343  tvc=24  total=2525  sd=9  latency=1333  worst=7679 (all us)
+22:55:46.587 > Loop rate: 394.63 Hz
+22:55:46.587 > Pending data points:  3
+22:55:46.591 > sensor=2104  angles=333  tvc=24  total=2505  sd=9  latency=2343  worst=7679 (all us)
+22:55:46.595 > Loop rate: 397.77 Hz
+22:55:46.596 > Pending data points:  4
+22:55:46.599 > sensor=1517  angles=333  tvc=24  total=1918  sd=9  latency=801  worst=7679 (all us)
+22:55:46.599 > Loop rate: 518.94 Hz
+22:55:46.600 > Pending data points:  5
+22:55:46.605 > sensor=1517  angles=333  tvc=24  total=1918  sd=10  latency=801  worst=7679 (all us)
+22:55:46.605 > Loop rate: 518.67 Hz
+22:55:46.605 > Pending data points:  5
+22:55:46.608 > sensor=1517  angles=333  tvc=24  total=1918  sd=10  latency=801  worst=7679 (all us)
+22:55:46.608 > Loop rate: 518.67 Hz
+22:55:46.608 > Pending data points:  5
+22:55:46.612 > sensor=2068  angles=322  tvc=24  total=2458  sd=10  latency=3771  worst=7679 (all us)
+22:55:46.612 > Loop rate: 405.19 Hz
+22:55:46.616 > Pending data points:  6
+22:55:46.618 > sensor=1548  angles=305  tvc=23  total=1921  sd=10  latency=456  worst=7679 (all us)
+22:55:46.619 > Loop rate: 517.87 Hz
+22:55:46.619 > Pending data points:  7
+22:55:46.621 > sensor=1548  angles=305  tvc=23  total=1921  sd=10  latency=456  worst=7679 (all us)
+22:55:46.622 > Loop rate: 517.87 Hz
+22:55:46.622 > Pending data points:  7
+22:55:46.623 > sensor=1548  angles=305  tvc=23  total=1921  sd=10  latency=456  worst=7679 (all us)
+22:55:46.625 > Loop rate: 517.87 Hz
+22:55:46.625 > Pending data points:  7
+22:55:46.629 > sensor=2210  angles=344  tvc=23  total=2622  sd=10  latency=1075  worst=7679 (all us)
+22:55:46.632 > Loop rate: 379.94 Hz
+22:55:46.632 > Pending data points:  8
+22:55:46.640 > sensor=2098  angles=305  tvc=23  total=2471  sd=10  latency=1033  worst=7679 (all us)
+22:55:46.640 > Loop rate: 403.06 Hz
+22:55:46.641 > Pending data points:  9
+22:55:46.642 > sensor=2098  angles=305  tvc=23  total=2471  sd=10  latency=1033  worst=7679 (all us)
+22:55:46.642 > Loop rate: 403.06 Hz
+22:55:46.642 > Pending data points:  9
+22:55:46.649 > sensor=1545  angles=335  tvc=24  total=1948  sd=10  latency=3817  worst=7679 (all us)
+22:55:46.649 > Loop rate: 510.73 Hz
+22:55:46.656 > Pending data points:  10
+22:55:46.659 > sensor=2105  angles=342  tvc=23  total=2514  sd=10  latency=142  worst=7679 (all us)
+22:55:46.660 > Loop rate: 396.20 Hz
+22:55:46.660 > Pending data points:  11
+22:55:46.664 > sensor=2105  angles=342  tvc=23  total=2514  sd=6996  latency=142  worst=7679 (all us)
+22:55:46.664 > Loop rate: 105.15 Hz
+22:55:46.670 > Pending data points:  1
+22:55:46.676 > sensor=2132  angles=342  tvc=24  total=2542  sd=6996  latency=8189  worst=7679 (all us)
+22:55:46.678 > Loop rate: 104.84 Hz
+22:55:46.679 > Pending data points:  2
+22:55:46.682 > sensor=2110  angles=333  tvc=24  total=2511  sd=6996  latency=5074  worst=7679 (all us)
+22:55:46.686 > Loop rate: 105.19 Hz
+22:55:46.686 > Pending data points:  3
+22:55:46.689 > sensor=1596  angles=331  tvc=23  total=1995  sd=6996  latency=838  worst=7679 (all us)
+22:55:46.691 > Loop rate: 111.22 Hz
+22:55:46.691 > Pending data points:  4
+22:55:46.691 > sensor=1596  angles=331  tvc=23  total=1995  sd=10  latency=838  worst=7679 (all us)
+22:55:46.694 > Loop rate: 498.75 Hz
+22:55:46.694 > Pending data points:  4
+22:55:46.699 > sensor=2099  angles=341  tvc=24  total=2525  sd=10  latency=253  worst=7679 (all us)
+22:55:46.699 > Loop rate: 394.48 Hz
+22:55:46.699 > Pending data points:  5
+22:55:46.702 > sensor=2099  angles=341  tvc=24  total=2525  sd=10  latency=253  worst=7679 (all us)
+22:55:46.703 > Loop rate: 394.48 Hz
+22:55:46.706 > Pending data points:  5
+22:55:46.711 > sensor=2117  angles=322  tvc=23  total=2507  sd=10  latency=2338  worst=7679 (all us)
+22:55:46.713 > Loop rate: 397.30 Hz
+22:55:46.713 > Pending data points:  6
+22:55:46.713 > sensor=2117  angles=322  tvc=23  total=2507  sd=10  latency=2338  worst=7679 (all us)
+22:55:46.715 > Loop rate: 397.30 Hz
+22:55:46.715 > Pending data points:  6
+22:55:46.715 > sensor=2117  angles=322  tvc=23  total=2507  sd=10  latency=2338  worst=7679 (all us)
+22:55:46.723 > Loop rate: 397.30 Hz
+22:55:46.723 > Pending data points:  6
+22:55:46.723 > sensor=2064  angles=331  tvc=23  total=2463  sd=10  latency=3528  worst=7679 (all us)
+22:55:46.723 > Loop rate: 404.37 Hz
+22:55:46.723 > Pending data points:  7
+22:55:46.723 > sensor=2064  angles=331  tvc=23  total=2463  sd=10  latency=3528  worst=7679 (all us)
+22:55:46.725 > Loop rate: 404.37 Hz
+22:55:46.725 > Pending data points:  7
+22:55:46.729 > sensor=1511  angles=313  tvc=51  total=1943  sd=10  latency=1523  worst=7679 (all us)
+22:55:46.737 > Loop rate: 512.03 Hz
+22:55:46.737 > Pending data points:  8
+22:55:46.737 > sensor=1511  angles=313  tvc=51  total=1943  sd=10  latency=1523  worst=7679 (all us)
+22:55:46.737 > Loop rate: 512.03 Hz
+22:55:46.737 > Pending data points:  8
+22:55:46.740 > sensor=2125  angles=341  tvc=24  total=2534  sd=10  latency=1974  worst=7679 (all us)
+22:55:46.741 > Loop rate: 393.08 Hz
+22:55:46.741 > Pending data points:  9
+22:55:46.746 > sensor=2125  angles=341  tvc=24  total=2534  sd=10  latency=1974  worst=7679 (all us)
+22:55:46.746 > Loop rate: 393.08 Hz
+22:55:46.746 > Pending data points:  9
+22:55:46.749 > sensor=2103  angles=333  tvc=24  total=2504  sd=10  latency=1120  worst=7679 (all us)
+22:55:46.751 > Loop rate: 397.77 Hz
+22:55:46.751 > Pending data points:  10
+22:55:46.751 > sensor=2103  angles=333  tvc=24  total=2504  sd=10  latency=1120  worst=7679 (all us)
+22:55:46.751 > Loop rate: 397.77 Hz
+22:55:46.754 > Pending data points:  10
+22:55:46.754 > sensor=2103  angles=333  tvc=24  total=2504  sd=10  latency=1120  worst=7679 (all us)
+22:55:46.757 > Loop rate: 397.77 Hz
+22:55:46.757 > Pending data points:  10
+22:55:46.759 > sensor=2115  angles=313  tvc=23  total=2496  sd=10  latency=1587  worst=7679 (all us)
+22:55:46.761 > Loop rate: 399.04 Hz
+22:55:46.761 > Pending data points:  11
+22:55:46.767 > sensor=2115  angles=313  tvc=23  total=2496  sd=5857  latency=1587  worst=7679 (all us)
+22:55:46.767 > Loop rate: 119.72 Hz
+22:55:46.767 > Pending data points:  1
+22:55:46.773 > sensor=1538  angles=305  tvc=23  total=1911  sd=5857  latency=2234  worst=7679 (all us)
+22:55:46.775 > Loop rate: 128.73 Hz
+22:55:46.775 > Pending data points:  2
+22:55:46.775 > sensor=1538  angles=305  tvc=23  total=1911  sd=10  latency=2234  worst=7679 (all us)
+22:55:46.777 > Loop rate: 520.56 Hz
+22:55:46.777 > Pending data points:  2
+22:55:46.779 > sensor=2104  angles=305  tvc=24  total=2477  sd=10  latency=1621  worst=7679 (all us)
+22:55:46.786 > Loop rate: 402.09 Hz
+22:55:46.786 > Pending data points:  3
+22:55:46.789 > sensor=2106  angles=324  tvc=23  total=2498  sd=10  latency=372  worst=7679 (all us)
+22:55:46.789 > Loop rate: 398.72 Hz
+22:55:46.789 > Pending data points:  4
+22:55:46.790 > sensor=2106  angles=324  tvc=23  total=2498  sd=10  latency=372  worst=7679 (all us)
+22:55:46.790 > Loop rate: 398.72 Hz
+22:55:46.791 > Pending data points:  4
+22:55:46.793 > sensor=2106  angles=324  tvc=23  total=2498  sd=10  latency=372  worst=7679 (all us)
+22:55:46.793 > Loop rate: 398.72 Hz
+22:55:46.793 > Pending data points:  4
+22:55:46.794 > sensor=2106  angles=324  tvc=23  total=2498  sd=10  latency=372  worst=7679 (all us)
+22:55:46.796 > Loop rate: 398.72 Hz
+22:55:46.796 > Pending data points:  4
+22:55:46.803 > sensor=2116  angles=349  tvc=24  total=2533  sd=10  latency=4905  worst=7679 (all us)
+22:55:46.805 > Loop rate: 393.24 Hz
+22:55:46.808 > Pending data points:  5
+22:55:46.810 > sensor=1517  angles=334  tvc=23  total=1919  sd=10  latency=1544  worst=7679 (all us)
+22:55:46.814 > Loop rate: 518.40 Hz
+22:55:46.814 > Pending data points:  6
+22:55:46.814 > sensor=1517  angles=334  tvc=23  total=1919  sd=10  latency=1544  worst=7679 (all us)
+22:55:46.816 > Loop rate: 518.40 Hz
+22:55:46.816 > Pending data points:  6
+22:55:46.828 > sensor=2261  angles=334  tvc=23  total=2662  sd=10  latency=8631  worst=7679 (all us)
+22:55:46.829 > Loop rate: 374.25 Hz
+22:55:46.829 > Pending data points:  7
+22:55:46.831 > sensor=1548  angles=334  tvc=24  total=1950  sd=10  latency=3437  worst=7679 (all us)
+22:55:46.832 > Loop rate: 510.20 Hz
+22:55:46.832 > Pending data points:  8
+22:55:46.832 > sensor=1548  angles=334  tvc=24  total=1950  sd=10  latency=3437  worst=7679 (all us)
+22:55:46.837 > Loop rate: 510.20 Hz
+22:55:46.837 > Pending data points:  8
+22:55:46.842 > sensor=2203  angles=325  tvc=23  total=2596  sd=10  latency=2967  worst=7679 (all us)
+22:55:46.843 > Loop rate: 383.73 Hz
+22:55:46.843 > Pending data points:  9
+22:55:46.845 > sensor=2203  angles=325  tvc=23  total=2596  sd=10  latency=2967  worst=7679 (all us)
+22:55:46.845 > Loop rate: 383.73 Hz
+22:55:46.846 > Pending data points:  9
+22:55:46.846 > sensor=4637  angles=305  tvc=24  total=5037  sd=10  latency=109  worst=7679 (all us)
+22:55:46.846 > Loop rate: 198.14 Hz
+22:55:46.846 > Pending data points:  10
+22:55:46.854 > sensor=4637  angles=305  tvc=24  total=5037  sd=10  latency=109  worst=7679 (all us)
+22:55:46.854 > Loop rate: 198.14 Hz
+22:55:46.854 > Pending data points:  10
+22:55:46.854 > sensor=4637  angles=305  tvc=24  total=5037  sd=10  latency=109  worst=7679 (all us)
+22:55:46.856 > Loop rate: 198.14 Hz
+22:55:46.856 > Pending data points:  10
+22:55:46.861 > sensor=2150  angles=313  tvc=51  total=2558  sd=10  latency=1625  worst=7679 (all us)
+22:55:46.862 > Loop rate: 389.41 Hz
+22:55:46.862 > Pending data points:  11
+22:55:46.864 > sensor=2150  angles=313  tvc=51  total=2558  sd=1586  latency=1625  worst=7679 (all us)
+22:55:46.866 > Loop rate: 241.31 Hz
+22:55:46.866 > Pending data points:  1
+22:55:46.870 > sensor=2097  angles=321  tvc=24  total=2487  sd=1586  latency=291  worst=7679 (all us)
+22:55:46.871 > Loop rate: 245.52 Hz
+22:55:46.871 > Pending data points:  2
+22:55:46.871 > sensor=2097  angles=321  tvc=24  total=2487  sd=10  latency=291  worst=7679 (all us)
+22:55:46.877 > Loop rate: 400.48 Hz
+22:55:46.877 > Pending data points:  2
+22:55:46.882 > sensor=6200  angles=322  tvc=24  total=6590  sd=10  latency=969  worst=7679 (all us)
+22:55:46.882 > Loop rate: 151.52 Hz
+22:55:46.882 > Pending data points:  3
+22:55:46.888 > sensor=6200  angles=322  tvc=24  total=6590  sd=10  latency=969  worst=7679 (all us)
+22:55:46.888 > Loop rate: 151.52 Hz
+22:55:46.888 > Pending data points:  3
+22:55:46.895 > sensor=2120  angles=321  tvc=24  total=2509  sd=10  latency=5320  worst=7679 (all us)
+22:55:46.895 > Loop rate: 396.98 Hz
+22:55:46.895 > Pending data points:  4
+22:55:46.899 > sensor=2120  angles=321  tvc=24  total=2509  sd=10  latency=5320  worst=7679 (all us)
+22:55:46.899 > Loop rate: 396.98 Hz
+22:55:46.899 > Pending data points:  4
+22:55:46.903 > sensor=1542  angles=333  tvc=23  total=1943  sd=10  latency=4389  worst=7679 (all us)
+22:55:46.904 > Loop rate: 512.03 Hz
+22:55:46.904 > Pending data points:  5
+22:55:46.910 > sensor=2122  angles=347  tvc=24  total=2537  sd=10  latency=595  worst=7679 (all us)
+22:55:46.911 > Loop rate: 392.62 Hz
+22:55:46.911 > Pending data points:  6
+22:55:46.912 > sensor=2122  angles=347  tvc=24  total=2537  sd=10  latency=595  worst=7679 (all us)
+22:55:46.913 > Loop rate: 392.62 Hz
+22:55:46.913 > Pending data points:  6
+22:55:46.921 > sensor=2078  angles=322  tvc=24  total=2468  sd=10  latency=2170  worst=7679 (all us)
+22:55:46.922 > Loop rate: 403.55 Hz
+22:55:46.925 > Pending data points:  7
+22:55:46.926 > sensor=2078  angles=322  tvc=24  total=2468  sd=10  latency=2170  worst=7679 (all us)
+22:55:46.930 > Loop rate: 403.55 Hz
+22:55:46.930 > Pending data points:  7
+22:55:46.933 > sensor=1505  angles=305  tvc=51  total=1905  sd=10  latency=4164  worst=7679 (all us)
+22:55:46.933 > Loop rate: 522.19 Hz
+22:55:46.933 > Pending data points:  8
+22:55:46.939 > sensor=2101  angles=305  tvc=23  total=2474  sd=10  latency=388  worst=7679 (all us)
+22:55:46.944 > Loop rate: 402.58 Hz
+22:55:46.944 > Pending data points:  9
+22:55:46.945 > sensor=2101  angles=305  tvc=23  total=2474  sd=10  latency=388  worst=7679 (all us)
+22:55:46.945 > Loop rate: 402.58 Hz
+22:55:46.946 > Pending data points:  9
+22:55:46.946 > sensor=2101  angles=305  tvc=23  total=2474  sd=39  latency=388  worst=7679 (all us)
+22:55:46.946 > Loop rate: 397.93 Hz
+22:55:46.951 > Pending data points:  9
+22:55:46.959 > sensor=6201  angles=333  tvc=24  total=6602  sd=39  latency=5510  worst=7679 (all us)
+22:55:46.959 > Loop rate: 150.58 Hz
+22:55:46.959 > Pending data points:  10
+22:55:46.963 > sensor=2094  angles=305  tvc=23  total=2467  sd=39  latency=4250  worst=7679 (all us)
+22:55:46.964 > Loop rate: 399.04 Hz
+22:55:46.964 > Pending data points:  11
+22:55:46.967 > sensor=2094  angles=305  tvc=23  total=2467  sd=4698  latency=4250  worst=7679 (all us)
+22:55:46.971 > Loop rate: 139.57 Hz
+22:55:46.971 > Pending data points:  1
+22:55:46.971 > sensor=1560  angles=322  tvc=23  total=1950  sd=4698  latency=4688  worst=7679 (all us)
+22:55:46.976 > Loop rate: 150.42 Hz
+22:55:46.976 > Pending data points:  2
+22:55:46.980 > sensor=2117  angles=322  tvc=24  total=2507  sd=4698  latency=869  worst=7679 (all us)
+22:55:46.982 > Loop rate: 138.79 Hz
+22:55:46.982 > Pending data points:  3
+22:55:46.982 > sensor=2117  angles=322  tvc=24  total=2507  sd=10  latency=869  worst=7679 (all us)
+22:55:46.983 > Loop rate: 397.30 Hz
+22:55:46.983 > Pending data points:  3
+22:55:46.984 > sensor=2117  angles=322  tvc=24  total=2507  sd=10  latency=869  worst=7679 (all us)
+22:55:46.986 > Loop rate: 397.30 Hz
+22:55:46.986 > Pending data points:  3
+22:55:46.988 > sensor=2134  angles=313  tvc=23  total=2515  sd=10  latency=110  worst=7679 (all us)
+22:55:46.993 > Loop rate: 396.04 Hz
+22:55:46.994 > Pending data points:  4
+22:55:46.994 > sensor=2134  angles=313  tvc=23  total=2515  sd=10  latency=110  worst=7679 (all us)
+22:55:46.995 > Loop rate: 396.04 Hz
+22:55:46.995 > Pending data points:  4
+22:55:46.996 > sensor=2134  angles=313  tvc=23  total=2515  sd=10  latency=110  worst=7679 (all us)
+22:55:46.996 > Loop rate: 396.04 Hz
+22:55:46.996 > Pending data points:  4
+22:55:47.004 > sensor=2082  angles=332  tvc=24  total=2482  sd=10  latency=4983  worst=7679 (all us)
+22:55:47.008 > Loop rate: 401.28 Hz
+22:55:47.011 > Pending data points:  5
+22:55:47.014 > sensor=2089  angles=305  tvc=24  total=2462  sd=10  latency=6304  worst=7679 (all us)
+22:55:47.014 > Loop rate: 404.53 Hz
+22:55:47.014 > Pending data points:  6
+22:55:47.019 > sensor=1514  angles=341  tvc=23  total=1923  sd=10  latency=1098  worst=7679 (all us)
+22:55:47.021 > Loop rate: 517.33 Hz
+22:55:47.021 > Pending data points:  7
+22:55:47.021 > sensor=1514  angles=341  tvc=23  total=1923  sd=10  latency=1098  worst=7679 (all us)
+22:55:47.028 > Loop rate: 517.33 Hz
+22:55:47.028 > Pending data points:  7
+22:55:47.036 > sensor=6182  angles=334  tvc=23  total=6584  sd=10  latency=2463  worst=7679 (all us)
+22:55:47.037 > Loop rate: 151.65 Hz
+22:55:47.037 > Pending data points:  8
+22:55:47.040 > sensor=1538  angles=330  tvc=24  total=1936  sd=10  latency=1324  worst=7679 (all us)
+22:55:47.041 > Loop rate: 513.87 Hz
+22:55:47.041 > Pending data points:  9
+22:55:47.042 > sensor=1538  angles=330  tvc=24  total=1936  sd=10  latency=1324  worst=7679 (all us)
+22:55:47.043 > Loop rate: 513.87 Hz
+22:55:47.043 > Pending data points:  9
+22:55:47.044 > sensor=1538  angles=330  tvc=24  total=1936  sd=10  latency=1324  worst=7679 (all us)
+22:55:47.046 > Loop rate: 513.87 Hz
+22:55:47.046 > Pending data points:  9
+22:55:47.050 > sensor=2089  angles=324  tvc=24  total=2482  sd=10  latency=907  worst=7679 (all us)
+22:55:47.054 > Loop rate: 401.28 Hz
+22:55:47.058 > Pending data points:  10
+22:55:47.061 > sensor=2093  angles=304  tvc=24  total=2466  sd=10  latency=2221  worst=7679 (all us)
+22:55:47.062 > Loop rate: 403.88 Hz
+22:55:47.062 > Pending data points:  11
+22:55:47.067 > sensor=2093  angles=304  tvc=24  total=2466  sd=2902  latency=2221  worst=7679 (all us)
+22:55:47.068 > Loop rate: 186.29 Hz
+22:55:47.068 > Pending data points:  1
+22:55:47.071 > sensor=2055  angles=322  tvc=23  total=2445  sd=2902  latency=3006  worst=7679 (all us)
+22:55:47.071 > Loop rate: 187.02 Hz
+22:55:47.074 > Pending data points:  2
+22:56:06.479 > Flight or launch sequence aborted!
+22:56:06.507 > Disarming pyros...
+22:56:06.510 > Shutting down TVC...
+22:56:06.833 > Press any key to shut down the rocket and all systems. 
+22:56:08.372 > Shutting down...
+22:56:08.389 > Disarming pyros...
+22:56:08.389 > Shutting down TVC...
+22:56:08.389 > Shutting down sensors...
+22:56:08.406 > Cleaning up logs...
+22:56:08.408 > Closing data file...
+22:56:08.425 > Closing log file...
+22:56:08.445 > All systems shut down. Please reset the board. 
+22:56:08.448 > Couldn't open log file
