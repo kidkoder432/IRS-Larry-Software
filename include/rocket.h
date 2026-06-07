@@ -258,9 +258,9 @@ public: // Public functions
         char buf[64];
         snprintf(buf, sizeof(buf), "bx = %f, by = %f, bz = %f", biases.bx, biases.by, biases.bz);
         logMessage(buf);
-
+    #if USE_BLE_SENSE
         altimeter.calibrate();
-
+    #endif
         printMessage("Sensors calibrated");
         updateTime(false);
         return true;

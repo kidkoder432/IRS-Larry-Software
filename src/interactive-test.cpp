@@ -1,6 +1,6 @@
 // Test all components and features
 
-#include <rocket_dummy.h>
+#include <rocket.h>
 #include <NRF52_MBED_TimerInterrupt.h>
 
 Rocket rocket;
